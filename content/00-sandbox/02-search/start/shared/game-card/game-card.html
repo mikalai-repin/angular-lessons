@@ -1,0 +1,13 @@
+<a class="cover" [routerLink]="['/games', game().id]">
+  <img [src]="game().cover" [alt]="game().title" />
+</a>
+<div class="title">{{ game().title }}</div>
+<div class="price">
+  {{ game().price }} ₽
+  @if (game().oldPrice; as oldPrice) {
+    <s class="muted">{{ oldPrice }} ₽</s>
+  }
+</div>
+<button class="button" [disabled]="game().inStock === 0" (click)="addToCart.emit(game())">
+  {{ game().inStock === 0 ? 'Нет в наличии' : 'В корзину' }}
+</button>

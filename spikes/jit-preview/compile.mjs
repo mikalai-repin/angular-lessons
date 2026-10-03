@@ -1,0 +1,11 @@
+import ts from 'typescript';
+import path from 'path';
+import { angularJitApplicationTransform } from '@angular/compiler-cli';
+const files = ['main.ts','counter.service.ts','todo-item.ts'].map(f => path.resolve('app', f));
+const options = { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, experimentalDecorators: true, strict: true, skipLibCheck: true, outDir: path.resolve('out'), useDefineForClassFields: false };
+const program = ts.createProgram(files, options);
+const diags = ts.getPreEmitDiagnostics(program);
+diags.forEach(d => console.log('TS', ts.flattenDiagnosticMessageText(d.messageText, '\n')));
+const t0 = Date.now();
+const r = program.emit(undefined, undefined, undefined, false, { before: [angularJitApplicationTransform(program)] });
+console.log('emit ms', Date.now()-t0, 'skipped', r.emitSkipped);

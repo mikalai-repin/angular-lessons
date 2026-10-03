@@ -1,0 +1,5 @@
+{
+  "title": "Angular",
+  "angularVersion": "22.2.1",
+  "chapters": ["00-sandbox"]
+}

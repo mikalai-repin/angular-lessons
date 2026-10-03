@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><script type="module">
+import { ts, angularJitApplicationTransform } from '/vendor/ng-transform.mjs';
+const names = ['main.ts', 'counter.service.ts', 'todo-item.ts'];
+const sources = {};
+for (const n of names) sources['/app/' + n] = await (await fetch('/app/' + n)).text();
+// типы Angular не нужны для emit — компилируем без проверки, как в превью
+const options = { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, experimentalDecorators: true, useDefineForClassFields: false, noResolve: true, noLib: true, isolatedModules: true };
+const host = {
+  getSourceFile: (f, lang) => sources[f] != null ? ts.createSourceFile(f, sources[f], lang) : undefined,
+  writeFile: (f, text) => { out[f] = text; }, getDefaultLibFileName: () => 'lib.d.ts', useCaseSensitiveFileNames: () => true,
+  getCanonicalFileName: (f) => f, getCurrentDirectory: () => '/', getNewLine: () => '\n', fileExists: (f) => f in sources, readFile: (f) => sources[f],
+};
+const out = {};
+const t0 = performance.now();
+const program = ts.createProgram(Object.keys(sources), options, host);
+program.emit(undefined, undefined, undefined, false, { before: [angularJitApplicationTransform(program)] });
+console.log('emit ms', Math.round(performance.now() - t0), Object.keys(out).join(','));
+console.log(out['/app/todo-item.js'].includes('isSignal: true') ? 'TRANSFORM OK' : 'TRANSFORM MISSING');
+</script>

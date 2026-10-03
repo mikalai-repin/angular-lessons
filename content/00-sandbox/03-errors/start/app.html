@@ -1,0 +1,10 @@
+<header class="header">
+  <a routerLink="/" class="logo">♞ Ход конём</a>
+  <nav>
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Каталог</a>
+    <a routerLink="/cart" routerLinkActive="active">Корзина ({{ cart.count() }})</a>
+  </nav>
+</header>
+<main class="page">
+  <router-outlet />
+</main>

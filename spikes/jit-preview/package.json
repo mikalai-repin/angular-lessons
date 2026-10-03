@@ -1,0 +1,26 @@
+{
+  "name": "angular-jit-preview-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vendor": "esbuild vendor-rxjs.mjs --bundle --format=esm --outfile=vendor/rxjs.mjs --log-level=warning && esbuild worker-in.mjs --bundle --format=esm --platform=browser --minify --outfile=vendor/ng-transform.mjs --alias:fs=./stub.mjs --alias:path=./stub.mjs --alias:module=./stub.mjs --alias:url=./stub.mjs --alias:os=./stub.mjs --alias:crypto=./stub.mjs --alias:process=./stub.mjs --alias:util=./stub.mjs --log-level=error",
+    "compile": "node compile.mjs",
+    "serve": "python3 -m http.server 8765",
+    "check": "node run.mjs"
+  },
+  "dependencies": {
+    "@angular/common": "22.2.1",
+    "@angular/compiler": "22.2.1",
+    "@angular/compiler-cli": "22.2.1",
+    "@angular/core": "22.2.1",
+    "@angular/forms": "22.2.1",
+    "@angular/platform-browser": "22.2.1",
+    "@angular/router": "22.2.1",
+    "rxjs": "^7.8.0",
+    "typescript": "~6.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "puppeteer-core": "^24.43.1"
+  }
+}
