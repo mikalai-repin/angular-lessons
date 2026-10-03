@@ -4,6 +4,7 @@ import CssWorker from 'monaco-editor/language/css/css.worker.js?worker';
 import HtmlWorker from 'monaco-editor/language/html/html.worker.js?worker';
 import TsWorker from 'monaco-editor/language/typescript/ts.worker.js?worker';
 import type { FileMap } from '../content/course';
+import { angularHtmlLanguage, defineCourseThemes } from './angular-html';
 
 // ---------- Типы библиотек для подсказок и проверки TypeScript ----------
 //
@@ -128,9 +129,14 @@ for (const language of ['typescript', 'html', 'css']) {
   });
 }
 
+// Шаблоны Angular: своя грамматика для языка html (встроенная не знает @if, {{ }}, [prop], (event)).
+// Зарегистрированный здесь провайдер токенов важнее ленивого встроенного — тот подключается, только если своего нет
+monaco.languages.setMonarchTokensProvider('html', angularHtmlLanguage);
+defineCourseThemes(monaco);
+
 function applyTheme() {
   const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  monaco.editor.setTheme(dark ? 'vs-dark' : 'vs');
+  monaco.editor.setTheme(dark ? 'course-dark' : 'course-light');
 }
 applyTheme();
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);

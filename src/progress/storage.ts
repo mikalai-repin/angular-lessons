@@ -14,6 +14,8 @@ interface Progress {
   steps: Record<string, StepProgress>;
   lastStep?: string;
   autorun?: boolean;
+  /** Открыто ли дерево файлов рядом с редактором */
+  fileTree?: boolean;
 }
 
 // localStorage может быть недоступен (приватный режим, запрет сайта) — тогда работаем без сохранения
@@ -62,6 +64,12 @@ export const progress = {
   getAutorun: () => state.autorun ?? true,
   setAutorun: (value: boolean) => {
     state.autorun = value;
+    write();
+  },
+
+  getFileTree: () => state.fileTree ?? false,
+  setFileTree: (value: boolean) => {
+    state.fileTree = value;
     write();
   },
 

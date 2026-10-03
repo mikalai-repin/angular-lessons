@@ -576,7 +576,147 @@ button {
 
 .editor-host {
   flex: 1;
+  min-width: 0;
   min-height: 0;
+}
+
+/* Полоса над редактором: кнопка дерева файлов + вкладки */
+.editor-header {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.editor-header .tabs {
+  flex: 1;
+  min-width: 0;
+  border-bottom: 0;
+}
+
+.tree-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 6px 8px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tree-toggle:hover,
+.tree-toggle.active {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.tree-count {
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--border);
+  font-size: 11px;
+}
+
+.editor-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* Дерево файлов шага */
+.file-tree {
+  flex: none;
+  width: 210px;
+  overflow: auto;
+  padding: 6px 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 13px;
+}
+
+.file-tree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 3px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tree-row:hover {
+  background: var(--border);
+}
+
+.tree-folder {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.tree-arrow {
+  width: 10px;
+  font-size: 10px;
+}
+
+.tree-file.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.file-icon {
+  flex: none;
+  width: 18px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.file-icon-ts {
+  color: #3178c6;
+}
+
+.file-icon-html {
+  color: #e44d26;
+}
+
+.file-icon-css {
+  color: #8b5cf6;
+}
+
+.file-icon-json {
+  color: #c99a06;
+}
+
+/* На узком экране дерево всплывает поверх кода */
+@media (max-width: 900px) {
+  .file-tree {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 10;
+    width: min(260px, 80%);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.18);
+  }
 }
 
 .toolbar {

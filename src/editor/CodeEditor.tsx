@@ -1,5 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { progress } from '../progress/storage';
+import { FileTree } from './FileTree';
 import { fileOfModel, formatEditor, modelUri, monaco } from './monaco';
+
+/** На узком экране дерево файлов всплывает поверх кода и закрывается после выбора файла */
+const NARROW = '(max-width: 900px)';
 
 interface Props {
   stepId: string;
@@ -72,23 +77,54 @@ export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange
     return () => observer.disconnect();
   }, [active]);
 
+  const [showTree, setShowTree] = useState(() => progress.getFileTree() && !window.matchMedia(NARROW).matches);
+
+  function toggleTree() {
+    const next = !showTree;
+    setShowTree(next);
+    // На узком экране дерево — временная панель, её состояние не запоминаем
+    if (!window.matchMedia(NARROW).matches) progress.setFileTree(next);
+  }
+
+  function selectFromTree(file: string) {
+    onSelect(file);
+    if (window.matchMedia(NARROW).matches) setShowTree(false);
+  }
+
   return (
     <div className="editor">
-      <div className="tabs" role="tablist" ref={tabsRef}>
-        {files.map((file) => (
-          <button
-            key={file}
-            role="tab"
-            aria-selected={file === active}
-            className={file === active ? 'tab active' : 'tab'}
-            onClick={() => onSelect(file)}
-          >
-            <TabLabel file={file} />
-            {readonly.includes(file) && <span className="tab-lock" title="Только для чтения">🔒</span>}
-          </button>
-        ))}
+      <div className="editor-header">
+        <button
+          className={showTree ? 'tree-toggle active' : 'tree-toggle'}
+          title={showTree ? 'Скрыть дерево файлов' : 'Показать все файлы деревом'}
+          aria-pressed={showTree}
+          onClick={toggleTree}
+        >
+          <span aria-hidden="true">☰</span> Файлы <span className="tree-count">{files.length}</span>
+        </button>
+        <div className="tabs" role="tablist" ref={tabsRef}>
+          {files.map((file) => (
+            <button
+              key={file}
+              role="tab"
+              aria-selected={file === active}
+              className={file === active ? 'tab active' : 'tab'}
+              onClick={() => onSelect(file)}
+            >
+              <TabLabel file={file} />
+              {readonly.includes(file) && (
+                <span className="tab-lock" title="Только для чтения">
+                  🔒
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="editor-host" ref={hostRef} />
+      <div className="editor-body">
+        {showTree && <FileTree files={files} active={active} readonly={readonly} onSelect={selectFromTree} />}
+        <div className="editor-host" ref={hostRef} />
+      </div>
     </div>
   );
 }
