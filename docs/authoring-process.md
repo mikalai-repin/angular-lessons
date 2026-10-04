@@ -40,12 +40,12 @@ python3 -c "…"                            # для поиска удобнее
 
 ## 2. Код шагов
 
-Код каждого шага — полные снимки файлов в `start/` и `solution/`. Удобнее всего генерировать их Python-скриптом **во временной папке** (scratchpad, не в репозитории): общие куски — строковые константы, шаги — их комбинации. Так цепочка «решение шага N = старт шага N+1» получается автоматически.
+Код каждого шага — полные снимки файлов в `solution/` и, только у шагов `startFrom: custom`, в `start/`. **Шаг `startFrom: previous` папки `start/` не хранит**: его старт — результат предыдущего шага (так решено после главы 5: до этого 753 файла содержали всего 142 разных). Код генерирует Python-скрипт `tools/authoring/chNN-gen.py`: общие куски — строковые константы, шаги — их комбинации. Запись — только через `write_steps(ROOT, steps)` из `tools/authoring/steps.py`: он сам не пишет `start/`, совпадающий с результатом предыдущего шага. Код прошлой главы генератор читает через `step_dir(путь)`, который разрешает отсутствующий `start/` по цепочке.
 
 Правила:
 
 - первый шаг главы — `startFrom: custom`, его старт — очищенное решение последнего шага прошлой главы. Что убрали или вынесли в файлы, объясняется в тексте первого шага;
-- если старт отличается от прошлого решения хотя бы строкой `// TODO`, шаг тоже `custom`;
+- если старт отличается от прошлого решения хотя бы строкой `// TODO`, шаг тоже `custom` (и только тогда у него есть `start/`; если `write_steps` не записал `start/` у шага `custom` или записал у `previous`, валидатор скажет об этом);
 - новый файл, появившийся в шаге, — тоже `custom`; в старте лежит заготовка с `// TODO`;
 - интерфейс магазина должен помещаться в превью **500 × 600** без растягивания панелей;
 - после генерации: `npx tsc -p tsconfig.content.json` — весь код уроков проверяется по настоящим типам `@angular/*`.
@@ -162,6 +162,7 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **Prettier раскрывает `@case (…) { Текст }` на три строки** — в тексте урока фрагмент можно дать компактно и предупредить, что после «Формат» он станет длиннее.
 - **Ширина ASCII-схем в тексте урока — не больше 46 символов**: панель урока при окне 1440 px показывает около 49 символов моноширинного блока, остальное уходит в горизонтальную прокрутку. Код и вывод консоли могут быть шире.
 - **Проверки AOT в scratchpad**: TypeScript 6 требует `rootDir` в `tsconfig.json` папки для `ngc`, если исходники в `src/` (TS5011).
+- **Папки `start/` у шагов `startFrom: previous` нет.** Путь `content/<глава>/<шаг>/start` всё равно можно передавать в `run-dir.mjs`, `exp.mjs` и `readDir`: `tools/e2e/lib.mjs` достроит старт по цепочке (`scripts/step-files.mjs`). В Python — `step_dir()` из `tools/authoring/steps.py`.
 - **Проверяйте эксперименты на коде того шага, о котором текст**, а не на решении последнего шага: поведение может зависеть от того, что появилось позже (в главе 5 — `display: inline-flex` хоста из шага 7 скрывал ошибку шага 4).
 - **Щелчки в iframe платформы**: `page.mouse.click` по координатам `boundingBox()` элемента внутри iframe в `checks/*` ненадёжен — используйте `elementHandle.click({ offset })`.
 - **Сигнальный вход и `@default never;`**: после замены `game` на `game()` в шаблоне с `@switch` нужна `@let` — иначе ошибка только в AOT.
@@ -183,7 +184,7 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 
 Отличия от `course-plan.md`: «Под капотом: компилятор» — отдельный шаг 1.7, а не врезка; глобальный `ng` — в шаге 1.6.
 
-Код магазина на конец главы 1 (`content/01-first-app/07-compiler/start/`): `main.ts` (`bootstrapApplication(App, appConfig).then(лог числа компонентов).catch(...)`), `app.ts` (`templateUrl`, `styleUrl`, пустой класс), `app.html` (шапка `.header` с `.logo` + `main.page` с `h1` и `p.muted`), `app.css` (шапка, `h1` фирменного цвета), `app.config.ts` (`provideBrowserGlobalErrorListeners()`), `styles.css` (переменные `--brand` и др., `body`, `h1`, `.muted`, `.button`, `.grid`).
+Код магазина на конец главы 1 (`content/01-first-app/06-debugging/solution/` — старт шага 07): `main.ts` (`bootstrapApplication(App, appConfig).then(лог числа компонентов).catch(...)`), `app.ts` (`templateUrl`, `styleUrl`, пустой класс), `app.html` (шапка `.header` с `.logo` + `main.page` с `h1` и `p.muted`), `app.css` (шапка, `h1` фирменного цвета), `app.config.ts` (`provideBrowserGlobalErrorListeners()`), `styles.css` (переменные `--brand` и др., `body`, `h1`, `.muted`, `.button`, `.grid`).
 
 Код шагов генерирует `tools/authoring/ch01-gen.py`.
 
@@ -203,7 +204,7 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 
 Отличия от `course-plan.md`: шаг 2.5 выводит запрос через `#ref` + `[hidden]` (состояния ещё нет), «Под капотом» — отдельный шаг 2.9.
 
-Код магазина на конец главы 2 (`content/02-templates/09-template-context/start/`): `main.ts` (`bootstrapApplication(App, appConfig).catch(...)`), `app.ts` (`game = GAMES[0]`, `addToCart()` и `search(query)` пишут в консоль), `app.html` (шапка, поле поиска `#searchBox` + абзац «Ищем», `@let soldOut`/`discount`, горизонтальная карточка `article.card`), `app.css` (шапка, поиск, карточка, рейтинг, `.sold-out`), `core/models.ts` (`Game`), `core/games-data.ts` (`GAMES` — 12 игр из `games.json`, у первой в описании `<b>`), `app.config.ts`, `styles.css` — без изменений.
+Код магазина на конец главы 2 (`content/02-templates/08-practice/solution/` — старт шага 09): `main.ts` (`bootstrapApplication(App, appConfig).catch(...)`), `app.ts` (`game = GAMES[0]`, `addToCart()` и `search(query)` пишут в консоль), `app.html` (шапка, поле поиска `#searchBox` + абзац «Ищем», `@let soldOut`/`discount`, горизонтальная карточка `article.card`), `app.css` (шапка, поиск, карточка, рейтинг, `.sold-out`), `core/models.ts` (`Game`), `core/games-data.ts` (`GAMES` — 12 игр из `games.json`, у первой в описании `<b>`), `app.config.ts`, `styles.css` — без изменений.
 
 Код шагов генерирует `tools/authoring/ch02-gen.py`, проверка взаимодействия — `tools/e2e/checks/ch02-templates.mjs`. Все решения проверены и `ngc --strictTemplates` (папка в scratchpad, как в главе 1).
 
@@ -263,7 +264,7 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 
 Отличия от `course-plan.md`: события (5.3) — сразу после входов, чтобы корзина не была сломана три шага; двусторонняя привязка (5.4) — раньше преобразований (у `readonly` появляется мотивация: звёзды в карточке меняются от щелчка); «Карточка-обёртка с бейджами» — стикеры через `select`; хост-элемент — на `Rating` (доступность и клавиатура), `:host` для карточки — в шаге про стили; `compact` не понадобился.
 
-Код магазина на конец главы 5 (`content/05-components/10-encapsulation/start/`): `app.ts` — `FREE_DELIVERY_FROM`, `HIT_RATING`, `SortKey`; сигналы `query`, `inStockOnly`, `minRating`, `sortBy`, `computed` `visibleGames` (с рейтингом), `hitRating`, `cart`, `cartCount`, `cartTotal`, `cartSummary`, `deliveryLeft`, `inCart` (`Map`), эффект-лог; методы `addToCart(game)`, `setQuantity(item, quantity)`, `removeFromCart`, `clearCart`, `changeSort`, `resetFilters`; `imports: [GameCard, Rating, Quantity]`. `app.html` — шапка, поиск, мини-корзина (строки с `<app-quantity min="1" [max] [value] (valueChange)>`), фильтры (флажок, «Рейтинг от» `<app-rating [(value)]="minRating">`, сортировка), сетка `<app-game-card [game] [inCart] (add)>` со стикерами `[sticker]`. `shared/game-card/` — `GameCard` (`game` обязательный, `inCart`, `add`, `host` с `role` и `sold-out`, слот стикеров, `<app-rating readonly>`, `FEW_LEFT`), стили через `:host`. `shared/rating/` — `Rating` (`value` модель, `readonly` с `booleanAttribute`, половинки звёзд, `host` с ARIA и стрелками). `shared/quantity/` — `Quantity`. `core/*`, `main.ts`, `app.config.ts`, `styles.css` — без изменений.
+Код магазина на конец главы 5 (`content/05-components/09-practice/solution/` — старт шага 10): `app.ts` — `FREE_DELIVERY_FROM`, `HIT_RATING`, `SortKey`; сигналы `query`, `inStockOnly`, `minRating`, `sortBy`, `computed` `visibleGames` (с рейтингом), `hitRating`, `cart`, `cartCount`, `cartTotal`, `cartSummary`, `deliveryLeft`, `inCart` (`Map`), эффект-лог; методы `addToCart(game)`, `setQuantity(item, quantity)`, `removeFromCart`, `clearCart`, `changeSort`, `resetFilters`; `imports: [GameCard, Rating, Quantity]`. `app.html` — шапка, поиск, мини-корзина (строки с `<app-quantity min="1" [max] [value] (valueChange)>`), фильтры (флажок, «Рейтинг от» `<app-rating [(value)]="minRating">`, сортировка), сетка `<app-game-card [game] [inCart] (add)>` со стикерами `[sticker]`. `shared/game-card/` — `GameCard` (`game` обязательный, `inCart`, `add`, `host` с `role` и `sold-out`, слот стикеров, `<app-rating readonly>`, `FEW_LEFT`), стили через `:host`. `shared/rating/` — `Rating` (`value` модель, `readonly` с `booleanAttribute`, половинки звёзд, `host` с ARIA и стрелками). `shared/quantity/` — `Quantity`. `core/*`, `main.ts`, `app.config.ts`, `styles.css` — без изменений.
 
 Код шагов генерирует `tools/authoring/ch05-gen.py` (в конце — Prettier по `.ts`, `.html`, `.css`), проверка взаимодействия — `tools/e2e/checks/ch05-components.mjs`. Все решения проверены `ngc --strictTemplates` — без ошибок и предупреждений.
 

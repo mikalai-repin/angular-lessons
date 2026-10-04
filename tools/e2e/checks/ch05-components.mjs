@@ -100,6 +100,9 @@ await checkConsoleClean('шаг 1');
 // 2. Входы
 await nextStep();
 expect((await title()) === 'Входы', 'шаг 2 открыт кнопкой «Далее»');
+// У шага 2 нет папки start/: платформа берёт старт из решения шага 1
+names = await titles();
+expect(names.length === 12 && names.every((n) => n === 'Остров сокровищ'), 'шаг 2: старт без start/ — решение шага 1');
 await showSolution();
 names = await titles();
 expect(new Set(names).size === 12 && names[0] === 'Остров сокровищ' && names[3] === 'Ночной экспресс', 'шаг 2: у каждой карточки своя игра');

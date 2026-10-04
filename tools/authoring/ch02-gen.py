@@ -3,11 +3,15 @@
 # Старт главы — решение главы 1 (07-compiler) с main.ts из ng new.
 # После запуска: npm run validate, проверка Prettier (см. docs/authoring-process.md).
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
-import json, os, shutil
+import json, os
 
 PROJECT = '/Users/mr/Desktop/Experimental/angular-learn'
 ROOT = f'{PROJECT}/content/02-templates'
-CH01 = f'{PROJECT}/content/01-first-app/07-compiler/start'
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from steps import step_dir
+
+CH01 = step_dir(f'{PROJECT}/content/01-first-app/07-compiler/start')
 
 def read(path):
     with open(path) as f:
@@ -373,18 +377,8 @@ steps = {
     '09-template-context': {'start': S08},
 }
 
-for step, spec in steps.items():
-    stepdir = os.path.join(ROOT, step)
-    os.makedirs(stepdir, exist_ok=True)
-    for kind in ('start', 'solution'):
-        path = os.path.join(stepdir, kind)
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        if kind not in spec:
-            continue
-        for name, code in spec[kind].items():
-            full = os.path.join(path, name)
-            os.makedirs(os.path.dirname(full), exist_ok=True)
-            with open(full, 'w') as f:
-                f.write(code)
+# Запись на диск: start/, совпадающий с результатом предыдущего шага, не записывается (см. steps.py)
+from steps import write_steps
+
+write_steps(ROOT, steps)
 print('ok')

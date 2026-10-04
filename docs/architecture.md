@@ -167,7 +167,7 @@ export default async function check({ document, navigate }: CheckContext): Promi
 
 `npm run validate`:
 
-- `scripts/validate-content.mjs` — структура, frontmatter (YAML), цепочка `start`/`solution` и **сборка** каждого `start/` и `solution/` через `compile-core` (ловит ненайденные `templateUrl`/`styleUrl` и синтаксические ошибки);
+- `scripts/validate-content.mjs` — структура, frontmatter (YAML), цепочка шагов (у шага `startFrom: previous` не должно быть папки `start/`: старт берётся из предыдущего шага, `scripts/step-files.mjs`) и **сборка** каждого `solution/` и своего `start/` через `compile-core` (ловит ненайденные `templateUrl`/`styleUrl` и синтаксические ошибки);
 - `tsc -p tsconfig.content.json` — типы кода уроков по настоящим `@angular/*` (настройки как в `ng new`).
 - **План** (этап 5): `ngc` с `strictTemplates` по каждому `solution/`.
 

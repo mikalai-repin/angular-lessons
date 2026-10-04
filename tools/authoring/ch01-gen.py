@@ -3,7 +3,7 @@
 # Шаг 01 копирует демо-магазин из песочницы (content/00-sandbox/02-search/solution).
 # После запуска: npm run validate, проверка Prettier (см. docs/authoring-process.md).
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
-import os, shutil
+import os
 
 ROOT = '/Users/mr/Desktop/Experimental/angular-learn/content/01-first-app'
 SANDBOX = '/Users/mr/Desktop/Experimental/angular-learn/content/00-sandbox/02-search/solution'
@@ -173,7 +173,7 @@ def files_final():
             'app.config.ts': CONFIG, 'styles.css': STYLES_CSS}
 
 steps = {
-    '01-what-is-angular': {'start': 'SANDBOX'},
+    '01-what-is-angular': {'start': SANDBOX},
     '02-first-component': {
         'start': {'main.ts': MAIN_BASIC, 'app.ts': APP_NO_DECORATOR},
         'solution': {'main.ts': MAIN_BASIC, 'app.ts': APP_INLINE},
@@ -197,19 +197,10 @@ steps = {
     '07-compiler': {'start': files_final()},
 }
 
-for step, spec in steps.items():
-    base = os.path.join(ROOT, step)
-    for kind in ('start', 'solution'):
-        path = os.path.join(base, kind)
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        if kind not in spec:
-            continue
-        if spec[kind] == 'SANDBOX':
-            shutil.copytree(SANDBOX, path)
-            continue
-        os.makedirs(path)
-        for name, code in spec[kind].items():
-            with open(os.path.join(path, name), 'w') as f:
-                f.write(code)
+# Запись на диск: start/, совпадающий с результатом предыдущего шага, не записывается (см. steps.py)
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from steps import write_steps
+
+write_steps(ROOT, steps)
 print('ok')

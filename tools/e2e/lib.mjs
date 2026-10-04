@@ -1,12 +1,13 @@
 // Общие помощники браузерных проверок курса.
 // Нужен запущенный dev-сервер (npm run dev) и установленный Chrome.
-import { mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
+import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { angularJitApplicationTransform } from '@angular/compiler-cli';
 import puppeteer from 'puppeteer-core';
 import { compileFiles } from '../../shared/compile-core.js';
+import { readStepDir } from '../../scripts/step-files.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const CONTENT = resolve(ROOT, 'content');
@@ -23,18 +24,12 @@ export function launch() {
   return puppeteer.launch({ executablePath: CHROME, headless: true });
 }
 
-/** Все файлы папки шага (с подпапками): 'core/cart-store.ts' → текст */
+/**
+ * Все файлы папки шага (с подпапками): 'core/cart-store.ts' → текст.
+ * Путь …/<шаг>/start у шага со startFrom: previous (папки нет) даёт решение предыдущего шага
+ */
 export function readDir(dir) {
-  const files = {};
-  const walk = (current) => {
-    for (const name of readdirSync(current)) {
-      const path = resolve(current, name);
-      if (statSync(path).isDirectory()) walk(path);
-      else files[relative(dir, path)] = readFileSync(path, 'utf8');
-    }
-  };
-  walk(dir);
-  return files;
+  return readStepDir(dir);
 }
 
 /** Компилирует папку шага (start/ или solution/) тем же кодом, что и воркер платформы */

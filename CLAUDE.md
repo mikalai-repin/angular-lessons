@@ -53,9 +53,9 @@ public/preview-runtime.js — среда выполнения кода учен�
 public/backend/       — учебный бэкенд (/api/…) и его данные (data/*.json)
 public/assets/        — обложки игр (scripts/build-covers.mjs), CREDITS.md
 public/vendor/, public/preview.html — генерирует scripts/copy-vendor.mjs (не в git)
-scripts/              — copy-vendor, validate-content, build-covers
+scripts/              — copy-vendor, validate-content, build-covers, step-files (старт шага по цепочке)
 tools/e2e/            — проверки в headless Chrome (lib, run-dir, run-chapter, exp, checks/)
-tools/authoring/      — генераторы кода шагов глав (chNN-gen.py)
+tools/authoring/      — генераторы кода шагов глав (chNN-gen.py) и общий steps.py (запись шагов без копий start/)
 spikes/jit-preview/   — первый прототип (только для справки)
 ```
 
@@ -85,7 +85,7 @@ spikes/jit-preview/   — первый прототип (только для с�
 
 1. Найти шаг в `docs/course-plan.md`, проверить, какие API и понятия он вводит и что уже известно ученику из предыдущих шагов.
 2. Писать по `docs/writing-guide.md`; термины — строго по `docs/glossary.md` (новый термин сначала добавить в словарь).
-3. `start/` шага N+1 должен совпадать с `solution/` шага N (если не оговорено иное).
+3. Старт шага N+1 — решение шага N (`startFrom: previous`), и **папку `start/` для него не создаём**: платформа, валидатор и `tools/e2e` берут старт из предыдущего шага. Своя `start/` — только у шагов `startFrom: custom` (первый шаг главы, заготовки с `TODO`). Генераторы пишут шаги через `write_steps` из `tools/authoring/steps.py` — он соблюдает это правило сам.
 4. Решение каждого шага должно запускаться без ошибок и давать видимый результат. После правок — `npm run validate`.
 5. **Проверять факты об API по типам и исходникам установленной версии `@angular/*`, а не по памяти**: в интернете и в памяти модели много Angular 2–17 (NgModule, zone.js, `@Input`, `*ngIf`). Уже выяснилось, что в v22 OnPush — стратегия по умолчанию, зонлесс включён по умолчанию, появился декоратор `@Service()`, `withFetch` устарел — см. `docs/modern-angular.md`.
 6. Каждое утверждение и каждый эксперимент из текста урока проверять запуском кода (`tools/e2e/run-dir.mjs`). Полный процесс — в `docs/authoring-process.md`.

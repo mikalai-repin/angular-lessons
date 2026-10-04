@@ -4,7 +4,7 @@
 # стили плитки собраны в конце (в шаге 1 они переезжают в game-card.css), добавлены стили главы.
 # В конце прогоняет Prettier по коду шагов. После запуска: npm run validate.
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
-import os, shutil, subprocess
+import os, subprocess
 
 PROJECT = '/Users/mr/Desktop/Experimental/angular-learn'
 ROOT = f'{PROJECT}/content/05-components'
@@ -857,21 +857,12 @@ steps = {
     '10-encapsulation': {'start': S59},
 }
 
-for step, spec in steps.items():
-    stepdir = os.path.join(ROOT, step)
-    os.makedirs(stepdir, exist_ok=True)
-    for kind in ('start', 'solution'):
-        path = os.path.join(stepdir, kind)
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        if kind not in spec:
-            continue
-        for name, code in spec[kind].items():
-            full = os.path.join(path, name)
-            os.makedirs(os.path.dirname(full), exist_ok=True)
-            with open(full, 'w') as f:
-                f.write(code)
+# Запись на диск: start/, совпадающий с результатом предыдущего шага, не записывается (см. steps.py)
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from steps import write_steps
 
+write_steps(ROOT, steps)
 # Код шагов — в том виде, какой даёт форматирование в редакторе платформы
 opts = ['--print-width', '120', '--single-quote', '--trailing-comma', 'all', '--log-level', 'warn', '--write']
 subprocess.run(['npx', 'prettier', *opts, f'{ROOT}/**/*.ts'], cwd=PROJECT, check=True)

@@ -2,39 +2,18 @@
 // что и превью (ловит ненайденные templateUrl/styleUrl и синтаксические ошибки).
 // Запуск: npm run validate (типы кода уроков проверяет отдельно `tsc -p tsconfig.content.json`)
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 import ts from 'typescript';
 import { angularJitApplicationTransform } from '@angular/compiler-cli';
 import { parse as parseYaml } from 'yaml';
 import { compileFiles } from '../shared/compile-core.js';
+import { readFiles, readResult, readStart } from './step-files.mjs';
 
 const root = join(import.meta.dirname, '..', 'content');
 const errors = [];
 const warnings = [];
 
 const isDir = (path) => existsSync(path) && statSync(path).isDirectory();
-
-function readFiles(dir) {
-  const files = {};
-  if (!isDir(dir)) return files;
-  const walk = (current) => {
-    for (const name of readdirSync(current)) {
-      const path = join(current, name);
-      if (isDir(path)) walk(path);
-      else files[relative(dir, path)] = readFileSync(path, 'utf8');
-    }
-  };
-  walk(dir);
-  return files;
-}
-
-function sameFiles(a, b) {
-  const diff = [];
-  for (const name of new Set([...Object.keys(a), ...Object.keys(b)])) {
-    if (a[name] !== b[name]) diff.push(name);
-  }
-  return diff;
-}
 
 const course = JSON.parse(readFileSync(join(root, 'course.json'), 'utf8'));
 // tsconfig.content.json с комментариями: убираем строки-комментарии перед разбором
@@ -53,7 +32,6 @@ for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
   }
 
   const steps = readdirSync(chapterPath).filter((name) => isDir(join(chapterPath, name))).sort();
-  let previousSolution = null;
 
   for (const stepDir of steps) {
     stepCount++;
@@ -78,13 +56,26 @@ for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
       if (!meta.title) errors.push(`${where}: во frontmatter нет title`);
     }
 
-    const start = readFiles(join(stepPath, 'start'));
+    const startFrom = meta.startFrom ?? 'previous';
+    const ownStart = readFiles(join(stepPath, 'start'));
     const solution = readFiles(join(stepPath, 'solution'));
+    // startFrom: previous — папки start/ нет: старт = результат предыдущего шага (scripts/step-files.mjs)
+    if (startFrom === 'previous') {
+      if (steps.indexOf(stepDir) === 0) errors.push(`${where}: первый шаг главы должен иметь startFrom: custom`);
+      if (isDir(join(stepPath, 'start'))) {
+        const same = JSON.stringify(ownStart) === JSON.stringify(readResult(join(chapterPath, steps[steps.indexOf(stepDir) - 1] ?? '')));
+        errors.push(
+          `${where}: startFrom: previous, но есть папка start/ — ${same ? 'это копия результата предыдущего шага, удалите её' : 'она отличается от результата предыдущего шага: нужен startFrom: custom'}`,
+        );
+      }
+    }
+    const start = startFrom === 'previous' ? readStart(stepPath) : ownStart;
     if (!start['main.ts']) errors.push(`${where}: нет start/main.ts`);
     if (meta.noSolution && Object.keys(solution).length) errors.push(`${where}: noSolution: true, но папка solution/ не пуста`);
     if (!solution['main.ts'] && !meta.noSolution) warnings.push(`${where}: нет solution/main.ts — кнопки «Решение» не будет`);
 
-    for (const [kind, files] of [['start', start], ['solution', solution]]) {
+    // Старт со startFrom: previous уже собран как результат предыдущего шага — повторно не собираем
+    for (const [kind, files] of [['start', startFrom === 'custom' ? start : {}], ['solution', solution]]) {
       if (!Object.keys(files).length) continue;
       // brokenStart: стартовый код намеренно содержит ошибки (шаг про отладку)
       if (kind === 'start' && meta.brokenStart) {
@@ -97,16 +88,6 @@ for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
       for (const error of buildErrors) errors.push(`${where}/${kind}: ${error}`);
     }
 
-    const startFrom = meta.startFrom ?? 'previous';
-    if (startFrom === 'previous') {
-      if (!previousSolution) {
-        errors.push(`${where}: первый шаг главы должен иметь startFrom: custom`);
-      } else {
-        const diff = sameFiles(previousSolution, start);
-        if (diff.length) errors.push(`${where}: start/ отличается от solution/ предыдущего шага в файлах: ${diff.join(', ')}`);
-      }
-    }
-    previousSolution = solution;
   }
 }
 
