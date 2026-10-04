@@ -55,7 +55,7 @@ public/assets/        — обложки игр (scripts/build-covers.mjs), CRED
 public/vendor/, public/preview.html — генерирует scripts/copy-vendor.mjs (не в git)
 scripts/              — copy-vendor, validate-content, build-covers
 tools/e2e/            — проверки в headless Chrome (lib, run-dir, run-chapter, exp, checks/)
-tools/authoring/      — генераторы кода шагов глав (ch01-gen.py)
+tools/authoring/      — генераторы кода шагов глав (chNN-gen.py)
 spikes/jit-preview/   — первый прототип (только для справки)
 ```
 
@@ -68,12 +68,12 @@ spikes/jit-preview/   — первый прототип (только для с�
 - `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, адрес, текст страницы, скриншот в `tools/e2e/out/`
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»
 - `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент из текста урока со своим сценарием действий
-- `node tools/e2e/checks/platform.mjs` и `checks/ch00-sandbox.mjs` — проверки платформы (после любых правок в `src/`, `public/`, `shared/`); `checks/ch02-templates.mjs` — проверка главы 2
+- `node tools/e2e/checks/platform.mjs` и `checks/ch00-sandbox.mjs` — проверки платформы (после любых правок в `src/`, `public/`, `shared/`); `checks/ch02-templates.mjs`, `checks/ch03-signals.mjs` — проверки глав 2 и 3
 - Все проверки требуют запущенного `npm run dev` и Chrome (`CHROME_PATH`, по умолчанию путь macOS). Другой адрес — `BASE_URL=http://localhost:5181`
 
 ## Текущий статус
 
-Платформа готова (этапы 0, 0.5, 1). **Главы 1 «Первое приложение» (7 шагов) и 2 «Шаблоны и привязки» (9 шагов) написаны**, все утверждения проверены запуском. Песочница `00-sandbox` — служебная глава (`devChapters`), только для проверок платформы. **Следующий шаг — глава 3 «Сигналы»**: что делать — в конце `docs/roadmap.md`, состояние кода магазина — в `docs/authoring-process.md`, «Фактическое состояние». Перед продолжением прочитайте `docs/authoring-process.md` целиком.
+Платформа готова (этапы 0, 0.5, 1). **Главы 1 «Первое приложение» (7 шагов), 2 «Шаблоны и привязки» (9 шагов) и 3 «Сигналы» (9 шагов) написаны**, все утверждения проверены запуском. Песочница `00-sandbox` — служебная глава (`devChapters`), только для проверок платформы. **Следующий шаг — глава 4 «Управляющие блоки»**: что делать — в конце `docs/roadmap.md`, состояние кода магазина — в `docs/authoring-process.md`, «Фактическое состояние». Перед продолжением прочитайте `docs/authoring-process.md` целиком.
 
 ## Пользователь и тон работы
 

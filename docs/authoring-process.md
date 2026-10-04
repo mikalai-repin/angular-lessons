@@ -100,6 +100,11 @@ export default async ({ page, pageText, navigate, wait }) => {
 | «Ошибки `@let` (чтение до объявления, присваивание) видны в превью» (гл. 2) | JIT их не проверяет — только AOT (NG8015–NG8017) |
 | `protected readonly inStock = 12` + `[disabled]="inStock === 0"` (гл. 2) | AOT `strictTemplates`: TS2367 из-за литерального типа `12`; нужен `: number` |
 | «В шаблоне нельзя шаблонные строки, `typeof`, стрелочные функции» (память модели) | В 22.2 всё это работает |
+| «Счётчик застрял из-за зонлесс + OnPush» (план 3.1) | Из-за зонлесс: с `ChangeDetectionStrategy.Eager` счётчик из `setTimeout` застревает так же — проверки нет вообще. OnPush с одним компонентом не виден |
+| `linkedSignal(() => (this.soldOut() ? 0 : 1))` «сбрасывается при смене игры» (гл. 3) | Не сбрасывается между играми в наличии: `soldOut` пересчитался, но остался `false` — отсечение по равенству. Нашла проверка `ch03-signals.mjs`. Читать в `linkedSignal` то, изменение чего должно сбрасывать (`game()`) |
+| Пример очистки эффекта: таймер без чтения сигналов (гл. 3) | Эффект без зависимостей запускается один раз — очистка не показывает ничего. В примере эффект должен читать сигнал |
+| «Мы видели в консоли: эффект раньше шаблона» (черновик 3.5) | Ученик этого не видел — заменено экспериментом с `console.log` в `cartTotal` |
+| «Консоль превью покажет `computed(ещё не вычислен)`» (гл. 3) | Показывала `computed(0)`: Chrome с подключённым CDP вызывает `toString()` у аргументов `console.log`, а `toString` у `computed` из `@angular/core` вызывает геттер. Исправлено в `preview-runtime.js`: форматирование до вызова настоящей консоли |
 
 Вывод из курса PixiJS: **не доверяйте себе**. Если утверждение нельзя проверить, лучше его не писать.
 
@@ -147,6 +152,11 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **Проверка шаблонов в AOT строже JIT**: литеральные типы `readonly`-полей, необязательные поля (`oldPrice?`) в арифметике, правила `@let` — JIT молчит. Прогоняйте решения главы через `ngc` со `strictTemplates: true`.
 - **Чистое превью `exp.mjs`**: приложение — сама страница, без iframe: `page.click('.card button')`, `page.type('.search', …)`.
 - **Шаг со стартом без решения**: в `run-chapter` «Решение» нажимается автоматически, а в своих проверках — нет; стартовый код может не содержать элементов, которые ищет проверка.
+- **Генератор главы перезаписывает десятки файлов** — Vite шлёт волну HMR-обновлений, и первая проверка сразу после генерации может упасть по таймауту навигации или без iframe превью. Подождать и повторить.
+- **Литеральные типы из функций**: `linkedSignal(() => (cond ? 0 : 1))` и `computed` выводят тип `0 | 1`, и `update((q) => q + 1)` — TS2322. Указывать тип: `linkedSignal<number>(…)`. У `signal(0)` тип расширяется до `number`.
+- **`exp.mjs`**: строки `console.log` самого сценария печатаются сразу, а консоль страницы — в конце; порядок между ними по выводу не восстановить. Нужен порядок — пишите метки в консоль страницы (`page.evaluate(() => console.log(…))`).
+- **Ширина ASCII-схем в тексте урока — не больше 46 символов**: панель урока при окне 1440 px показывает около 49 символов моноширинного блока, остальное уходит в горизонтальную прокрутку. Код и вывод консоли могут быть шире.
+- **Проверки AOT в scratchpad**: TypeScript 6 требует `rootDir` в `tsconfig.json` папки для `ngc`, если исходники в `src/` (TS5011).
 
 # Фактическое состояние
 
@@ -187,6 +197,26 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 Код магазина на конец главы 2 (`content/02-templates/09-template-context/start/`): `main.ts` (`bootstrapApplication(App, appConfig).catch(...)`), `app.ts` (`game = GAMES[0]`, `addToCart()` и `search(query)` пишут в консоль), `app.html` (шапка, поле поиска `#searchBox` + абзац «Ищем», `@let soldOut`/`discount`, горизонтальная карточка `article.card`), `app.css` (шапка, поиск, карточка, рейтинг, `.sold-out`), `core/models.ts` (`Game`), `core/games-data.ts` (`GAMES` — 12 игр из `games.json`, у первой в описании `<b>`), `app.config.ts`, `styles.css` — без изменений.
 
 Код шагов генерирует `tools/authoring/ch02-gen.py`, проверка взаимодействия — `tools/e2e/checks/ch02-templates.mjs`. Все решения проверены и `ngc --strictTemplates` (папка в scratchpad, как в главе 1).
+
+## Глава 3 «Сигналы» — 9 шагов
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-problem | Вводный шаг главы; поле в `(click)` обновляет экран, в `setTimeout` — нет (отставание на одно нажатие); зонлесс; OnPush и эксперимент с `Eager`; legacy zone.js | custom: решение 2.8 + «В корзине: 0» в шапке, `app.css` со стилями всей главы, TODO в `app.ts` |
+| 02-signal | `signal`, чтение вызовом, `set`/`update`, `readonly`; `{{ cartCount }}` → `[Signal: 0]`, AOT NG8109; TS2540; `signal(1)` в консоли превью; в конце задержка убирается | решение 01 |
+| 03-computed | переключатель игр (`gameIndex` + `computed` `game`/`soldOut`/`discount`), «храните минимум», ленивость и кэш (эксперимент с `console.log`), `@let` → `computed`, TS2339, NG0600 | решение 02 |
+| 04-immutability | `CartItem`, `cart = signal<CartItem[]>`, `cartCount`/`cartTotal`/`cartSummary`; эксперимент с `push` (мини-корзина без списка, шапка `0 · 0 ₽`), `Object.is`, `readonly CartItem[]`, `equal` | решение 03 |
+| 05-effect | `effect` в конструкторе (лог корзины), контекст внедрения, NG0203, время запуска и объединение изменений, «когда эффект не нужен», `onCleanup`, эффекты компонента и корневые | решение 04 |
+| 06-untracked | название открытой игры в логе через `untracked`, реактивный контекст, чужой код в эффектах | решение 05 |
+| 07-linked-signal | выбор количества `linkedSignal<number>(() => (this.game().inStock > 0 ? 1 : 0))`, литеральный тип `0 \| 1`, ловушка с `soldOut()`, полная форма `source`/`computation`/`previous` | решение 06 |
+| 08-practice | практикум: `inCart`, `available`, `deliveryLeft`, «Убрать», «Очистить», склад, бесплатная доставка от `FREE_DELIVERY_FROM = 5000`; «Итоги главы» | custom: TODO в `app.ts`/`app.html`, константа `FREE_DELIVERY_FROM` |
+| 09-signal-graph | граф сигналов магазина (`signal-graph.ts` — помощник по внутренним полям узлов), производители и потребители, активный потребитель, динамические зависимости, push-pull, отсечение по равенству, живые потребители, `markAncestorsForTraversal`, планировщик, `debugName` в AOT | custom: решение 08 + `signal-graph.ts` (`noSolution`) |
+
+Отличия от `course-plan.md`: «застрявший» счётчик — на `setTimeout` (обработчик клика экран обновляет); «Выбранное издание» в 3.7 заменено выбором количества (изданий в данных нет); `linkedSignal` в практикуме — `this.game().inStock > this.inCart() ? 1 : 0`.
+
+Код магазина на конец главы 3 (`content/03-signals/09-signal-graph/start/` без `signal-graph.ts`): `app.ts` — `gameIndex`, `gamesCount`, `computed` `game`/`soldOut`/`discount`, `linkedSignal` `quantity`, `cart: signal<CartItem[]>`, `computed` `cartCount`/`cartTotal`/`cartSummary`/`inCart`/`available`/`deliveryLeft`, эффект с `untracked` в конструкторе, методы `showPrevious`/`showNext`/`decreaseQuantity`/`increaseQuantity`/`addToCart`/`removeFromCart`/`clearCart`/`search`; `app.html` — шапка «В корзине: N · S ₽», поиск, переключатель `.pager`, карточка с `.actions` (−, N, +, «В корзину»), «Уже в корзине: N шт. Убрать», мини-корзина `.mini-cart` (список строкой, итог, доставка через пары `[hidden]`, «Очистить»); `core/models.ts` — `Game`, `CartItem`; `core/games-data.ts`, `main.ts`, `app.config.ts`, `styles.css` — без изменений.
+
+Код шагов генерирует `tools/authoring/ch03-gen.py` (в конце — Prettier по коду шагов), проверка взаимодействия — `tools/e2e/checks/ch03-signals.mjs` (в т. ч. эксперименты: формат сигналов в консоли и вывод графа шага 3.9). Все решения проверены `ngc --strictTemplates` — без ошибок и предупреждений.
 
 ## Песочница
 

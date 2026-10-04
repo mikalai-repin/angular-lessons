@@ -3,7 +3,8 @@
   "angularVersion": "22.2.1",
   "chapters": [
     "01-first-app",
-    "02-templates"
+    "02-templates",
+    "03-signals"
   ],
   "devChapters": [
     "00-sandbox"

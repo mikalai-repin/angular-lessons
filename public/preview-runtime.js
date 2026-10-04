@@ -117,8 +117,11 @@ function formatValue(value, depth = 0) {
   if (type === 'function') {
     const node = signalNode(value);
     if (node) {
-      const kind = 'computation' in node ? 'computed' : 'signal';
-      return `${kind}(${depth >= 2 ? '…' : formatValue(node.value, depth + 1)})`;
+      // kind узла: signal, computed, linkedSignal, input…; у computed вместо значения бывают
+      // служебные символы: UNSET (ещё ни разу не читали) и ERRORED (вычисление бросило исключение)
+      const kind = node.kind && node.kind !== 'unknown' ? node.kind : 'computation' in node ? 'computed' : 'signal';
+      const special = { UNSET: 'ещё не вычислен', ERRORED: 'ошибка' }[typeof node.value === 'symbol' && node.value.description];
+      return `${kind}(${special ?? (depth >= 2 ? '…' : formatValue(node.value, depth + 1))})`;
     }
     return `ƒ ${value.name || 'anonymous'}()`;
   }
@@ -153,12 +156,16 @@ function formatValue(value, depth = 0) {
 for (const level of ['log', 'info', 'warn', 'error', 'debug']) {
   const original = console[level].bind(console);
   console[level] = (...args) => {
-    original(...args);
+    // Сначала форматируем, потом вызываем настоящую консоль: браузер с открытыми DevTools вызывает
+    // toString() у аргументов-функций, а toString() у computed из @angular/core вычисляет его значение
+    let text = null;
     try {
-      send({ type: 'console', level, text: args.map((arg) => formatValue(arg)).join(' ') });
+      text = args.map((arg) => formatValue(arg)).join(' ');
     } catch {
       // Ошибка форматирования не должна ломать код ученика
     }
+    original(...args);
+    if (text !== null) send({ type: 'console', level, text });
   };
 }
 
