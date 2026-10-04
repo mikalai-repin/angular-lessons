@@ -116,6 +116,13 @@ export default async ({ page, pageText, navigate, wait }) => {
 | «До Angular 22 стратегией по умолчанию была `Default`» (черновик 6.9) | Версию перехода по исходникам не подтвердить — оставлено проверенное: в 22 `Default` — `@deprecated` синоним `Eager` |
 | `checks/ch06`: «каждую секунду две строки `Проверены: Countdown`» | Консоль платформы сворачивает одинаковые строки подряд в одну со счётчиком (`.console-count`). Тексты шагов 4 и 9 предупреждают об этом |
 | Горячая клавиша «/» для поиска (замысел 6.2) | `keydown./` зависит от раскладки: в русской «/» набирается иначе. Горячую клавишу не делали — фокус только после сброса фильтров |
+| «Без `registerLocaleData` — NG0701 в первой карточке» (черновик 7.1, проверено на коде 6.8) | На коде шага 7.1 первым падает `percent` в шаблоне `App`: `NG02100: InvalidPipeArgument: 'NG0701: …' for pipe 'PercentPipe'`, от карточек остаются пустые рамки. Проверять на коде того шага, о котором текст |
+| «Имя пайпа без префикса: у имён пайпов нет опасности столкновения» (черновик 7.2) | Не проверить — убрано; оставлено проверенное: camelCase и класс с суффиксом `Pipe`, как у `ng generate pipe` |
+| «Компонент на элементе всегда первый» (черновик 7.8) | Из совпавших по селекторам — да, но хост-директивы компонента встают перед ним (`resolveHostDirectives`): `InView` создаётся раньше `LoadMore` |
+| «Вложенных селекторов и псевдоклассов нет — компилятор не пропустит» (замысел 7.8) | Пропустит молча: `CssSelector.parse` из `div span` оставляет тег `span` |
+| Строка «2–5 игроков · 45 мин · 8+» в карточке (замысел 7.3) | В три колонки по 500 px рвётся посреди («· 45 мин ·» / «8+»). Возраст убран, части — `<span>` с `white-space: nowrap`, точка — `::after` |
+| «Нечистый `price` — пять вызовов на каждую букву» (черновик 7.4) | Пять в шаблоне `App` плюс вызовы для новых карточек, если буква изменила выдачу |
+| `import localeRu from '@angular/common/locales/ru'` «работает» (`validate`, `run-dir` — без ошибок) | В редакторе платформы — `Cannot find module '@angular/common/locales/ru'`: Monaco не знал типов локалей. Нашёл `run-chapter`; добавлены `localeTypes` в `src/editor/monaco.ts` |
 
 Вывод из курса PixiJS: **не доверяйте себе**. Если утверждение нельзя проверить, лучше его не писать.
 
@@ -180,6 +187,10 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **Порядок фаз после отрисовки действует между компонентами**: замер в `earlyRead` одного компонента идёт раньше `afterNextRender` без фазы (`mixedReadWrite`) другого. Если элемент открывает/показывает чужой `afterNextRender` (`showModal()`), замеряйте в `read`.
 - **`IntersectionObserver` сообщает об изменении видимости**: если после новой порции элемент остаётся видимым, повторного вызова нет (проверено: порция 3, окно 500 × 1400 — застряло на 9). Кнопка «Показать ещё» — запасной путь.
 - **Журнал проверок компонентов** — `ng.ɵsetProfiler` (только dev): помощник `cd-log.ts` шага 6.9. Пригодится в следующих главах «под капотом».
+- **Копия шага для эксперимента — только в папку `<имя>/solution`** (или `start`): `readStepDir` в `run-dir.mjs`/`exp.mjs` смотрит на родительскую папку и без такой раскладки молча собирает пустое приложение (пустая консоль, пустой текст).
+- **Пайпы форматирования пишут неразрывные пробелы**: U+00A0 в `1 990 ₽` и `20 %`, U+202F перед «г.» в датах. В проверках сравнивать после замены на обычный пробел.
+- **Содержимое `::after` не попадает ни в `textContent`, ни в `innerText`**: точку между частями `.meta` проверка читает через `getComputedStyle(span, '::after').content`. `textContent` у `<dl>` склеивает `dt`/`dd` без пробелов — брать `innerText`.
+- **Новая локаль** для пайпов — в двух местах: `LOCALES` в `scripts/copy-vendor.mjs` (файлы в превью) и `localeTypes` в `src/editor/monaco.ts` (типы в редакторе). Иначе код работает, а редактор показывает ошибку TS.
 
 # Фактическое состояние
 
@@ -300,6 +311,25 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 Код магазина на конец главы 6 (`content/06-lifecycle/08-practice/solution/` — старт шага 09 без `cd-log.ts`): `app.ts` — к главе 5 добавлены `PAGE_SIZE`, `searchBox` (`viewChild.required`, фокус в `resetFilters`), `selectedGame`, `shownCount` (`linkedSignal` от `visibleGames`), `shownGames`, `showMore`; `imports: [GameCard, GameDetails, LoadMore, Rating, Quantity]`. `app.html` — карточки по `shownGames()` с `(open)`, `<app-load-more>` под сеткой, `@if (selectedGame(); as game)` с `<app-game-details>` в конце `<main>`. `shared/game-card/` — название-кнопка `.title-button` и выход `open`. `shared/game-details/` — `GameDetails` (`<dialog #dialog>`, `showModal()` в `afterNextRender`, `(close)` → `closed`, цена, `<app-countdown>` для скидки, вкладки «Описание»/«Характеристики»). `shared/countdown/` — `Countdown`. `shared/tabs/` — `Tabs` (`contentChildren`, эффект `active`, полоска через `afterRenderEffect`) и `Tab`. `shared/load-more/` — `LoadMore`. `shared/rating/`, `shared/quantity/`, `core/*`, `main.ts`, `app.config.ts`, `styles.css`, `app.css` — без изменений.
 
 Код шагов генерирует `tools/authoring/ch06-gen.py` (в конце — Prettier), проверка взаимодействия — `tools/e2e/checks/ch06-lifecycle.mjs`. Все решения и заготовки проверены `ngc --strictTemplates` — без ошибок и предупреждений.
+
+## Глава 7 «Директивы и пайпы» — 8 шагов
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-builtin-pipes | вводный шаг главы; пайп, параметры через `:`, встроенные пайпы (таблица), `LOCALE_ID` + `registerLocaleData` (провайдер — коротко, подробно в гл. 8), `currency: 'RUB' : 'symbol' : '1.0-0'` в карточке, `percent` на стикере («−20 %», приоритет `\|`), `date: 'HH:mm:ss' : 'UTC'` в `Countdown` (`formatTime` удалена); эксперименты: без `LOCALE_ID`, без данных (NG02100/NG0701), скобки (`−NaN`), `json` | custom: решение 6.8 + `.tooltip`/`.lazy` в `styles.css`, `.meta` в `game-card.css`, TODO в `app.config.ts`, `app.html`, `game-card.html`, `countdown.html` |
+| 02-custom-pipe | `@Pipe`, `transform`, `PipeTransform`, `inject(LOCALE_ID)`, `formatCurrency`; `price` во всех восьми местах (`App`, `GameCard`, `GameDetails`); `formatNumber` в `Rating` (`label` — пайпы в `host` нельзя); NG0302 / NG8004, TS2345 (`∞ ₽` в JIT) | custom: заготовка `price-pipe.ts`, TODO в `rating.ts` |
+| 03-pipe-params | `players` (`Game['players']`), `duration` с параметром `format: 'short' \| 'long'`, готовый `plural.ts` (`Intl.PluralRules`); строка `.meta` в карточке, характеристики в окне; цепочка `\| uppercase`; TS2345 для `'lng'`; `deep` «пайп или метод» | custom: `plural.ts`, заготовки `players-pipe.ts`/`duration-pipe.ts`, TODO в `game-card.html`/`game-details.html` |
+| 04-pure-pipes | `pure`, счётчики вызовов (`PlayersPipe` чистый/нечистый, нечистый `price` в `App`), экземпляр на каждое место, изменение на месте, нечистые встроенные, таблица «метод / пайп / `computed`»; `deep` про `ɵɵpipeBind1` (`noSolution`) | решение 03 |
+| 05-directive | `@Directive`, селектор `[appTooltip]` = имя входа, `host` (`mouseenter`/`mouseleave`), `inject(ElementRef)`, элемент в `body` + `DestroyRef`, глобальные стили; подсказки у стикеров (`hitRating \| number`) и звёзд; NG0303 / NG8002, статический атрибут молча; ограничения (только мышь); legacy `@HostListener` | custom: заготовка `tooltip.ts`, TODO в `app.html`/`game-card.html` |
+| 06-host-directives | `InView` из `LoadMore` (`output({ alias: 'appInView' })`, совпадение по имени привязки), `hostDirectives: [InView]`, `inject(InView).visible.subscribe`; эксперименты: порядок конструкторов, закрытые выходы и `outputs: ['appInView']`, дубль по селектору, NG0310 | custom: заготовка `in-view.ts`, TODO в `load-more.ts` |
+| 07-practice | практикум: `LazyImage` (`img[appLazy]`, `hostDirectives: [InView]`, `seen`/`src` (`computed`)/`loaded`, `class: 'lazy'`, `[attr.src]`, `(load)`); «Итоги главы»; `NgOptimizedImage` и `loading="lazy"` | custom: заготовка `lazy-image.ts`, TODO в `game-card.html` |
+| 08-directives-inside | `ɵdir`/`ɵcmp`/`ɵpipe` (вывод `ngc`), сравнение полей, селектор-массив, `consts` с маркером `3`, сопоставление при первом создании шаблона (`directiveRegistry`), порядок на элементе и `ng.getDirectives`, NG0300, `ɵɵpipe`/`ɵɵpipeBind1` (`noSolution`) | решение 07 |
+
+Отличия от `course-plan.md`: «Свой пайп» разделён на два шага — `price` (зачем свой пайп, `inject`, функции `formatX`) и параметры (`players`, `duration`); «Композиция директив» — вынос `InView` из `LoadMore` (как и предлагал roadmap), практикум «ленивая картинка» её переиспользует; возраст из строки характеристик карточки убран (не помещается).
+
+Код магазина на конец главы 7 (`content/07-directives-pipes/07-practice/solution/` — старт шага 08): `app.config.ts` — `registerLocaleData(localeRu)` и `{ provide: LOCALE_ID, useValue: 'ru' }`; `app.ts` — `imports: [DecimalPipe, PercentPipe, GameCard, GameDetails, LoadMore, PricePipe, Rating, Quantity, Tooltip]`; `app.html` — цены `| price`, стикер скидки `−{{ 1 - game.price / oldPrice | percent }}` с `appTooltip`, «Хит» с `[appTooltip]`. `shared/price-pipe.ts`, `players-pipe.ts`, `duration-pipe.ts`, `plural.ts` — пайпы; `shared/tooltip.ts` — `Tooltip`; `shared/in-view.ts` — `InView`; `shared/lazy-image.ts` — `LazyImage`. `GameCard` — обложка `[appLazy]`, `.meta` (`players`, `duration`), звёзды с `[appTooltip]`, цены `price`. `GameDetails` — цены `price`, характеристики `players`/`duration: 'long'`. `Rating` — `label` через `formatNumber`. `Countdown` — `left` в мс + `date`. `LoadMore` — `hostDirectives: [InView]`. `styles.css` — `.tooltip`, `.lazy`; `game-card.css` — `.meta`.
+
+Код шагов генерирует `tools/authoring/ch07-gen.py` (в конце — Prettier), проверка взаимодействия — `tools/e2e/checks/ch07-directives-pipes.mjs`. Все решения и заготовки проверены `ngc --strictTemplates` — без ошибок и предупреждений.
 
 ## Песочница
 

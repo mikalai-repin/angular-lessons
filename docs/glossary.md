@@ -54,7 +54,12 @@
 | content projection | проекция содержимого | `<ng-content>` |
 | slot | слот | место проекции |
 | pipe | пайп | «фильтр» не используем |
+| pipe argument / parameter | параметр пайпа | `price \| currency: 'RUB'` |
+| pipe chaining | цепочка пайпов | `x \| duration \| uppercase` |
+| pure / impure pipe | чистый / нечистый пайп | `pure: false` |
+| locale / locale data | локаль / данные локали | `LOCALE_ID`, `registerLocaleData` |
 | directive | директива | |
+| directive composition | композиция директив | `hostDirectives` |
 | attribute directive | директива атрибута | |
 | structural directive | структурная директива | только в `::: legacy` |
 | host directive | хост-директива | `hostDirectives` |

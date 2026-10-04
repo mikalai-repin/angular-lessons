@@ -29,6 +29,14 @@ const rxjsTypes = import.meta.glob('../../node_modules/rxjs/dist/types/**/*.d.ts
   eager: true,
 }) as Record<string, string>;
 
+// Данные локалей для пайпов (`import localeRu from '@angular/common/locales/ru'`) — те же, что копирует
+// scripts/copy-vendor.mjs (LOCALES). Подпуть `./locales/*` в `exports` — шаблон, заглушки для него не строятся
+const localeTypes = import.meta.glob('../../node_modules/@angular/common/locales/{ru,en}.d.ts', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
 // Signal Forms ссылаются на типы Standard Schema
 import standardSchemaTypes from '../../node_modules/@standard-schema/spec/dist/index.d.ts?raw';
 
@@ -87,6 +95,9 @@ for (const [path, pkg] of Object.entries(angularPackages)) {
     ts.typescriptDefaults.addExtraLib(`export * from '${target}';`, `${NODE_MODULES}${stubDir}/index.d.ts`);
   }
 }
+for (const [path, source] of Object.entries(localeTypes)) {
+  ts.typescriptDefaults.addExtraLib(source, NODE_MODULES + relativeToNodeModules(path));
+}
 for (const [path, source] of Object.entries(rxjsTypes)) {
   ts.typescriptDefaults.addExtraLib(source, NODE_MODULES + relativeToNodeModules(path));
 }
@@ -96,7 +107,7 @@ ts.typescriptDefaults.addExtraLib(standardSchemaTypes, `${NODE_MODULES}@standard
 
 // --- Форматирование кода (Prettier) ---
 /** Настройки — как в курсе PixiJS; шаблоны Angular разбирает парсер `angular` (он знает @if, @for, привязки) */
-const PRETTIER_OPTIONS = { printWidth: 120, singleQuote: true, trailingComma: 'all', tabWidth: 2, semi: true } as const;
+const PRETTIER_OPTIONS = { printWidth: 64, singleQuote: true, trailingComma: 'all', tabWidth: 2, semi: true } as const;
 
 /** Prettier весит заметно, поэтому грузим его только при первом форматировании */
 async function format(code: string, language: string) {

@@ -18,7 +18,8 @@ const readJson = (path) => JSON.parse(readFileSync(resolve(root, path), 'utf8'))
 
 // Пакеты Angular, доступные коду ученика. @angular/animations не подключаем: пакет устарел (см. docs/modern-angular.md)
 const ANGULAR_PACKAGES = ['core', 'common', 'compiler', 'platform-browser', 'forms', 'router'];
-// Локали для пайпов дат и чисел (глава 7): `import localeRu from '@angular/common/locales/ru'`
+// Локали для пайпов дат и чисел (глава 7): `import localeRu from '@angular/common/locales/ru'`.
+// Тот же список — в src/editor/monaco.ts (localeTypes): типы локалей для редактора
 const LOCALES = ['ru', 'en'];
 
 const importMap = {};
