@@ -1,0 +1,28 @@
+/* Кнопки «−» и «+» и число между ними. Стили .icon-button из app.css сюда не достают — нужны свои */
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+button:disabled {
+  color: #bbb;
+  cursor: default;
+}
+
+.value {
+  min-width: 16px;
+  text-align: center;
+}

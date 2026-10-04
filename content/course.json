@@ -5,7 +5,8 @@
     "01-first-app",
     "02-templates",
     "03-signals",
-    "04-control-flow"
+    "04-control-flow",
+    "05-components"
   ],
   "devChapters": [
     "00-sandbox"

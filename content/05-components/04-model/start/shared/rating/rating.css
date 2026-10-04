@@ -1,0 +1,23 @@
+/* Звёзды рейтинга: серые, закрашенные — золотые */
+.star::before {
+  content: '★';
+}
+
+.star {
+  padding: 0 1px;
+  color: #d2d2d7;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.full {
+  color: #f5a623;
+}
+
+/* Половина звезды: левая половина золотая, правая серая */
+.half::before {
+  background: linear-gradient(90deg, #f5a623 50%, #d2d2d7 50%);
+  background-clip: text;
+  color: transparent;
+}

@@ -58,6 +58,11 @@
 | attribute directive | директива атрибута | |
 | structural directive | структурная директива | только в `::: legacy` |
 | host directive | хост-директива | `hostDirectives` |
+| host binding | привязка хоста | `host: { '[class.x]': '…' }` |
+| host listener | обработчик события хоста | `host: { '(keydown.enter)': '…' }` |
+| fallback content | запасное содержимое | разметка внутри `<ng-content>`, если в слот ничего не передали |
+| emulated encapsulation | эмулированная инкапсуляция | `ViewEncapsulation.Emulated`, атрибуты `_ngcontent-…` / `_nghost-…` |
+| shadow DOM / shadow root | теневой DOM / теневой корень | `ViewEncapsulation.ShadowDom` |
 | view encapsulation | инкапсуляция стилей | |
 | sanitization | санитизация (очистка) | |
 | sanitizer | санитайзер | часть Angular, которая очищает HTML и URL (`DomSanitizer`) |
@@ -76,6 +81,9 @@
 | required input | обязательный вход | |
 | output | событие компонента, выход | `output()` |
 | model input | модель (двусторонний вход) | `model()` |
+| input transform | преобразование входа | `transform: booleanAttribute` |
+| alias | псевдоним (входа, выхода) | `alias: 'x'` |
+| data flow | поток данных | «данные вниз — входами, события вверх — выходами» |
 | query | запрос (к представлению) | `viewChild()` |
 | view | представление | |
 | view tree | дерево представлений | |

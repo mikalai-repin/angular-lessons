@@ -105,6 +105,10 @@ export default async ({ page, pageText, navigate, wait }) => {
 | Пример очистки эффекта: таймер без чтения сигналов (гл. 3) | Эффект без зависимостей запускается один раз — очистка не показывает ничего. В примере эффект должен читать сигнал |
 | «Мы видели в консоли: эффект раньше шаблона» (черновик 3.5) | Ученик этого не видел — заменено экспериментом с `console.log` в `cartTotal` |
 | «Консоль превью покажет `computed(ещё не вычислен)`» (гл. 3) | Показывала `computed(0)`: Chrome с подключённым CDP вызывает `toString()` у аргументов `console.log`, а `toString` у `computed` из `@angular/core` вызывает геттер. Исправлено в `preview-runtime.js`: форматирование до вызова настоящей консоли |
+| Фильтр «Рейтинг от N звёзд» с целыми звёздами (замысел гл. 5) | Рейтинги игр 4,1–4,9: от 1 до 4 — все 12, от 5 — ни одной. Фильтр бессмыслен; добавлен выбор половинки звезды (от 4,5 — 7 игр) |
+| Половинка звезды по `event.offsetX < target.offsetWidth / 2` (гл. 5) | У строчного `<span>` в строчном хосте Chrome даёт `offsetX` не от элемента (84 при ширине 20). В чистом превью проверялось решение шага 9, где хост уже `inline-flex`, — ошибку нашла `ch05-components.mjs` в шаге 4. Заменено на `clientX - getBoundingClientRect().left` |
+| `@switch (game().category)` с `@default never;` после перехода на сигнальный вход (гл. 5) | JIT молчит, AOT — TS2322: сужение не работает для вызова функции. Нужен `@let category = game().category;` |
+| «Запасное содержимое `<ng-content>` покажется у карточек без стикеров» (гл. 5) | Не покажется: блоки `@if` попадают в слот и с ложным условием. Видно только у компонента совсем без содержимого |
 
 Вывод из курса PixiJS: **не доверяйте себе**. Если утверждение нельзя проверить, лучше его не писать.
 
@@ -158,6 +162,10 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **Prettier раскрывает `@case (…) { Текст }` на три строки** — в тексте урока фрагмент можно дать компактно и предупредить, что после «Формат» он станет длиннее.
 - **Ширина ASCII-схем в тексте урока — не больше 46 символов**: панель урока при окне 1440 px показывает около 49 символов моноширинного блока, остальное уходит в горизонтальную прокрутку. Код и вывод консоли могут быть шире.
 - **Проверки AOT в scratchpad**: TypeScript 6 требует `rootDir` в `tsconfig.json` папки для `ngc`, если исходники в `src/` (TS5011).
+- **Проверяйте эксперименты на коде того шага, о котором текст**, а не на решении последнего шага: поведение может зависеть от того, что появилось позже (в главе 5 — `display: inline-flex` хоста из шага 7 скрывал ошибку шага 4).
+- **Щелчки в iframe платформы**: `page.mouse.click` по координатам `boundingBox()` элемента внутри iframe в `checks/*` ненадёжен — используйте `elementHandle.click({ offset })`.
+- **Сигнальный вход и `@default never;`**: после замены `game` на `game()` в шаблоне с `@switch` нужна `@let` — иначе ошибка только в AOT.
+- **Отдельный скрипт с `launch()` из `tools/e2e/lib.mjs`, запущенный не как `checks/*.mjs`**, у автора зависал без вывода; диагностику удобнее встроить в проверку главы.
 
 # Фактическое состояние
 
@@ -237,6 +245,27 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 Код магазина на конец главы 4 (`content/04-control-flow/08-track/start/` без `dom-watch.ts`): `app.ts` — константы `FREE_DELIVERY_FROM`, `FEW_LEFT`, тип `SortKey`; сигналы `query`, `inStockOnly`, `sortBy`, `computed` `visibleGames` (поиск по названию и тегам, фильтр, сортировка копии), `fewLeft`, `cart`, `cartCount`, `cartTotal`, `cartSummary` (только для эффекта), `deliveryLeft`, `inCart` (`Map` id → количество), эффект-лог корзины; методы `addToCart(game)`, `changeQuantity(item, delta)`, `removeFromCart(item)`, `clearCart`, `changeSort`, `resetFilters`. `app.html` — шапка, поиск с `[value]`, мини-корзина (`@if`, строки `@for` с `$index`/`$even`, итог, доставка `@if`/`@else`), фильтры, сетка `.grid` с плитками `.tile` (бейдж `@switch`, цена `@if … as`, наличие `@if`/`@else if`, «В корзине: N шт.»), `@empty` со сбросом. `core/models.ts`, `core/games-data.ts`, `main.ts`, `app.config.ts`, `styles.css` — без изменений.
 
 Код шагов генерирует `tools/authoring/ch04-gen.py`, проверка взаимодействия — `tools/e2e/checks/ch04-control-flow.mjs` (в т. ч. эксперимент шага 8 с наблюдателем). Все решения проверены `ngc --strictTemplates` — без ошибок и предупреждений.
+
+## Глава 5 «Компоненты и их связь» — 10 шагов
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-component | вводный шаг главы, дерево компонентов; `GameCard` (`shared/game-card/`), `selector`, `imports`, NG0304 / NG8001, короткие классы в стилях компонента; 12 одинаковых карточек (`game = GAMES[0]`); эксперимент «`.tile` в `app.css` не действует»; legacy `NgModule` | custom: решение 4.7, `app.css` очищен от большой карточки главы 3, стили плитки — блоком в конце (ученик удаляет), стили главы; заготовки `game-card.ts`/`.html`, готовый `game-card.css` |
+| 02-inputs | `input.required<Game>()`, `input(0)` (`inCart`), `[game]`, TS2339 на `set`, `@let category` для `@default never;` (AOT TS2322), NG0950 / NG8008 / NG0303 / NG8002 / TS2322; эксперимент с начальной корзиной; legacy `@Input()` | решение 01 |
+| 03-outputs | `output()`, `emit()`, `(add)`, `$event` и `output<T>()`, TS2345, «данные вниз — события вверх», не всплывает, синхронно; эксперимент с выходом `click`; legacy `EventEmitter` | решение 02 |
+| 04-model | `Rating` (`shared/rating/`), `model(0)`, `valueChange`, `[(value)]="minRating"` (без вызова; `Unsupported expression in a two-way binding`), фильтр «Рейтинг от» с половинками, `@if` в звёздах; эксперимент «односторонняя привязка к модели»; `input` + `linkedSignal` как черновик; `ɵɵtwoWayBindingSet` | custom: решение 03 + заготовки `rating.ts`/`.html`, готовый `rating.css` |
+| 05-input-transforms | `readonly` с `booleanAttribute` (без него `''` → ложь, AOT TS2322), `numberAttribute`, свои преобразования, `alias`; legacy сеттеры и `coerceBooleanProperty` | решение 04 |
+| 06-content-projection | стикеры «Хит» (`HIT_RATING = 4.8`) и «Скидка», `<ng-content select="[sticker]">`, слот по умолчанию, `@if` с одним корнем, NG8011, стили содержимого — у родителя, запасное содержимое | решение 05 |
+| 07-host | `host` у `Rating`: `role` img/slider, `aria-*`, `tabindex`, `[class.readonly]`, `(keydown.arrowright/left)` → `step(±0.5)`; `:host`, `:host(:focus-visible)`, `:host(.readonly)`; `hostBindings`; legacy `@HostBinding`/`@HostListener` | решение 06 |
+| 08-styles | карточка без `<article>`: `host: { role: 'article', '[class.sold-out]' }`, `:host`, `:host(.sold-out)`; таблица «что куда достаёт»; эксперименты `ViewEncapsulation.None` и `ShadowDom`; legacy `::ng-deep` | решение 07 |
+| 09-practice | практикум: `Quantity` (`shared/quantity/`, `model.required`, `min`/`max` с `numberAttribute`), `[value]` + `(valueChange)` вместо `[(value)]="item.quantity"` (мутация — шапка не обновляется), `setQuantity`; «Итоги главы» | custom: заготовки `quantity.ts`/`.html`, готовый `quantity.css`, TODO в `app.ts`/`app.html` |
+| 10-encapsulation | `_nghost`/`_ngcontent`, идентификатор компонента, переписанные селекторы, специфичность, `<style>` появляется/удаляется (5 → 6 → 5 с `Quantity`), компонент без стилей → `None`, `%COMP%` и `%NS%` (`provideCssVarNamespacing`) в AOT, теневой DOM | решение 09 (`noSolution`) |
+
+Отличия от `course-plan.md`: события (5.3) — сразу после входов, чтобы корзина не была сломана три шага; двусторонняя привязка (5.4) — раньше преобразований (у `readonly` появляется мотивация: звёзды в карточке меняются от щелчка); «Карточка-обёртка с бейджами» — стикеры через `select`; хост-элемент — на `Rating` (доступность и клавиатура), `:host` для карточки — в шаге про стили; `compact` не понадобился.
+
+Код магазина на конец главы 5 (`content/05-components/10-encapsulation/start/`): `app.ts` — `FREE_DELIVERY_FROM`, `HIT_RATING`, `SortKey`; сигналы `query`, `inStockOnly`, `minRating`, `sortBy`, `computed` `visibleGames` (с рейтингом), `hitRating`, `cart`, `cartCount`, `cartTotal`, `cartSummary`, `deliveryLeft`, `inCart` (`Map`), эффект-лог; методы `addToCart(game)`, `setQuantity(item, quantity)`, `removeFromCart`, `clearCart`, `changeSort`, `resetFilters`; `imports: [GameCard, Rating, Quantity]`. `app.html` — шапка, поиск, мини-корзина (строки с `<app-quantity min="1" [max] [value] (valueChange)>`), фильтры (флажок, «Рейтинг от» `<app-rating [(value)]="minRating">`, сортировка), сетка `<app-game-card [game] [inCart] (add)>` со стикерами `[sticker]`. `shared/game-card/` — `GameCard` (`game` обязательный, `inCart`, `add`, `host` с `role` и `sold-out`, слот стикеров, `<app-rating readonly>`, `FEW_LEFT`), стили через `:host`. `shared/rating/` — `Rating` (`value` модель, `readonly` с `booleanAttribute`, половинки звёзд, `host` с ARIA и стрелками). `shared/quantity/` — `Quantity`. `core/*`, `main.ts`, `app.config.ts`, `styles.css` — без изменений.
+
+Код шагов генерирует `tools/authoring/ch05-gen.py` (в конце — Prettier по `.ts`, `.html`, `.css`), проверка взаимодействия — `tools/e2e/checks/ch05-components.mjs`. Все решения проверены `ngc --strictTemplates` — без ошибок и предупреждений.
 
 ## Песочница
 
