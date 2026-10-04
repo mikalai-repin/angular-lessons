@@ -94,7 +94,12 @@ export default async ({ page, pageText, navigate, wait }) => {
 
 | Утверждение в черновике | Как на самом деле |
 |---|---|
-| *(пока пусто — заполняется с главы 1)* | |
+| «`private`-поле в шаблоне не скомпилируется в AOT» (гл. 2) | AOT 22.2 принимает `private`; `protected` — только рекомендация стиля |
+| «Поменяли поле в обработчике — экран не обновится (OnPush + зонлесс)» (план 3.1) | Обновится: обработчик в шаблоне помечает представление «грязным». Не обновится, только если изменение пришло не из события шаблона |
+| «`aria-label` — только через `[attr.aria-label]`» (гл. 2) | В 22.2 работает и `[aria-label]` (`ɵɵariaProperty`); для примера «у атрибута нет свойства» взяли `data-*` |
+| «Ошибки `@let` (чтение до объявления, присваивание) видны в превью» (гл. 2) | JIT их не проверяет — только AOT (NG8015–NG8017) |
+| `protected readonly inStock = 12` + `[disabled]="inStock === 0"` (гл. 2) | AOT `strictTemplates`: TS2367 из-за литерального типа `12`; нужен `: number` |
+| «В шаблоне нельзя шаблонные строки, `typeof`, стрелочные функции» (память модели) | В 22.2 всё это работает |
 
 Вывод из курса PixiJS: **не доверяйте себе**. Если утверждение нельзя проверить, лучше его не писать.
 
@@ -138,6 +143,9 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **Prettier форматирует шаблоны внутри `template:` в `.ts`** (через встроенный парсер Angular). Однострочный шаблон с двумя элементами он переносит некрасиво — пишите многострочный шаблон в обратных кавычках. Проверка кода главы: `npx prettier --print-width 120 --single-quote --trailing-comma all --check "content/**/*.ts"`; для `.html` — парсер `angular` (пример в `docs/architecture.md`, «Стек»).
 - **Puppeteer и Monaco**: пробелы в строках редактора — неразрывные, токены объединяются в один `span` (`" games = httpResource<"`). Чтобы навести мышь на слово, ищите `span` по `includes` и берите координаты через `document.createRange()`.
 - **Проверка в настоящем AOT**: `ngc` из `@angular/compiler-cli` работает на Node 20 (в отличие от CLI). Папка с `tsconfig.json` (`experimentalDecorators`, `angularCompilerOptions`), симлинк на `node_modules` проекта, `node node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js -p tsconfig.json` → `out/*.js`.
+- **zsh и `echo =====`**: слово из одних `=` zsh разворачивает как путь к команде («==== not found»). Разделители в командах — в кавычках.
+- **Проверка шаблонов в AOT строже JIT**: литеральные типы `readonly`-полей, необязательные поля (`oldPrice?`) в арифметике, правила `@let` — JIT молчит. Прогоняйте решения главы через `ngc` со `strictTemplates: true`.
+- **Чистое превью `exp.mjs`**: приложение — сама страница, без iframe: `page.click('.card button')`, `page.type('.search', …)`.
 - **Шаг со стартом без решения**: в `run-chapter` «Решение» нажимается автоматически, а в своих проверках — нет; стартовый код может не содержать элементов, которые ищет проверка.
 
 # Фактическое состояние
@@ -159,6 +167,26 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 Код магазина на конец главы 1 (`content/01-first-app/07-compiler/start/`): `main.ts` (`bootstrapApplication(App, appConfig).then(лог числа компонентов).catch(...)`), `app.ts` (`templateUrl`, `styleUrl`, пустой класс), `app.html` (шапка `.header` с `.logo` + `main.page` с `h1` и `p.muted`), `app.css` (шапка, `h1` фирменного цвета), `app.config.ts` (`provideBrowserGlobalErrorListeners()`), `styles.css` (переменные `--brand` и др., `body`, `h1`, `.muted`, `.button`, `.grid`).
 
 Код шагов генерирует `tools/authoring/ch01-gen.py`.
+
+## Глава 2 «Шаблоны и привязки» — 9 шагов
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-interpolation | Вводный шаг главы, `{{ }}`, выражения шаблона и их ограничения, `protected readonly` | custom: решение 1.7, `main.ts` как в `ng new`, карточка в `app.html` статичной разметкой, `app.css` со стилями всей главы |
+| 02-property-binding | `[src]`, `[alt]`, `[disabled]`, свойство DOM и атрибут HTML, NG0303 / NG8002, `inStock: number` | решение 01 |
+| 03-attr-class-style | `[attr.aria-label]` (рейтинг `role="img"`), `[class.sold-out]`, `[style.width.%]`, групповые `[class]`/`[style]`, legacy `ngClass` | решение 02 |
+| 04-events | `(click)`, `(keydown.enter)`, `$event`, именование обработчиков | решение 03 |
+| 05-template-refs | `#searchBox`, `[hidden]`, загадка «шаблон обновляется только после событий» | решение 04 |
+| 06-let | `@let soldOut`, `@let discount`, `toFixed` вместо `Math`, ошибки AOT NG8015–8017 | решение 05 |
+| 07-security | экранирование интерполяции, `[innerHTML]`, санитизация, `unsafe:`, `DomSanitizer` (упоминание) | решение 06 |
+| 08-practice | практикум: один объект `game = GAMES[0]`, характеристики, текст кнопки, `[hidden]` для скидки; «Итоги главы» | custom: + `core/models.ts`, `core/games-data.ts`, TODO в `app.ts` |
+| 09-template-context | `ɵcmp.template`: блок обновления, `ctx.`, `textInterpolateN`, `domProperty` + санитайзер, `@let` → `const`, обработчики и `markViewDirty` | решение 08 (`noSolution`) |
+
+Отличия от `course-plan.md`: шаг 2.5 выводит запрос через `#ref` + `[hidden]` (состояния ещё нет), «Под капотом» — отдельный шаг 2.9.
+
+Код магазина на конец главы 2 (`content/02-templates/09-template-context/start/`): `main.ts` (`bootstrapApplication(App, appConfig).catch(...)`), `app.ts` (`game = GAMES[0]`, `addToCart()` и `search(query)` пишут в консоль), `app.html` (шапка, поле поиска `#searchBox` + абзац «Ищем», `@let soldOut`/`discount`, горизонтальная карточка `article.card`), `app.css` (шапка, поиск, карточка, рейтинг, `.sold-out`), `core/models.ts` (`Game`), `core/games-data.ts` (`GAMES` — 12 игр из `games.json`, у первой в описании `<b>`), `app.config.ts`, `styles.css` — без изменений.
+
+Код шагов генерирует `tools/authoring/ch02-gen.py`, проверка взаимодействия — `tools/e2e/checks/ch02-templates.mjs`. Все решения проверены и `ngc --strictTemplates` (папка в scratchpad, как в главе 1).
 
 ## Песочница
 

@@ -57,6 +57,13 @@
 | host directive | хост-директива | `hostDirectives` |
 | view encapsulation | инкапсуляция стилей | |
 | sanitization | санитизация (очистка) | |
+| sanitizer | санитайзер | часть Angular, которая очищает HTML и URL (`DomSanitizer`) |
+| DOM property | свойство DOM | `img.src`, `button.disabled` — то, что меняет привязка `[x]` |
+| HTML attribute | атрибут HTML | то, что написано в разметке и читается `getAttribute` |
+| event object | объект события | `$event` |
+| key event filter | фильтр клавиш | `(keydown.enter)` |
+| template variable (`@let`) | переменная шаблона | `@let soldOut = …;` |
+| template context | контекст шаблона | экземпляр компонента, `ctx` в скомпилированном шаблоне |
 
 ## Компоненты и жизненный цикл
 

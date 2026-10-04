@@ -1,0 +1,18 @@
+<header class="header">
+  <span class="logo">♞ Ход конём</span>
+</header>
+<main class="page">
+  <h1>Магазин настольных игр</h1>
+  <input class="search" type="search" placeholder="Найти игру" (keydown.enter)="search($event)" />
+  <article class="card" [class.sold-out]="inStock === 0">
+    <img class="cover" [src]="cover" [alt]="title" />
+    <div class="body">
+      <h2 class="title">{{ title }}</h2>
+      <span class="rating" role="img" [attr.aria-label]="'Рейтинг: ' + rating + ' из 5'">
+        <span class="stars" [style.width.%]="(rating / 5) * 100"></span>
+      </span>
+      <p class="price">{{ price }} ₽</p>
+      <button class="button" [disabled]="inStock === 0" (click)="addToCart()">В корзину</button>
+    </div>
+  </article>
+</main>
