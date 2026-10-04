@@ -101,13 +101,14 @@ interface Game {
 | `GET /api/games?q=&category=&players=&inStock=&sort=&page=&size=` | Страница каталога: `{ items, total, page, size }`; `sort`: `price`, `-price`, `rating`, `title`; `size` по умолчанию 12; `q` ищет по названию и тегам | 11 |
 | `GET /api/games/:id` | Игра (по `id` или `slug`) или 404 | 11 |
 | `GET /api/categories` | Категории | 11 |
-| `GET /api/games/:id/reviews` | Отзывы | 11, 14 |
-| `POST /api/games/:id/reviews` | Новый отзыв (нужен токен) | 13 |
-| `POST /api/login` | `{ email, password }` → `{ token, user }` или 401 | 13 |
-| `GET /api/me` | Текущий пользователь по токену | 12 |
+| `GET /api/games/:id/reviews` | Отзывы | 11, 15 |
+| `POST /api/games/:id/reviews` | Новый отзыв (нужен токен) | 13, 14 |
+| `POST /api/login` | `{ email, password }` → `{ token, user }` или 401 | 13, 14 |
+| `GET /api/me` | Текущий пользователь по токену или 401 | 14 |
+| `POST /api/refresh`, `POST /api/logout` | **План (до главы 14):** обновление короткоживущего access-токена по refresh-токену, отзыв токена; срок жизни токена задаёт урок (`backend: { tokenTtl }`), чтобы показать 401 и обновление | 14 |
 | `GET /api/promo/:code` | Проверка промокода (для асинхронной валидации) | 13 |
 | `POST /api/orders`, `GET /api/orders` | Заказы | 13 |
-| `PUT /api/games/:id`, `POST /api/games`, `DELETE /api/games/:id` | Админка (роль admin) | 16 |
+| `PUT /api/games/:id`, `POST /api/games`, `DELETE /api/games/:id` | Админка (роль admin) | 17 |
 | `GET /api/email-available?email=` | Асинхронная проверка e-mail | 13 |
 
 Учётные записи: `user@example.com / user` и `admin@example.com / admin`, токены `token-user` и `token-admin` (заголовок `Authorization: Bearer …`). Промокоды: `KNIGHT10` (−10 %), `CHESS500` (−500 ₽ от 3000 ₽). `POST /api/orders` уменьшает остаток на складе и отвечает 409, если игр не хватает. Это учебный бэкенд, и в тексте урока об этом сказано.
@@ -129,10 +130,12 @@ interface Game {
 | 11 | Каталог и игра с сервера; загрузка, ошибки, поиск, фильтры в URL |
 | 12 | RxJS-поиск с отменой запросов; интерцептор; `toSignal` |
 | 13 | Оформление заказа, вход, отзыв — Signal Forms с валидацией |
-| 14 | Анимация корзины, `@defer` для отзывов, оптимизация картинок |
-| 15 | Тесты на корзину, карточку, каталог |
-| 16 | Админка: ленивый раздел, гард роли, таблица, форма редактирования |
-| 18 | Перенос в проект Angular CLI, AOT-сборка, SSR, деплой |
+| 14 | Авторизация: `AuthStore`, вход и выход, сессия после перезагрузки, токен в интерцепторе, реакция на 401, гард входа с `returnUrl`, роли в шапке, «Мои заказы» |
+| 15 | Анимация корзины, `@defer` для отзывов, оптимизация картинок |
+| 16 | Тесты на корзину, карточку, каталог |
+| 17 | Админка: ленивый раздел, гард роли, таблица, форма редактирования |
+| 18 | NgRx: корзина и фильтры каталога на Signal Store, та же корзина на классическом Store |
+| 20 | Перенос в проект Angular CLI, AOT-сборка, SSR, деплой |
 
 ## Разбор «настоящего» кода (часть 3)
 

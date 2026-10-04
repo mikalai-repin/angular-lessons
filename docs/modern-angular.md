@@ -71,8 +71,10 @@ zsh: шаблоны с `[`, `?`, `*` интерпретируются как glo
 - [x] Что генерирует `ng new` в 22.2 — см. таблицу выше. `provideZonelessChangeDetection` в шаблоне **нет** (зонлесс по умолчанию).
 - [x] `HttpClient` по умолчанию на `fetch` — см. таблицу.
 - [x] `withFetch` — устарел.
-- [ ] `strictTemplates` по умолчанию в Angular 22 (в `tsconfig.json` из `ng new` не указан) — этап 5 и глава 18.
-- [ ] Поведение `@defer` в JIT — глава 14.
+- [ ] `strictTemplates` по умолчанию в Angular 22 (в `tsconfig.json` из `ng new` не указан) — этап 5 и глава 20.
+- [ ] Поведение `@defer` в JIT — глава 15.
+- [ ] NgRx 22.0.1 (`npm view`, 2026-10-04): все пакеты требуют `@angular/core ^22.0.0`; по типам есть `signalStore`, `withState`, `withComputed`, `withMethods`, `withHooks`, `withProps`, `withLinkedState`, `withFeature`, `signalStoreFeature`, `patchState`, `getState`, `watchState`, `signalMethod`, `rxMethod`, `withEntities`, `tapResponse`, `@ngrx/signals/events` (`eventGroup`, `withReducer`, `withEventHandlers`, `injectDispatch`), `createActionGroup`, `createFeature`, `Store.selectSignal`, `provideStoreDevtools`. Перед главой 18 проверить стабильность (особенно events), рекомендуемые NgRx паттерны и работу в JIT-превью.
+- [ ] Авторизация (глава 14): `provideAppInitializer` с асинхронной проверкой сессии и роутер (ждёт ли первая навигация); `withXsrfConfiguration` / `withNoXsrfProtection` — когда `HttpClient` добавляет заголовок (только мутирующие запросы на тот же origin?) — проверить по исходникам.
 - [x] Отладочный глобальный объект `ng` — есть в dev-режиме, см. таблицу.
 - [ ] Значения по умолчанию в `httpResource` (что в `value()` во время загрузки и при ошибке) — глава 11.
 - [ ] Что такое `withRouterResources` и стоит ли его показывать (developer preview) — глава 10.

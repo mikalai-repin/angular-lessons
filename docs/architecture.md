@@ -157,7 +157,7 @@ export default async function check({ document, navigate }: CheckContext): Promi
 }
 ```
 
-## Тесты в превью — план (этап 4, глава 15)
+## Тесты в превью — план (этап 4, глава 16)
 
 `TestBed` работает в JIT (его родной режим). Нужен раннер с API Vitest (`describe`, `it`, `expect`, `beforeEach`, `vi.fn`) — тесты из курса должны без изменений запускаться в проекте Angular CLI (там Vitest по умолчанию — проверено по `@schematics/angular`). Вкладка «Тесты» вместо приложения при `preview: tests`.
 

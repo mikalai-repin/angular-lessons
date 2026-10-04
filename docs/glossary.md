@@ -135,6 +135,25 @@
 | request / response | запрос / ответ | |
 | interceptor | интерцептор | |
 | endpoint | адрес API | |
+| authentication / authorization | вход (аутентификация) / права доступа (авторизация) | в тексте чаще «вход» и «права» |
+| session | сессия | вошёл ли пользователь; восстанавливается после перезагрузки |
+| access token / refresh token | токен доступа / refresh-токен | |
+| role | роль | `user`, `admin` |
+| open redirect | открытый редирект | уязвимость при возврате по `returnUrl` |
+
+## NgRx (глава 18)
+
+| English | Русский | Комментарий |
+|---|---|---|
+| state management | управление состоянием | |
+| Signal Store | Signal Store | имя не переводим; «стор» — только в разговорных фразах |
+| store feature | расширение стора | `signalStoreFeature` |
+| entity | сущность | `withEntities` |
+| action | действие (action) | классический Store |
+| reducer | редьюсер | |
+| selector | селектор | `createSelector`; не путать с селектором компонента — уточнять «селектор состояния» |
+| effect (NgRx) | эффект NgRx | не путать с `effect()` Angular — всегда уточнять |
+| dispatch | отправить действие | `store.dispatch` |
 
 ## Формы
 

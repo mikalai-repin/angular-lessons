@@ -5,8 +5,8 @@
 Курс состоит из **трёх частей**:
 
 1. **Основы** (главы 1–8). Компоненты, шаблоны, сигналы, DI. На выходе — витрина магазина на одной странице: карточки, корзина в шапке.
-2. **Приложение** (главы 9–16). Состояние, роутинг, HTTP, RxJS, формы, анимации, `@defer`, тесты, админка. На выходе — полноценный «Ход конём».
-3. **Глубже** (главы 17–20). Как Angular устроен внутри, настоящий проект на Angular CLI (AOT, SSR, деплой), разбор кода angular.dev, финальный проект.
+2. **Приложение** (главы 9–18). Состояние, роутинг, HTTP, RxJS, формы, авторизация, анимации, `@defer`, тесты, админка, NgRx. На выходе — полноценный «Ход конём».
+3. **Глубже** (главы 19–22). Как Angular устроен внутри, настоящий проект на Angular CLI (AOT, SSR, деплой), разбор кода angular.dev, финальный проект.
 
 Каждая глава — 5–10 **шагов**. Шаг — одна идея и одно небольшое изменение кода с видимым результатом. В конце главы — **практикум**: самостоятельное задание, решение показывается только по кнопке.
 
@@ -149,7 +149,7 @@
 | 9.2 | Сохранение | `effect` + `localStorage`, восстановление при старте | Корзина переживает перезапуск |
 | 9.3 | Производное состояние | Итоги, скидки, доставка через `computed` | |
 | 9.4 | Промокод | `linkedSignal` для сброса скидки при изменении корзины | |
-| 9.5 | Когда нужна библиотека | Обзор NgRx Signal Store (без установки) | |
+| 9.5 | Когда нужна библиотека | Когда хватает сервисов на сигналах, а когда берут библиотеку; NgRx — подробно в главе 18 | |
 | **Практикум** | Лимиты склада | Нельзя положить больше, чем `inStock` | |
 
 ### Глава 10. Роутинг
@@ -194,7 +194,7 @@
 | 12.3 | Переключение | `switchMap`, `debounceTime`, `distinctUntilChanged` — поиск с отменой | |
 | 12.4 | Мост к сигналам | `toSignal`, `toObservable`, `rxResource` | |
 | 12.5 | Уборка | `takeUntilDestroyed`, пайп `async` | |
-| 12.6 | Интерцепторы | `withInterceptors`, `HttpInterceptorFn` — токен, лог, повтор | Токен в каждом запросе |
+| 12.6 | Интерцепторы | `withInterceptors`, `HttpInterceptorFn` — лог, замер времени, повтор при 500 (токен — в главе 14) | Лог запросов в консоли |
 | **Практикум** | Автосохранение черновика | Поток изменений → `debounceTime` → сохранение | |
 | **Под капотом** | Сигналы против RxJS | Состояние против событий во времени; когда что брать | |
 
@@ -214,89 +214,125 @@
 | **Практикум** | Оформление заказа | Контакты, доставка, оплата, гард «несохранённые изменения» | |
 | **Под капотом** | Дерево полей | Как `form()` строит дерево состояний из одного сигнала | |
 
-### Глава 14. Анимации, `@defer` и производительность
+### Глава 14. Авторизация
+
+Цель: собрать вход, сессию, токены, гарды и роли в один сквозной сценарий — так, как это устроено в рабочих проектах.
 
 | # | Шаг | API / понятия | Результат |
 |---|---|---|---|
-| 14.1 | Анимация появления | `animate.enter`, `animate.leave`, CSS-переходы | Позиции корзины въезжают |
-| 14.2 | Отложенная отрисовка | `@defer`, `@placeholder`, `@loading`, `@error` | Отзывы |
-| 14.3 | Триггеры | `on viewport`, `on idle`, `on interaction`, `on hover`, `on timer`, `when` | |
-| 14.4 | Предзагрузка | `prefetch on …` | |
-| 14.5 | Картинки | `NgOptimizedImage`, `ngSrc`, `priority`, размеры | |
-| 14.6 | Большие списки | `track`, чистые пайпы, `computed`, когда нужна виртуализация (CDK) | |
+| 14.1 | Как устроен вход | Схема «логин → токен → запросы с токеном → 401»; что умеет учебный бэкенд; `AuthStore` на сигналах: `user`, `token`, `isLoggedIn` и роль через `computed` | В шапке «Войти» |
+| 14.2 | Вход и выход | Форма входа из главы 13 → `POST /api/login` → `AuthStore`; `logout()`; ошибка 401 при неверном пароле | Имя пользователя в шапке |
+| 14.3 | Сессия после перезагрузки | Где хранить токен; `provideAppInitializer` + `GET /api/me`; первый маршрут ждёт проверки сессии | Вход переживает перезагрузку |
+| 14.4 | Токен в запросах | `HttpInterceptorFn` + `inject(AuthStore)`, заголовок `Authorization`, только для своих адресов `/api/…` | Отзыв от имени пользователя |
+| 14.5 | Ответ 401 | Интерцептор с `catchError`: выход и переход на `/login`; протухший токен | Разлогин при недействительном токене |
+| 14.6 | Гард входа и возврат | `CanActivateFn` / `CanMatchFn`, `UrlTree` с `returnUrl`, возврат после входа, защита от открытого редиректа (только свои адреса) | «Мои заказы» → вход → обратно |
+| 14.7 | Роли в интерфейсе | Роль из `AuthStore`, `@if` в шапке; почему скрытая кнопка — не защита (проверяет сервер) | «Админка» видна только admin |
+| **Практикум** | Личный кабинет | `/account/orders` только после входа, выход с любой страницы, возврат на исходную | |
+| **Как в настоящем проекте** | Безопасность сессии | `localStorage` против httpOnly-cookie (XSS и CSRF); XSRF в `HttpClient`: `withXsrfConfiguration`, `withNoXsrfProtection`, cookie `XSRF-TOKEN` → заголовок; refresh-токен: пара access/refresh, повтор запроса после обновления, одно обновление на несколько параллельных 401; OAuth/OIDC и готовые библиотеки (обзор) | |
+
+### Глава 15. Анимации, `@defer` и производительность
+
+| # | Шаг | API / понятия | Результат |
+|---|---|---|---|
+| 15.1 | Анимация появления | `animate.enter`, `animate.leave`, CSS-переходы | Позиции корзины въезжают |
+| 15.2 | Отложенная отрисовка | `@defer`, `@placeholder`, `@loading`, `@error` | Отзывы |
+| 15.3 | Триггеры | `on viewport`, `on idle`, `on interaction`, `on hover`, `on timer`, `when` | |
+| 15.4 | Предзагрузка | `prefetch on …` | |
+| 15.5 | Картинки | `NgOptimizedImage`, `ngSrc`, `priority`, размеры | |
+| 15.6 | Большие списки | `track`, чистые пайпы, `computed`, когда нужна виртуализация (CDK) | |
 | **Практикум** | Летящая обложка | Анимация «в корзину» | |
 | **Под капотом** | `@defer` в JIT и в AOT | Чанки, почему в превью всё грузится сразу | |
 
-### Глава 15. Тестирование
+### Глава 16. Тестирование
 
 | # | Шаг | API / понятия | Результат |
 |---|---|---|---|
-| 15.1 | Зачем и что тестировать | Пирамида тестов; вкладка «Тесты» | |
-| 15.2 | Тест функции и пайпа | `describe`, `it`, `expect` | Тесты пайпа цены |
-| 15.3 | Тест сервиса | `TestBed.inject`, сигналы в тестах | Тесты `CartStore` |
-| 15.4 | Тест компонента | `TestBed.createComponent`, `fixture.componentRef.setInput`, `whenStable` | Тест `GameCard` |
-| 15.5 | Подмена зависимостей | `providers` в `TestBed`, заглушки | |
-| 15.6 | Тест HTTP | `provideHttpClientTesting`, `HttpTestingController` | |
-| 15.7 | Тест маршрутов | `RouterTestingHarness` | |
+| 16.1 | Зачем и что тестировать | Пирамида тестов; вкладка «Тесты» | |
+| 16.2 | Тест функции и пайпа | `describe`, `it`, `expect` | Тесты пайпа цены |
+| 16.3 | Тест сервиса | `TestBed.inject`, сигналы в тестах | Тесты `CartStore` |
+| 16.4 | Тест компонента | `TestBed.createComponent`, `fixture.componentRef.setInput`, `whenStable` | Тест `GameCard` |
+| 16.5 | Подмена зависимостей | `providers` в `TestBed`, заглушки | |
+| 16.6 | Тест HTTP | `provideHttpClientTesting`, `HttpTestingController` | |
+| 16.7 | Тест маршрутов | `RouterTestingHarness` | |
 | **Практикум** | Тесты оформления заказа | Валидация и отправка | |
 
-### Глава 16. Админка (сборка всего вместе)
+### Глава 17. Админка (сборка всего вместе)
 
 | # | Шаг | Понятия | Результат |
 |---|---|---|---|
-| 16.1 | Ленивый раздел | `loadChildren`, свои провайдеры раздела | |
-| 16.2 | Гард роли | `CanMatchFn`, роль из `AuthStore` | Только admin |
-| 16.3 | Таблица товаров | Сортировка, фильтр, страницы | |
-| 16.4 | Редактирование | Signal Forms + `httpResource` + `PUT` | |
-| 16.5 | Подтверждение удаления | Диалог: компонент через `createComponent` или CDK Dialog (обзор) | |
+| 17.1 | Ленивый раздел | `loadChildren`, свои провайдеры раздела | |
+| 17.2 | Гард роли | `CanMatchFn`, роль из `AuthStore` | Только admin |
+| 17.3 | Таблица товаров | Сортировка, фильтр, страницы | |
+| 17.4 | Редактирование | Signal Forms + `httpResource` + `PUT` | |
+| 17.5 | Подтверждение удаления | Диалог: компонент через `createComponent` или CDK Dialog (обзор) | |
 | **Практикум** | Новая игра | Форма создания с загрузкой обложки | |
 
 ---
 
+### Глава 18. NgRx
+
+Цель: познакомиться с самой распространённой библиотекой состояния в мире Angular — после того как ученик умеет делать то же самое сервисами на сигналах (глава 9) и понимает, что именно библиотека добавляет.
+
+Пакеты NgRx 22.0.1 (поддерживают Angular 22): `@ngrx/signals` (Signal Store, `entities`, `rxjs-interop`, `events`), `@ngrx/store`, `@ngrx/effects`, `@ngrx/entity`, `@ngrx/operators`, `@ngrx/store-devtools`. Для превью нужно подключить пакеты в import map (`scripts/copy-vendor.mjs`) — задача платформы перед главой.
+
+| # | Шаг | API / понятия | Результат |
+|---|---|---|---|
+| 18.1 | Зачем библиотека | Чего не хватает самописным хранилищам в большой команде: единые правила, расширения, инструменты; Signal Store против классического Store | — |
+| 18.2 | Signal Store | `signalStore`, `withState`, `withComputed`, `withMethods`, `patchState`, `{ providedIn: 'root' }` | `CartStore` на Signal Store |
+| 18.3 | Хуки и свойства | `withHooks` (`onInit` — восстановление из `localStorage`), `withProps`, `watchState`, `getState` | Корзина переживает перезапуск |
+| 18.4 | Свои расширения | `signalStoreFeature`, `withFeature` — общая «фича» сохранения для корзины и избранного | |
+| 18.5 | Коллекции | `withEntities`, `addEntity`, `updateEntity`, `removeEntity`, `setAllEntities` (`@ngrx/signals/entities`) | Позиции корзины как сущности |
+| 18.6 | Асинхронность | `rxMethod` (`@ngrx/signals/rxjs-interop`), `signalMethod`, `tapResponse` (`@ngrx/operators`) | Каталог через стор |
+| 18.7 | События в Signal Store | `@ngrx/signals/events`: `eventGroup`, `withReducer`, `withEventHandlers`, `injectDispatch` — Flux-подход без классического Store (проверить стабильность) | |
+| 18.8 | Классический Store | `createActionGroup`, `props`, `createReducer`, `on`, `createFeature`, `createSelector`, `provideStore`, `provideState`, `Store.dispatch`, `Store.selectSignal` | Та же корзина — для чтения существующих проектов |
+| 18.9 | Эффекты и DevTools | `createEffect`, `Actions`, `ofType`, `provideEffects`; `provideStoreDevtools` и Redux DevTools (в превью — обзорно) | |
+| **Практикум** | Фильтры каталога в сторе | Состояние фильтров, синхронизация с URL, загрузка через `rxMethod` | |
+| **Под капотом** | Что такое `signalStore` | Сервис с сигналами внутри: `patchState` и неизменяемость, сравнение с `CartStore` из главы 9; когда библиотека не нужна | |
+
 ## Часть 3. Глубже
 
-### Глава 17. Под капотом Angular
+### Глава 19. Под капотом Angular
 
 | # | Шаг | О чём |
 |---|---|---|
-| 17.1 | Компилятор | Шаблон → инструкции Ivy (вкладка «Шаблон»): создание и обновление, `ɵɵelementStart`, `ɵɵtextInterpolate` |
-| 17.2 | Представления | `LView`, `TView`, почему компоненты дешёвые |
-| 17.3 | Обнаружение изменений | Планировщик зонлесс, «грязные» представления, OnPush/`Eager`, `markForCheck` |
-| 17.4 | zone.js | Как было раньше, `provideZoneChangeDetection`, почему от него отказались |
-| 17.5 | Сигналы изнутри | `@angular/core/primitives/signals`: реактивные узлы, версии, эпохи |
-| 17.6 | DI изнутри | `R3Injector`, `NodeInjector`, bloom-фильтр |
-| 17.7 | JIT против AOT | Что делает `ngtsc`, проверка типов шаблонов, tree-shaking |
+| 19.1 | Компилятор | Шаблон → инструкции Ivy (вкладка «Шаблон»): создание и обновление, `ɵɵelementStart`, `ɵɵtextInterpolate` |
+| 19.2 | Представления | `LView`, `TView`, почему компоненты дешёвые |
+| 19.3 | Обнаружение изменений | Планировщик зонлесс, «грязные» представления, OnPush/`Eager`, `markForCheck` |
+| 19.4 | zone.js | Как было раньше, `provideZoneChangeDetection`, почему от него отказались |
+| 19.5 | Сигналы изнутри | `@angular/core/primitives/signals`: реактивные узлы, версии, эпохи |
+| 19.6 | DI изнутри | `R3Injector`, `NodeInjector`, bloom-фильтр |
+| 19.7 | JIT против AOT | Что делает `ngtsc`, проверка типов шаблонов, tree-shaking |
 
-### Глава 18. Настоящий проект (на машине ученика)
+### Глава 20. Настоящий проект (на машине ученика)
 
 Шаги этой главы выполняются в терминале, не в превью. Текст урока даёт команды и ожидаемый вывод; автор проверяет каждую команду сам.
 
 | # | Шаг | О чём |
 |---|---|---|
-| 18.1 | Angular CLI | `npm i -g @angular/cli`, `ng new`, структура проекта, `angular.json` |
-| 18.2 | Перенос магазина | Файлы из курса → `src/app`, учебный бэкенд → `public/` + интерцептор-заглушка или JSON-сервер |
-| 18.3 | Сборка | `ng serve`, `ng build`, esbuild/Vite, бюджеты, размер бандла |
-| 18.4 | Строгие шаблоны | `strictTemplates`: ошибки, которые JIT показывал только во время выполнения |
-| 18.5 | Генераторы и инструменты | `ng generate`, `ng add`, `ng update`, линтер |
-| 18.6 | Тесты | `ng test`, тесты из главы 15 без изменений |
-| 18.7 | SSR и гидратация | `@angular/ssr`, пререндеринг, гидратация, инкрементальная гидратация с `@defer` |
-| 18.8 | Окружения и деплой | Конфигурации, статический хостинг |
-| 18.9 | Angular DevTools | Расширение браузера: дерево компонентов, профилировщик, граф сигналов |
+| 20.1 | Angular CLI | `npm i -g @angular/cli`, `ng new`, структура проекта, `angular.json` |
+| 20.2 | Перенос магазина | Файлы из курса → `src/app`, учебный бэкенд → `public/` + интерцептор-заглушка или JSON-сервер |
+| 20.3 | Сборка | `ng serve`, `ng build`, esbuild/Vite, бюджеты, размер бандла |
+| 20.4 | Строгие шаблоны | `strictTemplates`: ошибки, которые JIT показывал только во время выполнения |
+| 20.5 | Генераторы и инструменты | `ng generate`, `ng add`, `ng update`, линтер |
+| 20.6 | Тесты | `ng test`, тесты из главы 16 без изменений |
+| 20.7 | SSR и гидратация | `@angular/ssr`, пререндеринг, гидратация, инкрементальная гидратация с `@defer` |
+| 20.8 | Окружения и деплой | Конфигурации, статический хостинг |
+| 20.9 | Angular DevTools | Расширение браузера: дерево компонентов, профилировщик, граф сигналов |
 
-### Глава 19. Разбор настоящего кода
+### Глава 21. Разбор настоящего кода
 
 Цель: прочитать код большого приложения и понять, почему он написан так. Кандидат — angular.dev (см. `project-app.md`).
 
 | # | Шаг | О чём |
 |---|---|---|
-| 19.1 | Карта проекта | Структура, что где лежит |
-| 19.2 | Роутинг и ленивые разделы | |
-| 19.3 | Состояние и сервисы | |
-| 19.4 | Пререндеринг и `@defer` | |
-| 19.5 | Встроенный редактор | Как angular.dev запускает код (WebContainers) — сравнение с нашим превью |
-| 19.6 | Что бы мы сделали иначе | |
+| 21.1 | Карта проекта | Структура, что где лежит |
+| 21.2 | Роутинг и ленивые разделы | |
+| 21.3 | Состояние и сервисы | |
+| 21.4 | Пререндеринг и `@defer` | |
+| 21.5 | Встроенный редактор | Как angular.dev запускает код (WebContainers) — сравнение с нашим превью |
+| 21.6 | Что бы мы сделали иначе | |
 
-### Глава 20. Финальный проект (самостоятельный)
+### Глава 22. Финальный проект (самостоятельный)
 
 Варианты на выбор, с подсказками, но без пошагового решения:
 
@@ -310,24 +346,26 @@
 
 | Область | API | Главы |
 |---|---|---|
-| Приложение | `bootstrapApplication`, `ApplicationConfig`, `provide*`, `ErrorHandler`, `provideAppInitializer` | 1, 8 |
-| Шаблоны | интерполяция, привязки, события, `#ref`, `@let`, `@if`, `@for`, `@switch`, `@defer`, `ng-content`, `ng-template`, `ng-container` | 2, 4, 5, 14 |
+| Приложение | `bootstrapApplication`, `ApplicationConfig`, `provide*`, `ErrorHandler`, `provideAppInitializer` | 1, 8, 14 |
+| Шаблоны | интерполяция, привязки, события, `#ref`, `@let`, `@if`, `@for`, `@switch`, `@defer`, `ng-content`, `ng-template`, `ng-container` | 2, 4, 5, 15 |
 | Компоненты | `@Component`, `input`, `output`, `model`, `host`, стили и инкапсуляция | 5 |
 | Сигналы | `signal`, `computed`, `effect`, `untracked`, `linkedSignal`, `resource`, `httpResource`, `rxResource`, `debounced` | 3, 9, 11, 12 |
 | DOM и жизненный цикл | `viewChild`, `contentChild(ren)`, `afterNextRender`, `afterRenderEffect`, `DestroyRef`, хуки | 6 |
 | Директивы и пайпы | `@Directive`, `hostDirectives`, `@Pipe`, встроенные пайпы, локали | 7 |
 | DI | `inject`, `@Service`, `@Injectable`, провайдеры, `InjectionToken`, иерархия, `injectAsync` | 8 |
-| Роутер | `provideRouter`, `routerLink`, параметры, `loadComponent`, гарды, резолверы, `withViewTransitions` | 10, 16 |
-| HTTP | `provideHttpClient`, `HttpClient`, `httpResource`, интерцепторы | 11, 12 |
+| Роутер | `provideRouter`, `routerLink`, параметры, `loadComponent`, гарды, резолверы, `withViewTransitions` | 10, 14, 17 |
+| HTTP | `provideHttpClient`, `HttpClient`, `httpResource`, интерцепторы, `withXsrfConfiguration` | 11, 12, 14 |
 | RxJS | `Observable`, операторы, `toSignal`, `toObservable`, `takeUntilDestroyed` | 12 |
 | Формы | Signal Forms (`form`, `FormField`, валидаторы, `submit`, `schema`); реактивные формы обзорно | 13 |
-| Анимации и производительность | `animate.enter/leave`, `@defer`, `NgOptimizedImage` | 14 |
-| Тесты | `TestBed`, `ComponentFixture`, `HttpTestingController`, `RouterTestingHarness` | 15 |
-| Внутреннее устройство | Ivy, `LView`, планировщик, zone.js, примитивы сигналов, инжекторы | 17 |
-| Инструменты | CLI, `ng build`, `strictTemplates`, SSR, гидратация, DevTools | 18 |
+| Авторизация | `AuthStore`, токен, сессия (`/api/me`), интерцептор `Authorization` и 401, гард входа, `returnUrl`, роли; refresh-токен, cookie, XSRF — обзорно | 14, 17 |
+| Анимации и производительность | `animate.enter/leave`, `@defer`, `NgOptimizedImage` | 15 |
+| Тесты | `TestBed`, `ComponentFixture`, `HttpTestingController`, `RouterTestingHarness` | 16 |
+| NgRx | Signal Store (`signalStore`, `withState`, `withComputed`, `withMethods`, `withHooks`, `withEntities`, `rxMethod`, `signalStoreFeature`, события), классический Store (`createActionGroup`, `createReducer`, `createSelector`, `createEffect`), DevTools | 18 |
+| Внутреннее устройство | Ivy, `LView`, планировщик, zone.js, примитивы сигналов, инжекторы | 19 |
+| Инструменты | CLI, `ng build`, `strictTemplates`, SSR, гидратация, DevTools | 20 |
 
-Не входит в курс (упоминаем ссылкой): Angular Material и CDK (кроме обзора в 14.6 и 16.5), NgRx (обзор в 9.5), i18n (`@angular/localize`), Service Worker / PWA, Angular Elements, микрофронтенды, `upgrade` с AngularJS.
+Не входит в курс (упоминаем ссылкой): Angular Material и CDK (кроме обзора в 15.6 и 17.5), i18n (`@angular/localize`), Service Worker / PWA, Angular Elements, микрофронтенды, `upgrade` с AngularJS.
 
 ## Объём
 
-20 глав, примерно 140–160 шагов. Ориентир для ученика — 35–45 часов.
+22 главы, примерно 160–175 шагов. Ориентир для ученика — 40–50 часов.
