@@ -1,4 +1,5 @@
 import { parse as parseYaml } from 'yaml';
+import { resolveChapter } from '../../shared/step-chain.js';
 
 /** Набор файлов шага: имя файла → исходный код */
 export type FileMap = Record<string, string>;
@@ -16,6 +17,10 @@ export interface StepMeta {
   url?: string;
   /** Настройки учебного бэкенда для шага */
   backend?: BackendConfig;
+  /** Файлы результата предыдущего шага, которых нет в custom-старте (закадровая подготовка) */
+  removedInStart?: string[];
+  /** Файлы старта, которые ученик удаляет в этом шаге */
+  removedInSolution?: string[];
 }
 
 /** Настройки учебного бэкенда (public/backend/backend.js) */
@@ -156,17 +161,19 @@ function loadCourse(): Course {
       if (rest.length > 1) stepDirs.add(rest[0]);
     }
 
-    // Шаг со startFrom: previous не хранит папку start/: его старт — решение предыдущего шага
-    // (у шага без решения — его собственный старт). Так в content/ нет копий одних и тех же файлов
-    let previousResult: FileMap = {};
-    chapter.steps = [...stepDirs].sort().map((stepDir, index): Step => {
+    // Шаг хранит только изменения: start/ — поверх результата предыдущего шага (startFrom: custom),
+    // solution/ — поверх старта. Полный код собирает shared/step-chain.js (тот же модуль, что у валидатора)
+    const lessons = [...stepDirs].sort().map((stepDir) => {
       const base = `${prefix}${stepDir}/`;
-      const { meta, body } = parseLesson(`${base}lesson.md`);
-      const ownStart = collectFiles(`${base}start/`);
-      const start =
-        Object.keys(ownStart).length || meta.startFrom === 'custom' ? ownStart : { ...previousResult };
-      const solution = collectFiles(`${base}solution/`);
-      previousResult = Object.keys(solution).length ? solution : start;
+      return {
+        stepDir,
+        ...parseLesson(`${base}lesson.md`),
+        own: { start: collectFiles(`${base}start/`), solution: collectFiles(`${base}solution/`) },
+      };
+    });
+    const resolved = resolveChapter(lessons.map(({ meta, own }) => ({ meta, ...own })));
+    chapter.steps = lessons.map(({ stepDir, meta, body }, index): Step => {
+      const { start, solution } = resolved[index];
       return {
         id: `${chapter.slug}/${stripOrder(stepDir)}`,
         dir: `${chapterDir}/${stepDir}`,

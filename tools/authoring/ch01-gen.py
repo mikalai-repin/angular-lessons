@@ -6,7 +6,11 @@
 import os
 
 ROOT = '/Users/mr/Desktop/Experimental/angular-learn/content/01-first-app'
-SANDBOX = '/Users/mr/Desktop/Experimental/angular-learn/content/00-sandbox/02-search/solution'
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from steps import step_dir
+# Полный код решения песочницы (в content/ шаг хранит только изменения)
+SANDBOX = step_dir('/Users/mr/Desktop/Experimental/angular-learn/content/00-sandbox/02-search/solution')
 
 MAIN_BASIC = """import { bootstrapApplication } from '@angular/platform-browser';
 import { App } from './app';

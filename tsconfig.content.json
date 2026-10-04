@@ -1,5 +1,8 @@
 {
-  // Проверка типов кода уроков (npm run validate). Настройки — как в tsconfig.json, который создаёт `ng new` в Angular 22
+  // Настройки проверки типов кода уроков — как в tsconfig.json, который создаёт `ng new` в Angular 22.
+  // Проверяется не content/ (там шаги хранят только изменения), а полный код шагов, который npm run validate
+  // выгружает в .content-check/ (.content-check/tsconfig.json наследует эти настройки). Шаги с brokenStart
+  // (намеренно сломанный старт) валидатор туда не выгружает.
   "compilerOptions": {
     "target": "ES2022",
     "module": "preserve",
@@ -15,9 +18,5 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "types": []
-  },
-  "include": ["content/**/*.ts"],
-  // Шаги с намеренно сломанным стартом (frontmatter `brokenStart: true`): ошибки в нём — часть урока.
-  // Валидатор проверяет, что каждый такой шаг перечислен здесь
-  "exclude": ["content/01-first-app/06-debugging/start/**"]
+  }
 }

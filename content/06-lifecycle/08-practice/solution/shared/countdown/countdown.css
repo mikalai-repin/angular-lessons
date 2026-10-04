@@ -1,6 +1,0 @@
-/* Строка под ценой: цвет акции, цифры одинаковой ширины — время не «прыгает» */
-:host {
-  font-size: 13px;
-  color: var(--brand);
-  font-variant-numeric: tabular-nums;
-}

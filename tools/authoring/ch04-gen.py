@@ -7,7 +7,10 @@ import os, subprocess
 
 PROJECT = '/Users/mr/Desktop/Experimental/angular-learn'
 ROOT = f'{PROJECT}/content/04-control-flow'
-CH03 = f'{PROJECT}/content/03-signals/08-practice/solution'
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from steps import step_dir
+CH03 = step_dir(f'{PROJECT}/content/03-signals/08-practice/solution')
 
 def read(path):
     with open(path) as f:

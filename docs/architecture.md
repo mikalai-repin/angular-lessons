@@ -163,12 +163,12 @@ export default async function check({ document, navigate }: CheckContext): Promi
 
 ## Загрузка контента и валидатор
 
-`src/content/course.ts`: `import.meta.glob('/content/**/*', { query: '?raw', eager: true })`. Файлы шага — с подпапками.
+`src/content/course.ts`: `import.meta.glob('/content/**/*', { query: '?raw', eager: true })`. Файлы шага — с подпапками. Полный код старта и решения каждого шага собирает `shared/step-chain.js` (шаг хранит только изменения, см. `lesson-format.md`).
 
 `npm run validate`:
 
-- `scripts/validate-content.mjs` — структура, frontmatter (YAML), цепочка шагов (у шага `startFrom: previous` не должно быть папки `start/`: старт берётся из предыдущего шага, `scripts/step-files.mjs`) и **сборка** каждого `solution/` и своего `start/` через `compile-core` (ловит ненайденные `templateUrl`/`styleUrl` и синтаксические ошибки);
-- `tsc -p tsconfig.content.json` — типы кода уроков по настоящим `@angular/*` (настройки как в `ng new`).
+- `scripts/validate-content.mjs` — структура, frontmatter (YAML), цепочка шагов (шаг хранит только изменения, полный код собирает `shared/step-chain.js`; копии, лишние `start/` и пустые оверлеи — ошибки) и **сборка** полного кода каждого решения и `custom`-старта через `compile-core` (ловит ненайденные `templateUrl`/`styleUrl` и синтаксические ошибки). Полный код выгружает в `.content-check/` (не в git);
+- `tsc -p .content-check/tsconfig.json` — типы полного кода шагов по настоящим `@angular/*` (настройки из `tsconfig.content.json`, как в `ng new`).
 - **План** (этап 5): `ngc` с `strictTemplates` по каждому `solution/`.
 
 ## Структура исходников

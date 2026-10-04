@@ -1,27 +1,36 @@
-// Проверка контента курса: структура шагов, цепочка start/solution и сборка кода шага тем же модулем,
-// что и превью (ловит ненайденные templateUrl/styleUrl и синтаксические ошибки).
-// Запуск: npm run validate (типы кода уроков проверяет отдельно `tsc -p tsconfig.content.json`)
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+// Проверка контента курса: структура шагов, цепочка start/solution (шаг хранит только изменения — см.
+// shared/step-chain.js) и сборка кода шага тем же модулем, что и превью (ловит ненайденные templateUrl/styleUrl
+// и синтаксические ошибки). Полный код каждого старта и решения выгружает в .content-check/ — там типы проверяет
+// `tsc -p .content-check/tsconfig.json` (второй шаг npm run validate).
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import ts from 'typescript';
 import { angularJitApplicationTransform } from '@angular/compiler-cli';
 import { parse as parseYaml } from 'yaml';
 import { compileFiles } from '../shared/compile-core.js';
-import { readFiles, readResult, readStart } from './step-files.mjs';
+import { resolveChapterDir, writeFiles } from './step-files.mjs';
 
 const root = join(import.meta.dirname, '..', 'content');
+const checkDir = join(import.meta.dirname, '..', '.content-check');
 const errors = [];
 const warnings = [];
 
 const isDir = (path) => existsSync(path) && statSync(path).isDirectory();
 
 const course = JSON.parse(readFileSync(join(root, 'course.json'), 'utf8'));
-// tsconfig.content.json с комментариями: убираем строки-комментарии перед разбором
-const contentTsconfig = JSON.parse(
-  readFileSync(join(root, '..', 'tsconfig.content.json'), 'utf8').replace(/^\s*\/\/.*$/gm, ''),
-);
-const contentExcludes = contentTsconfig.exclude ?? [];
 let stepCount = 0;
+rmSync(checkDir, { recursive: true, force: true });
+
+// Файлы оверлея, совпадающие с базой (копии), и удаления, которых в базе нет
+function checkOverlay(where, kind, base, own, removed = []) {
+  for (const name of Object.keys(own)) {
+    if (base[name] === own[name]) errors.push(`${where}/${kind}/${name}: совпадает с тем, что было до шага, — копия, удалите её`);
+  }
+  for (const name of removed) {
+    if (!(name in base)) errors.push(`${where}: removedIn${kind === 'start' ? 'Start' : 'Solution'}: файла ${name} и так нет`);
+    if (name in own) errors.push(`${where}: ${name} и удалён, и лежит в ${kind}/`);
+  }
+}
 
 // Служебные главы (devChapters, песочница) проверяются так же, как обычные
 for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
@@ -31,15 +40,15 @@ for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
     continue;
   }
 
-  const steps = readdirSync(chapterPath).filter((name) => isDir(join(chapterPath, name))).sort();
-
-  for (const stepDir of steps) {
+  const steps = resolveChapterDir(chapterPath);
+  let previousResult = {};
+  for (const [index, step] of steps.entries()) {
     stepCount++;
+    const stepDir = step.path.split('/').at(-1);
     const where = `${chapterDir}/${stepDir}`;
-    const stepPath = join(chapterPath, stepDir);
     if (!/^\d{2}-[a-z0-9-]+$/.test(stepDir)) errors.push(`${where}: имя папки должно быть вида NN-slug`);
 
-    const lessonPath = join(stepPath, 'lesson.md');
+    const lessonPath = join(step.path, 'lesson.md');
     let meta = {};
     if (!existsSync(lessonPath)) {
       errors.push(`${where}: нет lesson.md`);
@@ -57,39 +66,47 @@ for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
     }
 
     const startFrom = meta.startFrom ?? 'previous';
-    const ownStart = readFiles(join(stepPath, 'start'));
-    const solution = readFiles(join(stepPath, 'solution'));
-    // startFrom: previous — папки start/ нет: старт = результат предыдущего шага (scripts/step-files.mjs)
+    const { own, start, solution } = step;
     if (startFrom === 'previous') {
-      if (steps.indexOf(stepDir) === 0) errors.push(`${where}: первый шаг главы должен иметь startFrom: custom`);
-      if (isDir(join(stepPath, 'start'))) {
-        const same = JSON.stringify(ownStart) === JSON.stringify(readResult(join(chapterPath, steps[steps.indexOf(stepDir) - 1] ?? '')));
-        errors.push(
-          `${where}: startFrom: previous, но есть папка start/ — ${same ? 'это копия результата предыдущего шага, удалите её' : 'она отличается от результата предыдущего шага: нужен startFrom: custom'}`,
-        );
+      if (index === 0) errors.push(`${where}: первый шаг главы должен иметь startFrom: custom`);
+      if (isDir(join(step.path, 'start'))) errors.push(`${where}: startFrom: previous, но есть папка start/ — нужен startFrom: custom (или удалите её)`);
+      if (meta.removedInStart) errors.push(`${where}: removedInStart бывает только у startFrom: custom`);
+    } else {
+      checkOverlay(where, 'start', previousResult, own.start, meta.removedInStart);
+      if (index > 0 && !Object.keys(own.start).length && !meta.removedInStart?.length) {
+        errors.push(`${where}: startFrom: custom, но старт ничем не отличается от результата предыдущего шага — нужен startFrom: previous`);
       }
     }
-    const start = startFrom === 'previous' ? readStart(stepPath) : ownStart;
-    if (!start['main.ts']) errors.push(`${where}: нет start/main.ts`);
-    if (meta.noSolution && Object.keys(solution).length) errors.push(`${where}: noSolution: true, но папка solution/ не пуста`);
-    if (!solution['main.ts'] && !meta.noSolution) warnings.push(`${where}: нет solution/main.ts — кнопки «Решение» не будет`);
+    if (meta.noSolution) {
+      if (Object.keys(own.solution).length) errors.push(`${where}: noSolution: true, но папка solution/ не пуста`);
+      if (meta.removedInSolution) errors.push(`${where}: noSolution: true, но есть removedInSolution`);
+    } else {
+      checkOverlay(where, 'solution', start, own.solution, meta.removedInSolution);
+      if (!Object.keys(own.solution).length && !meta.removedInSolution?.length) {
+        errors.push(`${where}: решение не отличается от старта — нужен noSolution: true или файлы в solution/`);
+      }
+      if (!solution['main.ts']) errors.push(`${where}: в решении нет main.ts`);
+    }
+    if (!start['main.ts']) errors.push(`${where}: в старте нет main.ts`);
 
-    // Старт со startFrom: previous уже собран как результат предыдущего шага — повторно не собираем
+    // Старт со startFrom: previous — результат предыдущего шага, он уже проверен
     for (const [kind, files] of [['start', startFrom === 'custom' ? start : {}], ['solution', solution]]) {
       if (!Object.keys(files).length) continue;
-      // brokenStart: стартовый код намеренно содержит ошибки (шаг про отладку)
-      if (kind === 'start' && meta.brokenStart) {
-        if (!contentExcludes.some((pattern) => pattern.startsWith(`content/${where}/start`))) {
-          errors.push(`${where}: brokenStart: true, но папка start/ не исключена в tsconfig.content.json → exclude`);
-        }
-        continue;
-      }
+      // brokenStart: стартовый код намеренно содержит ошибки (шаг про отладку) — не собираем и не проверяем типы
+      if (kind === 'start' && meta.brokenStart) continue;
       const { errors: buildErrors } = compileFiles(ts, angularJitApplicationTransform, files);
       for (const error of buildErrors) errors.push(`${where}/${kind}: ${error}`);
+      writeFiles(join(checkDir, chapterDir, stepDir, kind), files);
     }
-
+    previousResult = meta.noSolution ? start : solution;
   }
 }
+
+// Проверка типов полного кода шагов: настройки — из tsconfig.content.json
+writeFileSync(
+  join(checkDir, 'tsconfig.json'),
+  JSON.stringify({ extends: '../tsconfig.content.json', include: ['**/*.ts'] }, null, 2) + '\n',
+);
 
 for (const warning of warnings) console.warn(`⚠ ${warning}`);
 for (const error of errors) console.error(`✗ ${error}`);

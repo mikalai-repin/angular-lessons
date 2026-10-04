@@ -7,3 +7,4 @@ public/vendor/
 public/preview.html
 spikes/jit-preview/out/
 spikes/jit-preview/vendor/*.mjs
+.content-check/

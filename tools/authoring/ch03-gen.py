@@ -8,7 +8,10 @@ import os
 
 PROJECT = '/Users/mr/Desktop/Experimental/angular-learn'
 ROOT = f'{PROJECT}/content/03-signals'
-CH02 = f'{PROJECT}/content/02-templates/08-practice/solution'
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from steps import step_dir
+CH02 = step_dir(f'{PROJECT}/content/02-templates/08-practice/solution')
 
 def read(path):
     with open(path) as f:

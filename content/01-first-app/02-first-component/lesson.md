@@ -3,6 +3,7 @@ title: Первый компонент
 startFrom: custom
 focus: app.ts
 api: ['@Component', selector, template]
+removedInStart: [app.config.ts, app.css, app.html, app.routes.ts, cart/cart.ts, catalog/catalog.html, catalog/catalog.ts, core/cart-store.ts, core/models.ts, game/game-page.html, game/game-page.ts, not-found.ts, shared/game-card/game-card.css, shared/game-card/game-card.html, shared/game-card/game-card.ts, styles.css]
 ---
 
 Начинаем с чистого листа: в шаге всего два файла. Превью пустое, а в консоли ошибка:
