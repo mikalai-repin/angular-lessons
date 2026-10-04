@@ -134,10 +134,32 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **Порты**: 5173 и 5174 заняты dev-серверами курса PixiJS — курс Angular на 5180.
 - **Эксперименты «сломайте X»**: исключение в конструкторе компонента (вызов несуществующего метода) не даст отрисоваться шаблону — ошибок шаблона (NG0303) уже не будет. Для демонстрации ошибки TypeScript без падения — ошибка только в типах (`let n: number = 'строка'`).
 - **Puppeteer и iframe превью**: после перезапуска (ввод адреса, ⟳) старый iframe может ещё числиться в `page.frames()` — брать последний (`.filter(f => f.url().includes('/app')).at(-1)`).
+- **Намеренно сломанный старт** (шаг про ошибки): frontmatter `brokenStart: true` и папка `start/` в `exclude` файла `tsconfig.content.json` — иначе `npm run validate` упадёт. Валидатор проверяет, что исключение не забыто.
+- **Prettier форматирует шаблоны внутри `template:` в `.ts`** (через встроенный парсер Angular). Однострочный шаблон с двумя элементами он переносит некрасиво — пишите многострочный шаблон в обратных кавычках. Проверка кода главы: `npx prettier --print-width 120 --single-quote --trailing-comma all --check "content/**/*.ts"`; для `.html` — парсер `angular` (пример в `docs/architecture.md`, «Стек»).
+- **Puppeteer и Monaco**: пробелы в строках редактора — неразрывные, токены объединяются в один `span` (`" games = httpResource<"`). Чтобы навести мышь на слово, ищите `span` по `includes` и берите координаты через `document.createRange()`.
+- **Проверка в настоящем AOT**: `ngc` из `@angular/compiler-cli` работает на Node 20 (в отличие от CLI). Папка с `tsconfig.json` (`experimentalDecorators`, `angularCompilerOptions`), симлинк на `node_modules` проекта, `node node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js -p tsconfig.json` → `out/*.js`.
 - **Шаг со стартом без решения**: в `run-chapter` «Решение» нажимается автоматически, а в своих проверках — нет; стартовый код может не содержать элементов, которые ищет проверка.
 
 # Фактическое состояние
 
-Глав пока нет — только временная глава `00-sandbox` (3 шага: мини-магазин, поиск, ошибки), на которой проверяется платформа. Её код — хороший образец стиля для глав (файлы как в `ng new`, `@Service()`, `httpResource`, `input.required()`, `withComponentInputBinding`).
+## Глава 1 «Первое приложение» — 7 шагов
 
-Раздел заполняется после главы 1: отличия от плана и код магазина на конец каждой главы (таблица файлов, как в курсе PixiJS).
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-what-is-angular | Что такое Angular, AOT/JIT, интерфейс курса (`noSolution`) | Демо-магазин из песочницы (15 файлов) |
+| 02-first-component | `@Component`, `selector`, `template`, NG0906, селектор по умолчанию `ng-component` | `main.ts` + `app.ts` без декоратора (custom) |
+| 03-bootstrap | `bootstrapApplication`, `ApplicationRef`, NG05104 (выводится дважды: `ErrorHandler` и `.catch`), `ng-version` | решение 02 |
+| 04-template-files | `templateUrl`, `styleUrl`, глобальный `styles.css`, инкапсуляция (`_ngcontent-ng-c…`) | custom: `app.html` с TODO, `app.css` и `styles.css` готовые |
+| 05-app-config | `ApplicationConfig`, `providers`, `provideBrowserGlobalErrorListeners` | custom: `app.config.ts` с TODO |
+| 06-debugging | Метки ошибок TS / Сборка / выполнение, чтение ошибки JIT (`@4:28` — с нуля), коды NG, `ng.getComponent($0)` | custom, **`brokenStart: true`**: `styleUrl: './app.scss'`, `</h2>`, `appRef.component` |
+| 07-compiler | `ɵcmp.template`, инструкции, `consts`, `rf & 1` / `rf & 2`, сравнение с AOT (`ngc`) | решение 06 (`noSolution`) |
+
+Отличия от `course-plan.md`: «Под капотом: компилятор» — отдельный шаг 1.7, а не врезка; глобальный `ng` — в шаге 1.6.
+
+Код магазина на конец главы 1 (`content/01-first-app/07-compiler/start/`): `main.ts` (`bootstrapApplication(App, appConfig).then(лог числа компонентов).catch(...)`), `app.ts` (`templateUrl`, `styleUrl`, пустой класс), `app.html` (шапка `.header` с `.logo` + `main.page` с `h1` и `p.muted`), `app.css` (шапка, `h1` фирменного цвета), `app.config.ts` (`provideBrowserGlobalErrorListeners()`), `styles.css` (переменные `--brand` и др., `body`, `h1`, `.muted`, `.button`, `.grid`).
+
+Код шагов генерирует `tools/authoring/ch01-gen.py`.
+
+## Песочница
+
+`content/00-sandbox` — служебная глава (`devChapters` в `content/course.json`), только в режиме разработки. На ней работают `tools/e2e/checks/platform.mjs` и `ch00-sandbox.mjs`. Её `02-search/solution` — ещё и демо в шаге 1.1: меняя песочницу, перезапустите генератор главы 1.

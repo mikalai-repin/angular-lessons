@@ -6,6 +6,7 @@ import { StepPage } from './StepPage';
 
 function Home() {
   const last = allSteps.find((step) => step.id === progress.getLastStep()) ?? allSteps[0];
+  if (!last) return <p className="empty-course">В курсе пока нет глав.</p>;
   return <Navigate to={stepPath(last)} replace />;
 }
 
@@ -22,11 +23,9 @@ function TableOfContents() {
     <details className="toc" ref={detailsRef}>
       <summary>Оглавление</summary>
       <nav className="toc-panel">
-        {course.chapters.map((chapter) => (
-          <section key={chapter.slug}>
-            <h3>
-              {chapter.index + 1}. {chapter.title}
-            </h3>
+        {[...course.chapters, ...course.devChapters].map((chapter) => (
+          <section key={chapter.slug} className={chapter.dev ? 'toc-dev' : undefined}>
+            <h3>{chapter.dev ? `Для разработки: ${chapter.title}` : `${chapter.index + 1}. ${chapter.title}`}</h3>
             <ol>
               {chapter.steps.map((step) => (
                 <li key={step.id}>

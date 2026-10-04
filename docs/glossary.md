@@ -22,6 +22,14 @@
 | compiler | компилятор | |
 | AOT / JIT | AOT / JIT (компиляция заранее / во время выполнения) | расшифровка при первом упоминании |
 | dev mode | режим разработки | |
+| entry point | точка входа | `main.ts` |
+| application reference | ссылка на приложение (`ApplicationRef`) | результат `bootstrapApplication` |
+| error handler | обработчик ошибок (`ErrorHandler`) | пометка `ERROR` в консоли |
+| global styles | глобальные стили | `styles.css` |
+| component styles | стили компонента | `styleUrl`, действуют только на шаблон компонента |
+| instruction | инструкция | вызов в скомпилированном шаблоне: `ɵɵdomElementStart`, `ɵɵtext` |
+| creation / update mode | режим создания / режим обновления | блоки `rf & 1` и `rf & 2` функции шаблона |
+| private API (ɵ) | внутреннее API | имена с префиксом `ɵ`, в коде приложения не используются |
 
 ## Шаблоны
 

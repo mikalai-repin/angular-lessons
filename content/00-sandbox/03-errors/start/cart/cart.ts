@@ -13,7 +13,9 @@ import { CartStore } from '../core/cart-store';
     } @empty {
       <p class="muted">Корзина пуста</p>
     }
-    <p><b>Итого: {{ cart.total() }} ₽</b></p>
+    <p>
+      <b>Итого: {{ cart.total() }} ₽</b>
+    </p>
   `,
 })
 export class CartPage {

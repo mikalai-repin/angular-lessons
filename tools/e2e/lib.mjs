@@ -39,7 +39,12 @@ export function readDir(dir) {
 
 /** Компилирует папку шага (start/ или solution/) тем же кодом, что и воркер платформы */
 export function compileDir(dir) {
-  return compileFiles(ts, angularJitApplicationTransform, readDir(dir));
+  return compileMap(readDir(dir));
+}
+
+/** Компилирует набор файлов из памяти ({ 'main.ts': '…', 'app.ts': '…' }) — для экспериментов */
+export function compileMap(files) {
+  return compileFiles(ts, angularJitApplicationTransform, files);
 }
 
 /**

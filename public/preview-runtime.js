@@ -162,13 +162,22 @@ for (const level of ['log', 'info', 'warn', 'error', 'debug']) {
   };
 }
 
+// Необработанные ошибки. Наш слушатель срабатывает раньше слушателей Angular: если приложение подключило
+// provideBrowserGlobalErrorListeners(), Angular сам выведет ошибку через ErrorHandler («ERROR Error: …»)
+// и вызовет preventDefault(). Поэтому решение откладываем до конца обработки события — как браузер,
+// который не пишет «Uncaught» для обработанных ошибок
 window.addEventListener('error', (event) => {
-  send({ type: 'error', text: prettify(event.error?.stack || event.message) });
+  setTimeout(() => {
+    if (!event.defaultPrevented) send({ type: 'error', text: prettify(event.error?.stack || event.message) });
+  });
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-  const reason = event.reason;
-  send({ type: 'error', text: prettify(reason?.stack || String(reason)) });
+  setTimeout(() => {
+    if (event.defaultPrevented) return;
+    const reason = event.reason;
+    send({ type: 'error', text: prettify(reason?.stack || String(reason)) });
+  });
 });
 
 // ---------- Адрес приложения (роутинг внутри iframe) ----------

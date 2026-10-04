@@ -37,9 +37,15 @@ function sameFiles(a, b) {
 }
 
 const course = JSON.parse(readFileSync(join(root, 'course.json'), 'utf8'));
+// tsconfig.content.json с комментариями: убираем строки-комментарии перед разбором
+const contentTsconfig = JSON.parse(
+  readFileSync(join(root, '..', 'tsconfig.content.json'), 'utf8').replace(/^\s*\/\/.*$/gm, ''),
+);
+const contentExcludes = contentTsconfig.exclude ?? [];
 let stepCount = 0;
 
-for (const chapterDir of course.chapters) {
+// Служебные главы (devChapters, песочница) проверяются так же, как обычные
+for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
   const chapterPath = join(root, chapterDir);
   if (!existsSync(join(chapterPath, 'chapter.json'))) {
     errors.push(`${chapterDir}: нет chapter.json`);
@@ -80,6 +86,13 @@ for (const chapterDir of course.chapters) {
 
     for (const [kind, files] of [['start', start], ['solution', solution]]) {
       if (!Object.keys(files).length) continue;
+      // brokenStart: стартовый код намеренно содержит ошибки (шаг про отладку)
+      if (kind === 'start' && meta.brokenStart) {
+        if (!contentExcludes.some((pattern) => pattern.startsWith(`content/${where}/start`))) {
+          errors.push(`${where}: brokenStart: true, но папка start/ не исключена в tsconfig.content.json → exclude`);
+        }
+        continue;
+      }
       const { errors: buildErrors } = compileFiles(ts, angularJitApplicationTransform, files);
       for (const error of buildErrors) errors.push(`${where}/${kind}: ${error}`);
     }

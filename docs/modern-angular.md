@@ -47,6 +47,11 @@ zsh: шаблоны с `[`, `?`, `*` интерпретируются как glo
 | `tsconfig.json` из `ng new`: нет `"strict": true` — в **TypeScript 6 строгий режим включён по умолчанию**; есть `experimentalDecorators: true`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `module: preserve`; `angularCompilerOptions`: `strictInjectionParameters`, `strictInputAccessModifiers` (`strictTemplates` не указан — проверить, включён ли по умолчанию) | `workspace/files/tsconfig.json.template` |
 | Angular CLI 22 требует **Node 22.22.3+ / 24.15+ / 26+** | сообщение `npx @angular/cli@22.2.1 new` |
 | В JIT: `@Service()`, `httpResource` (в т. ч. `{ url, params }` от сигналов, отмена устаревших запросов), `withComponentInputBinding` + `input.required()`, `loadComponent`, `@let`, `@if (...; as x)`, `routerLinkActive` работают | `checks/ch00-sandbox.mjs` |
+| Без `@Component`: `NG0906: The App is not an Angular component, make sure it has the \`@Component\` decorator.`; компонент без `selector` получает селектор по умолчанию `ng-component` (`NG05104: The selector "ng-component" did not match any elements`); NG05104 при запуске выводится дважды: `ERROR RuntimeError…` от `ErrorHandler` и отклонённый промис `bootstrapApplication` | эксперименты главы 1 |
+| `bootstrapApplication` разрешается `ApplicationRef` уже после первой отрисовки (в `.then` DOM на месте, сразу после вызова — нет); хост получает `ng-version="22.2.1"` | эксперименты главы 1 |
+| `provideBrowserGlobalErrorListeners()` = слушатели `error` и `unhandledrejection` на `window` → `ErrorHandler` + `preventDefault()`, снимаются при уничтожении приложения. Ошибки в обработчиках шаблона Angular передаёт в `ErrorHandler` и без него | `_pending_tasks-chunk.mjs`, эксперимент |
+| Глобальный `ng` (`getComponent`, `getContext`, `applyChanges`, `ɵgetSignalGraph`…) публикуется только при `ngDevMode` | `publishDefaultGlobalUtils` |
+| Компилятор: функция шаблона `App_Template(rf, ctx)`, `rf & 1` — создание, `rf & 2` — обновление; для элементов без директив — `ɵɵdomElementStart`/`ɵɵdomElementEnd`, вызовы цепочкой; атрибуты в `consts` (`[1, 'header']`, `1` = `AttributeMarker.Classes`); JIT и AOT (`ngc`) дают одинаковую функцию, JIT добавляет префиксы `jit___…_N`; AOT обрабатывает стили при сборке (`[_ngcontent-%COMP%]`) | эксперименты главы 1, `ngc` |
 | Ошибки JIT: NG0303 «Can't bind to 'x' since it isn't a known property of 'y' (used in the 'Catalog' component template)» и NG0304 «'x' is not a known element» — через `console.error`, приложение продолжает работать; NG0303 повторяется для каждого элемента `@for`; `@for` без `track` — «Errors during JIT compilation of template for Catalog: @for loop must have a "track" expression»; обязательный вход без значения — NG0950; исключение в выражении шаблона — `ERROR TypeError…` без места в шаблоне | эксперименты на песочнице |
 
 ## Проверить при написании соответствующих глав
@@ -56,7 +61,7 @@ zsh: шаблоны с `[`, `?`, `*` интерпретируются как glo
 - [x] `withFetch` — устарел.
 - [ ] `strictTemplates` по умолчанию в Angular 22 (в `tsconfig.json` из `ng new` не указан) — этап 5 и глава 18.
 - [ ] Поведение `@defer` в JIT — глава 14.
-- [ ] Отладочный глобальный объект `ng` (`ng.getComponent`, `ng.applyChanges`) в dev-режиме — глава 1.
+- [x] Отладочный глобальный объект `ng` — есть в dev-режиме, см. таблицу.
 - [ ] Значения по умолчанию в `httpResource` (что в `value()` во время загрузки и при ошибке) — глава 11.
 - [ ] Что такое `withRouterResources` и стоит ли его показывать (developer preview) — глава 10.
 - [ ] `declareExperimentalWebMcpTool`, `provideExperimentalWebMcpForms` — экспериментальное, в курс не берём, но упомянуть можно.

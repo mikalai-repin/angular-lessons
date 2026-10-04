@@ -51,16 +51,31 @@ export interface Chapter {
   description: string;
   part: number;
   steps: Step[];
+  /** Служебная глава (devChapters): только в режиме разработки, вне цепочки «Назад / Далее» */
+  dev: boolean;
 }
 
 export interface Course {
   title: string;
   angularVersion: string;
   chapters: Chapter[];
+  /** Служебные главы для проверки платформы (песочница). В продакшен-сборку не попадают */
+  devChapters: Chapter[];
 }
 
-// Vite собирает весь content/ в бандл на этапе сборки
-const raw = import.meta.glob<string>('/content/**/*', { query: '?raw', import: 'default', eager: true });
+// Vite собирает content/ в бандл на этапе сборки. Песочница (служебная глава из devChapters) подключается
+// только в режиме разработки: в продакшене ветка с import.meta.env.DEV = false удаляется вместе с её файлами.
+// Путь песочницы здесь задан явно: шаблоны import.meta.glob должны быть литералами
+const raw: Record<string, string> = {
+  ...import.meta.glob<string>(['/content/**/*', '!/content/00-sandbox/**'], {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }),
+  ...(import.meta.env.DEV
+    ? import.meta.glob<string>('/content/00-sandbox/**/*', { query: '?raw', import: 'default', eager: true })
+    : {}),
+};
 
 const stripOrder = (dir: string) => dir.replace(/^\d+-/, '');
 
@@ -116,9 +131,11 @@ function orderFiles(meta: StepMeta, files: FileMap): string[] {
 }
 
 function loadCourse(): Course {
-  const courseJson = readJson<{ title: string; angularVersion: string; chapters: string[] }>('/content/course.json');
+  const courseJson = readJson<{ title: string; angularVersion: string; chapters: string[]; devChapters?: string[] }>(
+    '/content/course.json',
+  );
 
-  const chapters = courseJson.chapters.map((chapterDir, chapterIndex): Chapter => {
+  const loadChapter = (chapterDir: string, chapterIndex: number, dev: boolean): Chapter => {
     const info = readJson<{ title: string; description: string; part: number }>(`/content/${chapterDir}/chapter.json`);
     const chapter: Chapter = {
       dir: chapterDir,
@@ -128,6 +145,7 @@ function loadCourse(): Course {
       description: info.description,
       part: info.part,
       steps: [],
+      dev,
     };
 
     const stepDirs = new Set<string>();
@@ -158,9 +176,11 @@ function loadCourse(): Course {
     });
 
     return chapter;
-  });
+  };
 
-  return { title: courseJson.title, angularVersion: courseJson.angularVersion, chapters };
+  const chapters = courseJson.chapters.map((dir, index) => loadChapter(dir, index, false));
+  const devChapters = import.meta.env.DEV ? (courseJson.devChapters ?? []).map((dir, index) => loadChapter(dir, index, true)) : [];
+  return { title: courseJson.title, angularVersion: courseJson.angularVersion, chapters, devChapters };
 }
 
 export const course = loadCourse();
@@ -168,8 +188,18 @@ export const course = loadCourse();
 /** Все шаги курса подряд — для кнопок «Назад/Далее» через границы глав */
 export const allSteps: Step[] = course.chapters.flatMap((chapter) => chapter.steps);
 
+/** Шаги служебных глав: открываются по ссылке и из оглавления, но не по «Назад / Далее» */
+const devSteps: Step[] = course.devChapters.flatMap((chapter) => chapter.steps);
+
 export function findStep(chapterSlug?: string, stepSlug?: string): Step | undefined {
-  return allSteps.find((step) => step.chapter.slug === chapterSlug && step.slug === stepSlug);
+  return [...allSteps, ...devSteps].find((step) => step.chapter.slug === chapterSlug && step.slug === stepSlug);
+}
+
+/** Соседние шаги для «Назад / Далее»: в служебной главе — только внутри неё */
+export function neighbours(step: Step): { prev?: Step; next?: Step } {
+  const list = step.chapter.dev ? step.chapter.steps : allSteps;
+  const index = list.indexOf(step);
+  return { prev: list[index - 1], next: list[index + 1] };
 }
 
 export function stepPath(step: Step): string {
@@ -178,5 +208,5 @@ export function stepPath(step: Step): string {
 
 /** «02-templates/02-property-binding» → шаг; используется для ссылок `step:` в markdown */
 export function findStepByDir(dir: string): Step | undefined {
-  return allSteps.find((step) => step.dir === dir);
+  return [...allSteps, ...devSteps].find((step) => step.dir === dir);
 }

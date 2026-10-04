@@ -1,5 +1,10 @@
 {
   "title": "Angular",
   "angularVersion": "22.2.1",
-  "chapters": ["00-sandbox"]
+  "chapters": [
+    "01-first-app"
+  ],
+  "devChapters": [
+    "00-sandbox"
+  ]
 }

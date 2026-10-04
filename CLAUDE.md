@@ -43,7 +43,7 @@
 ```
 CLAUDE.md
 docs/                 — документация проекта (этот контекст)
-content/              — уроки курса (см. lesson-format.md); сейчас только временная глава 00-sandbox
+content/              — уроки курса (см. lesson-format.md); 00-sandbox — служебная глава (devChapters)
 src/                  — код платформы (Vite + React + TS), основа — платформа ../pixi-js
   compiler/           — веб-воркер компиляции кода ученика
   editor/ preview/ lesson/ app/ content/ progress/
@@ -54,6 +54,7 @@ public/assets/        — обложки игр (scripts/build-covers.mjs), CRED
 public/vendor/, public/preview.html — генерирует scripts/copy-vendor.mjs (не в git)
 scripts/              — copy-vendor, validate-content, build-covers
 tools/e2e/            — проверки в headless Chrome (lib, run-dir, run-chapter, exp, checks/)
+tools/authoring/      — генераторы кода шагов глав (ch01-gen.py)
 spikes/jit-preview/   — первый прототип (только для справки)
 ```
 
@@ -71,7 +72,7 @@ spikes/jit-preview/   — первый прототип (только для с�
 
 ## Текущий статус
 
-Этапы 0, 0.5 и 1 готовы: платформа работает, проверена автотестами в dev и в продакшен-сборке. Уроков пока нет — только временная глава `00-sandbox` (мини-магазин). **Следующий шаг — этап 2: глава 1 «Первое приложение».** Что делать — в конце `docs/roadmap.md` («Следующий шаг»), технический долг — там же. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
+Платформа готова (этапы 0, 0.5, 1). **Глава 1 «Первое приложение» написана** (7 шагов, все утверждения проверены запуском). Песочница `00-sandbox` — служебная глава (`devChapters`), только для проверок платформы. **Следующий шаг — глава 2 «Шаблоны и привязки»**: что делать — в конце `docs/roadmap.md`, состояние кода магазина — в `docs/authoring-process.md`, «Фактическое состояние». Перед продолжением прочитайте `docs/authoring-process.md` целиком.
 
 ## Пользователь и тон работы
 

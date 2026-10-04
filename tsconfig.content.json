@@ -16,5 +16,8 @@
     "isolatedModules": true,
     "types": []
   },
-  "include": ["content/**/*.ts"]
+  "include": ["content/**/*.ts"],
+  // Шаги с намеренно сломанным стартом (frontmatter `brokenStart: true`): ошибки в нём — часть урока.
+  // Валидатор проверяет, что каждый такой шаг перечислен здесь
+  "exclude": ["content/01-first-app/06-debugging/start/**"]
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { Navigate, useParams } from 'react-router';
-import { allSteps, findStep, type FileMap, type Step } from '../content/course';
+import { findStep, neighbours, type FileMap, type Step } from '../content/course';
 import { CodeEditor } from '../editor/CodeEditor';
 import { compileStep } from '../compiler';
 import { collectDiagnostics, disposeModels, formatEditor, readModels, refreshDiagnostics, syncModels } from '../editor/monaco';
@@ -48,9 +48,7 @@ function StepWorkspace({ step }: { step: Step }) {
 
   const timers = useRef<{ save?: number; autorun?: number }>({});
 
-  const index = allSteps.indexOf(step);
-  const prev = allSteps[index - 1];
-  const next = allSteps[index + 1];
+  const { prev, next } = neighbours(step);
 
   const runCode = useCallback(async () => {
     window.clearTimeout(timers.current.autorun);
