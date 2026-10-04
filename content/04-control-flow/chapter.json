@@ -1,0 +1,5 @@
+{
+  "title": "Управляющие блоки",
+  "description": "@if, @for и track, переменные цикла, @empty, @switch, ng-container и ng-template. Каталог «Хода конём» с поиском, фильтром и сортировкой.",
+  "part": 1
+}

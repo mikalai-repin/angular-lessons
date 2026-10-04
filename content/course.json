@@ -4,7 +4,8 @@
   "chapters": [
     "01-first-app",
     "02-templates",
-    "03-signals"
+    "03-signals",
+    "04-control-flow"
   ],
   "devChapters": [
     "00-sandbox"

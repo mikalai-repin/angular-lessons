@@ -155,6 +155,7 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **Генератор главы перезаписывает десятки файлов** — Vite шлёт волну HMR-обновлений, и первая проверка сразу после генерации может упасть по таймауту навигации или без iframe превью. Подождать и повторить.
 - **Литеральные типы из функций**: `linkedSignal(() => (cond ? 0 : 1))` и `computed` выводят тип `0 | 1`, и `update((q) => q + 1)` — TS2322. Указывать тип: `linkedSignal<number>(…)`. У `signal(0)` тип расширяется до `number`.
 - **`exp.mjs`**: строки `console.log` самого сценария печатаются сразу, а консоль страницы — в конце; порядок между ними по выводу не восстановить. Нужен порядок — пишите метки в консоль страницы (`page.evaluate(() => console.log(…))`).
+- **Prettier раскрывает `@case (…) { Текст }` на три строки** — в тексте урока фрагмент можно дать компактно и предупредить, что после «Формат» он станет длиннее.
 - **Ширина ASCII-схем в тексте урока — не больше 46 символов**: панель урока при окне 1440 px показывает около 49 символов моноширинного блока, остальное уходит в горизонтальную прокрутку. Код и вывод консоли могут быть шире.
 - **Проверки AOT в scratchpad**: TypeScript 6 требует `rootDir` в `tsconfig.json` папки для `ngc`, если исходники в `src/` (TS5011).
 
@@ -217,6 +218,25 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 Код магазина на конец главы 3 (`content/03-signals/09-signal-graph/start/` без `signal-graph.ts`): `app.ts` — `gameIndex`, `gamesCount`, `computed` `game`/`soldOut`/`discount`, `linkedSignal` `quantity`, `cart: signal<CartItem[]>`, `computed` `cartCount`/`cartTotal`/`cartSummary`/`inCart`/`available`/`deliveryLeft`, эффект с `untracked` в конструкторе, методы `showPrevious`/`showNext`/`decreaseQuantity`/`increaseQuantity`/`addToCart`/`removeFromCart`/`clearCart`/`search`; `app.html` — шапка «В корзине: N · S ₽», поиск, переключатель `.pager`, карточка с `.actions` (−, N, +, «В корзину»), «Уже в корзине: N шт. Убрать», мини-корзина `.mini-cart` (список строкой, итог, доставка через пары `[hidden]`, «Очистить»); `core/models.ts` — `Game`, `CartItem`; `core/games-data.ts`, `main.ts`, `app.config.ts`, `styles.css` — без изменений.
 
 Код шагов генерирует `tools/authoring/ch03-gen.py` (в конце — Prettier по коду шагов), проверка взаимодействия — `tools/e2e/checks/ch03-signals.mjs` (в т. ч. эксперименты: формат сигналов в консоли и вывод графа шага 3.9). Все решения проверены `ngc --strictTemplates` — без ошибок и предупреждений.
+
+## Глава 4 «Управляющие блоки» — 8 шагов
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-if | вводный шаг главы; `@if`, `as` (сужение типа в AOT, ловушка с `0`), `@else if` / `@else` — строка наличия (`FEW_LEFT = 5`), все `[hidden]` → `@if` (кроме «Ищем»), `@if` против `[hidden]`; legacy `*ngIf`, миграция `control-flow` | custom: решение 3.8, `app.css` со стилями всей главы |
+| 02-for | каталог-сетка `@for (game of games; track game.id)`, зачем `track`, `@let` и `@if` внутри `@for`; legacy `*ngFor` + `trackBy` | custom: из `app.ts` убраны сигналы открытой игры и `linkedSignal`, `games = GAMES`, `addToCart(game)`, `inCart` — `Map`; в `app.html` TODO на месте каталога, мини-корзина наверху |
+| 03-for-variables | строки корзины `@for (item of cart(); track item.game.id)`, `$index` (номер), `$even` («зебра»), таблица переменных, `let i = $index`; `changeQuantity`, `removeFromCart` | решение 02 |
+| 04-empty | `query` + `visibleGames` (название и теги), `(input)="query.set(…)"`, `@empty`; «Ищем» и `search()` удалены | решение 03 |
+| 05-switch | бейдж категории `@switch` с пятью `@case` и `@default never;`, объединение `@case`, словарь `Record` как альтернатива; legacy `ngSwitch` | решение 04 |
+| 06-ng-template | обзор (`noSolution`): `<ng-container>`, `<ng-template>` + `NgTemplateOutlet` (`priceTpl`, `let-game`, `$implicit`), `let-` — `any`; блоки — тоже шаблоны | решение 05 |
+| 07-practice | практикум: «Только в наличии», сортировка (`SortKey`, `changeSort`), «Сбросить фильтры» с `[value]`/`[checked]`; «Итоги главы» | custom: TODO в `app.ts` и `app.html` |
+| 08-track | наблюдатель `dom-watch.ts` (`MutationObserver`: создано / перемещено / удалено / тексты), `track game.id` / `$index` / копии + `track game` (NG0956) / `game.category` (NG0955), `ɵɵrepeaterCreate`, алгоритм `reconcile` | custom: решение 07 + `dom-watch.ts` (`noSolution`) |
+
+Отличия от `course-plan.md`: «Нумерация, разделители» в 4.3 — нумерация и «зебра» строк корзины; 4.6 — шаг без задания (только эксперименты).
+
+Код магазина на конец главы 4 (`content/04-control-flow/08-track/start/` без `dom-watch.ts`): `app.ts` — константы `FREE_DELIVERY_FROM`, `FEW_LEFT`, тип `SortKey`; сигналы `query`, `inStockOnly`, `sortBy`, `computed` `visibleGames` (поиск по названию и тегам, фильтр, сортировка копии), `fewLeft`, `cart`, `cartCount`, `cartTotal`, `cartSummary` (только для эффекта), `deliveryLeft`, `inCart` (`Map` id → количество), эффект-лог корзины; методы `addToCart(game)`, `changeQuantity(item, delta)`, `removeFromCart(item)`, `clearCart`, `changeSort`, `resetFilters`. `app.html` — шапка, поиск с `[value]`, мини-корзина (`@if`, строки `@for` с `$index`/`$even`, итог, доставка `@if`/`@else`), фильтры, сетка `.grid` с плитками `.tile` (бейдж `@switch`, цена `@if … as`, наличие `@if`/`@else if`, «В корзине: N шт.»), `@empty` со сбросом. `core/models.ts`, `core/games-data.ts`, `main.ts`, `app.config.ts`, `styles.css` — без изменений.
+
+Код шагов генерирует `tools/authoring/ch04-gen.py`, проверка взаимодействия — `tools/e2e/checks/ch04-control-flow.mjs` (в т. ч. эксперимент шага 8 с наблюдателем). Все решения проверены `ngc --strictTemplates` — без ошибок и предупреждений.
 
 ## Песочница
 

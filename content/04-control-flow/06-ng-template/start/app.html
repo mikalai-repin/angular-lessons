@@ -1,0 +1,96 @@
+<header class="header">
+  <span class="logo">♞ Ход конём</span>
+  <span class="cart">В корзине: {{ cartCount() }} · {{ cartTotal() }} ₽</span>
+</header>
+<main class="page">
+  <h1>Магазин настольных игр</h1>
+  <input #searchBox class="search" type="search" placeholder="Найти игру" (input)="query.set(searchBox.value)" />
+
+  @if (cart().length > 0) {
+    <section class="mini-cart">
+      <h2>Корзина</h2>
+      @for (item of cart(); track item.game.id) {
+        <div class="cart-row" [class.even]="$even">
+          <span class="cart-row-title">{{ $index + 1 }}. {{ item.game.title }}</span>
+          <button
+            class="icon-button"
+            aria-label="Убрать одну"
+            [disabled]="item.quantity === 1"
+            (click)="changeQuantity(item, -1)"
+          >
+            −
+          </button>
+          <span>{{ item.quantity }}</span>
+          <button
+            class="icon-button"
+            aria-label="Добавить ещё"
+            [disabled]="item.quantity >= item.game.inStock"
+            (click)="changeQuantity(item, 1)"
+          >
+            +
+          </button>
+          <span class="cart-row-sum">{{ item.game.price * item.quantity }} ₽</span>
+          <button class="icon-button" aria-label="Убрать из корзины" (click)="removeFromCart(item)">×</button>
+        </div>
+      }
+      <p>
+        <b>Итого: {{ cartTotal() }} ₽</b>
+      </p>
+      @if (deliveryLeft() > 0) {
+        <p class="muted">До бесплатной доставки: {{ deliveryLeft() }} ₽</p>
+      } @else {
+        <p class="muted">Доставка бесплатная</p>
+      }
+      <button class="link-button" (click)="clearCart()">Очистить корзину</button>
+    </section>
+  }
+
+  <div class="grid">
+    @for (game of visibleGames(); track game.id) {
+      @let inCartCount = inCart().get(game.id) ?? 0;
+      <article class="tile" [class.sold-out]="game.inStock === 0">
+        <img class="tile-cover" [src]="game.cover" [alt]="game.title" />
+        <span class="category">
+          @switch (game.category) {
+            @case ('family') {
+              Семейная
+            }
+            @case ('strategy') {
+              Стратегия
+            }
+            @case ('party') {
+              Для компании
+            }
+            @case ('cooperative') {
+              Кооперативная
+            }
+            @case ('kids') {
+              Детская
+            }
+            @default never;
+          }
+        </span>
+        <h2 class="tile-title">{{ game.title }}</h2>
+        <p class="price">
+          {{ game.price }} ₽
+          @if (game.oldPrice; as oldPrice) {
+            <s class="old-price">{{ oldPrice }} ₽</s>
+          }
+        </p>
+        @if (game.inStock === 0) {
+          <p class="stock stock-out">Нет в наличии</p>
+        } @else if (game.inStock <= fewLeft) {
+          <p class="stock stock-few">Осталось {{ game.inStock }} шт.</p>
+        } @else {
+          <p class="stock stock-ok">В наличии</p>
+        }
+        <button class="button" [disabled]="inCartCount >= game.inStock" (click)="addToCart(game)">В корзину</button>
+        @if (inCartCount > 0) {
+          <p class="in-cart muted">В корзине: {{ inCartCount }} шт.</p>
+        }
+      </article>
+    } @empty {
+      <p class="empty muted">Ничего не найдено по запросу «{{ query() }}»</p>
+    }
+  </div>
+</main>

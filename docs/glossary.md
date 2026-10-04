@@ -46,6 +46,9 @@
 | template statement | обработчик в шаблоне | `(click)="add()"` |
 | template reference variable | ссылка на элемент в шаблоне | `#input` |
 | control flow block | управляющий блок | `@if`, `@for`, `@switch` |
+| track expression | выражение отслеживания | `track game.id` в `@for` |
+| embedded view / template | встроенное представление / шаблон | `<ng-template>`, тело блока |
+| exhaustive check | проверка полноты | `@default never;` |
 | deferrable view | отложенный блок | `@defer` |
 | trigger | триггер | `on viewport` |
 | content projection | проекция содержимого | `<ng-content>` |
