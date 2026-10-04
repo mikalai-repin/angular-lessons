@@ -109,6 +109,12 @@ export default async ({ page, pageText, navigate, wait }) => {
 | Половинка звезды по `event.offsetX < target.offsetWidth / 2` (гл. 5) | У строчного `<span>` в строчном хосте Chrome даёт `offsetX` не от элемента (84 при ширине 20). В чистом превью проверялось решение шага 9, где хост уже `inline-flex`, — ошибку нашла `ch05-components.mjs` в шаге 4. Заменено на `clientX - getBoundingClientRect().left` |
 | `@switch (game().category)` с `@default never;` после перехода на сигнальный вход (гл. 5) | JIT молчит, AOT — TS2322: сужение не работает для вызова функции. Нужен `@let category = game().category;` |
 | «Запасное содержимое `<ng-content>` покажется у карточек без стикеров» (гл. 5) | Не покажется: блоки `@if` попадают в слот и с ложным условием. Видно только у компонента совсем без содержимого |
+| «Эффект с `viewChildren(GameCard)` срабатывает на каждую букву поиска» (гл. 6) | Только когда меняется набор карточек: «кот» — две строки (6 и 1), а не три |
+| «Компонент проверяется, когда его родитель проверяется и …» (черновик 6.9) | Противоречит тику таймера: `Countdown` обновляется без проверки предков (сигнал + `markAncestorsForTraversal`). Правило переписано без «родитель проверяется» |
+| «Для `ngOnChanges` компилятор добавляет обёртку» (черновик 6.7) | Делает рантайм: `registerPreOrderHooks` смотрит прототип, `NgOnChangesFeatureImpl` подменяет `setInput`, прошлые значения — в `__ngSimpleChanges__` |
+| «До Angular 22 стратегией по умолчанию была `Default`» (черновик 6.9) | Версию перехода по исходникам не подтвердить — оставлено проверенное: в 22 `Default` — `@deprecated` синоним `Eager` |
+| `checks/ch06`: «каждую секунду две строки `Проверены: Countdown`» | Консоль платформы сворачивает одинаковые строки подряд в одну со счётчиком (`.console-count`). Тексты шагов 4 и 9 предупреждают об этом |
+| Горячая клавиша «/» для поиска (замысел 6.2) | `keydown./` зависит от раскладки: в русской «/» набирается иначе. Горячую клавишу не делали — фокус только после сброса фильтров |
 
 Вывод из курса PixiJS: **не доверяйте себе**. Если утверждение нельзя проверить, лучше его не писать.
 
@@ -167,6 +173,11 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **Щелчки в iframe платформы**: `page.mouse.click` по координатам `boundingBox()` элемента внутри iframe в `checks/*` ненадёжен — используйте `elementHandle.click({ offset })`.
 - **Сигнальный вход и `@default never;`**: после замены `game` на `game()` в шаблоне с `@switch` нужна `@let` — иначе ошибка только в AOT.
 - **Отдельный скрипт с `launch()` из `tools/e2e/lib.mjs`, запущенный не как `checks/*.mjs`**, у автора зависал без вывода; диагностику удобнее встроить в проверку главы.
+- **Консоль платформы сворачивает одинаковые строки подряд** в одну со счётчиком повторов (`.console-count`). Эксперименты «смотрите, сколько раз напечаталось» описывать через счётчик; в `checks/*` читать `.console-count`. В `exp.mjs` (чистое превью) строки не сворачиваются.
+- **Эксперименты с правкой кода — копией шага в scratchpad**: скрипт вида `mk.py <имя> <папка шага> файл 'старое' 'новое' …` (копия + замены с `assert`) и `exp.mjs` по копии. Так проверены все эксперименты главы 6.
+- **Порядок фаз после отрисовки действует между компонентами**: замер в `earlyRead` одного компонента идёт раньше `afterNextRender` без фазы (`mixedReadWrite`) другого. Если элемент открывает/показывает чужой `afterNextRender` (`showModal()`), замеряйте в `read`.
+- **`IntersectionObserver` сообщает об изменении видимости**: если после новой порции элемент остаётся видимым, повторного вызова нет (проверено: порция 3, окно 500 × 1400 — застряло на 9). Кнопка «Показать ещё» — запасной путь.
+- **Журнал проверок компонентов** — `ng.ɵsetProfiler` (только dev): помощник `cd-log.ts` шага 6.9. Пригодится в следующих главах «под капотом».
 
 # Фактическое состояние
 
@@ -267,6 +278,26 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 Код магазина на конец главы 5 (`content/05-components/09-practice/solution/` — старт шага 10): `app.ts` — `FREE_DELIVERY_FROM`, `HIT_RATING`, `SortKey`; сигналы `query`, `inStockOnly`, `minRating`, `sortBy`, `computed` `visibleGames` (с рейтингом), `hitRating`, `cart`, `cartCount`, `cartTotal`, `cartSummary`, `deliveryLeft`, `inCart` (`Map`), эффект-лог; методы `addToCart(game)`, `setQuantity(item, quantity)`, `removeFromCart`, `clearCart`, `changeSort`, `resetFilters`; `imports: [GameCard, Rating, Quantity]`. `app.html` — шапка, поиск, мини-корзина (строки с `<app-quantity min="1" [max] [value] (valueChange)>`), фильтры (флажок, «Рейтинг от» `<app-rating [(value)]="minRating">`, сортировка), сетка `<app-game-card [game] [inCart] (add)>` со стикерами `[sticker]`. `shared/game-card/` — `GameCard` (`game` обязательный, `inCart`, `add`, `host` с `role` и `sold-out`, слот стикеров, `<app-rating readonly>`, `FEW_LEFT`), стили через `:host`. `shared/rating/` — `Rating` (`value` модель, `readonly` с `booleanAttribute`, половинки звёзд, `host` с ARIA и стрелками). `shared/quantity/` — `Quantity`. `core/*`, `main.ts`, `app.config.ts`, `styles.css` — без изменений.
 
 Код шагов генерирует `tools/authoring/ch05-gen.py` (в конце — Prettier по `.ts`, `.html`, `.css`), проверка взаимодействия — `tools/e2e/checks/ch05-components.mjs`. Все решения проверены `ngc --strictTemplates` — без ошибок и предупреждений.
+
+## Глава 6 «Жизненный цикл и DOM» — 9 шагов
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-lifecycle | вводный шаг главы; окно «Подробнее» (`@if` создаёт/уничтожает `GameDetails`), выход `open` у карточки, схема жизни компонента; эксперименты: NG0950 в конструкторе, `inject(ElementRef)` — хост пуст и не в документе, эффект — до обновления шаблона, NG0203; legacy — DI через конструктор | custom: решение 5.9 + готовый `GameDetails` (`<dialog open>` + `.backdrop`), стили `.title-button`, TODO в карточке и `App` |
+| 02-view-child | `viewChild.required<ElementRef<HTMLInputElement>>('searchBox')`, фокус после «Сбросить фильтры» (без него — `BODY`); `viewChildren` — сигнал, видит только свой шаблон (1 `Rating` из 13), `read: ElementRef`, NG0951; legacy `@ViewChild`/`QueryList` | решение 01 |
+| 03-after-next-render | `<dialog>` + `showModal()` в `afterNextRender`, `(close)`, `::backdrop`; эксперименты: конструктор (NG0951), `effect` (работает, но заголовок пуст), `afterEveryRender`; SSR; фазы — `deep` | решение 02 |
+| 04-destroy-ref | `Countdown` (`shared/countdown/`): сигнал `now` + `setInterval` + `DestroyRef.onDestroy`; эксперимент «три открытия — три таймера»; что убирать самим, `host`-слушатели снимаются; `onCleanup` против `DestroyRef`; legacy `ngOnDestroy` | custom: заготовка `countdown.ts` с готовыми `untilMidnight`/`formatTime`, готовые `.html`/`.css`, TODO в окне |
+| 05-content-children | `Tabs`/`Tab` (`shared/tabs/`): `contentChildren(Tab)`, `Tab.active` — сигнал, который меняет эффект `Tabs`, `[hidden]` у хоста; вкладка «Характеристики» (`<dl class="specs">`); эксперименты: вкладка в `@if`, в `<div>` (`descendants`), `contentChild`, `viewChildren(Tab)` = 0; legacy `@ContentChildren` | custom: заготовки `tabs.ts`, `tabs.html`, `tab.ts`, готовые `tabs.css` (с `.ink`), `tab.html`; `.specs` в `game-details.css` |
+| 06-after-render-effect | полоска под вкладкой: `viewChildren('tabButton')`, сигнал `ink`, `afterRenderEffect({ read })`; фазы; эксперименты: `earlyRead` (0 при открытии), `effect` (отставание на отрисовку: 86/110 вместо 83/116), счёт запусков против `afterEveryRender` | решение 05 |
+| 07-lifecycle-hooks | `ngOnChanges` (`SimpleChanges<T>`), `ngOnInit`, `ngAfterViewInit`, `ngOnDestroy` — порядок по логу вместе с `effect`/`afterNextRender`/`DestroyRef`; хуки против функций (`noSolution`) | решение 06 |
+| 08-practice | практикум: `LoadMore` (`shared/load-more/`, `inject(ElementRef)`, `IntersectionObserver` в `afterNextRender`, `DestroyRef`), `PAGE_SIZE = 6`, `shownCount = linkedSignal<Game[], number>`, `shownGames`, `showMore`; «Итоги главы» | custom: заготовки `load-more.ts`/`.html`, готовый `.css`, TODO в `app.ts`/`app.html` |
+| 09-change-detection | что такое проверка, дерево представлений, журнал `cd-log.ts` (`ng.ɵsetProfiler`): «В корзину», «+», тик таймера, вкладка, `Eager`; планировщик; legacy `Default`/zone.js/`markForCheck` (`noSolution`) | custom: решение 08 + `cd-log.ts`, `main.ts` вызывает `logChangeDetection()` |
+
+Отличия от `course-plan.md`: шаг «Когда что происходит» сразу добавляет окно «Подробнее» (иначе в главе негде показать создание и уничтожение компонента и работу с DOM); «Фокус в поле поиска» — после сброса фильтров, а не при запуске (превью перезапускается при каждой правке кода, и автофокус мог бы забирать фокус у редактора — не проверялось, просто не стали рисковать); «Замер высоты блока» — замер кнопки вкладки для полоски (шаг 6), отдельным шагом после вкладок; вкладки `Tabs`/`Tab` — в шаге 5, а практикум — «Показать ещё» с `IntersectionObserver`.
+
+Код магазина на конец главы 6 (`content/06-lifecycle/08-practice/solution/` — старт шага 09 без `cd-log.ts`): `app.ts` — к главе 5 добавлены `PAGE_SIZE`, `searchBox` (`viewChild.required`, фокус в `resetFilters`), `selectedGame`, `shownCount` (`linkedSignal` от `visibleGames`), `shownGames`, `showMore`; `imports: [GameCard, GameDetails, LoadMore, Rating, Quantity]`. `app.html` — карточки по `shownGames()` с `(open)`, `<app-load-more>` под сеткой, `@if (selectedGame(); as game)` с `<app-game-details>` в конце `<main>`. `shared/game-card/` — название-кнопка `.title-button` и выход `open`. `shared/game-details/` — `GameDetails` (`<dialog #dialog>`, `showModal()` в `afterNextRender`, `(close)` → `closed`, цена, `<app-countdown>` для скидки, вкладки «Описание»/«Характеристики»). `shared/countdown/` — `Countdown`. `shared/tabs/` — `Tabs` (`contentChildren`, эффект `active`, полоска через `afterRenderEffect`) и `Tab`. `shared/load-more/` — `LoadMore`. `shared/rating/`, `shared/quantity/`, `core/*`, `main.ts`, `app.config.ts`, `styles.css`, `app.css` — без изменений.
+
+Код шагов генерирует `tools/authoring/ch06-gen.py` (в конце — Prettier), проверка взаимодействия — `tools/e2e/checks/ch06-lifecycle.mjs`. Все решения и заготовки проверены `ngc --strictTemplates` — без ошибок и предупреждений.
 
 ## Песочница
 

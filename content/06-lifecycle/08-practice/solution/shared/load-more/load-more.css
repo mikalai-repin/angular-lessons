@@ -1,0 +1,6 @@
+/* Кнопка по центру под сеткой каталога */
+:host {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}

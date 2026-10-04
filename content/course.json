@@ -6,7 +6,8 @@
     "02-templates",
     "03-signals",
     "04-control-flow",
-    "05-components"
+    "05-components",
+    "06-lifecycle"
   ],
   "devChapters": [
     "00-sandbox"

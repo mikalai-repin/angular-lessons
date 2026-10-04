@@ -84,12 +84,20 @@
 | input transform | преобразование входа | `transform: booleanAttribute` |
 | alias | псевдоним (входа, выхода) | `alias: 'x'` |
 | data flow | поток данных | «данные вниз — входами, события вверх — выходами» |
-| query | запрос (к представлению) | `viewChild()` |
+| view query | запрос к представлению | `viewChild()`, `viewChildren()` — элементы и компоненты своего шаблона |
+| content query | запрос к содержимому | `contentChild()`, `contentChildren()` — то, что родитель вложил в компонент |
+| host element | хост-элемент | элемент, на котором «живёт» компонент: `<app-game-card>` |
 | view | представление | |
 | view tree | дерево представлений | |
 | component tree | дерево компонентов | |
-| lifecycle hook | хук жизненного цикла | |
+| lifecycle | жизненный цикл | создание → проверки → уничтожение |
+| lifecycle hook | хук жизненного цикла | `ngOnInit`, `ngOnChanges`, `ngOnDestroy` |
 | render | отрисовка, рендер | |
+| after-render callback | колбэк после отрисовки | `afterNextRender`, `afterEveryRender`, `afterRenderEffect` |
+| render phase | фаза (колбэка после отрисовки) | `earlyRead`, `write`, `mixedReadWrite`, `read` |
+| destroy callback | колбэк уничтожения | `DestroyRef.onDestroy` |
+| modal dialog | модальное окно | `<dialog>` + `showModal()` |
+| profiler | профайлер | `ng.ɵsetProfiler`, Angular DevTools |
 | parent / child component | родительский / дочерний компонент | |
 
 ## Реактивность
@@ -114,6 +122,8 @@
 | change detection | обнаружение изменений | |
 | zoneless | зонлесс (без zone.js) | |
 | dirty | «грязный», помеченный на проверку | |
+| change detection strategy | стратегия обнаружения изменений | `OnPush` (по умолчанию в v22), `Eager` |
+| check (a component) | проверить (компонент) | выполнить блок обновления его шаблона |
 | observable | Observable, поток | имя класса не переводим |
 | subscription | подписка | |
 | operator | оператор | RxJS |

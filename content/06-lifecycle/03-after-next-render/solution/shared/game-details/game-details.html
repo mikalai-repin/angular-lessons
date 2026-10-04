@@ -1,0 +1,21 @@
+<dialog #dialog class="details" (close)="closed.emit()">
+  <button class="close" aria-label="Закрыть" (click)="dialog.close()">×</button>
+  <div class="head">
+    <img class="cover" [src]="game().cover" [alt]="game().title" />
+    <div class="summary">
+      <h2 class="title">{{ game().title }}</h2>
+      <app-rating [value]="game().rating" readonly />
+      <p class="price">
+        {{ game().price }} ₽
+        @if (game().oldPrice; as oldPrice) {
+          <s class="old-price">{{ oldPrice }} ₽</s>
+        }
+      </p>
+      <button class="button" [disabled]="inCart() >= game().inStock" (click)="add.emit()">В корзину</button>
+      @if (inCart() > 0) {
+        <p class="in-cart muted">В корзине: {{ inCart() }} шт.</p>
+      }
+    </div>
+  </div>
+  <p class="description" [innerHTML]="game().description"></p>
+</dialog>
