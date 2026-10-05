@@ -1,6 +1,8 @@
 ---
 title: Зачем внедрение зависимостей
 startFrom: custom
+base: 07-directives-pipes/07-practice
+baseHash: '7d600b7605a6'
 files: [main.ts, core/cart-store.ts, app.ts, app.html, layout/header/header.ts, layout/header/header.html, layout/header/header.css, app.css, shared/game-card/game-card.ts, shared/game-card/game-card.html, shared/game-card/game-card.css, shared/game-details/game-details.ts, shared/game-details/game-details.html, shared/game-details/game-details.css, shared/tabs/tabs.ts, shared/tabs/tabs.html, shared/tabs/tabs.css, shared/tabs/tab.ts, shared/tabs/tab.html, shared/countdown/countdown.ts, shared/countdown/countdown.html, shared/countdown/countdown.css, shared/price-pipe.ts, shared/players-pipe.ts, shared/duration-pipe.ts, shared/plural.ts, shared/tooltip.ts, shared/in-view.ts, shared/lazy-image.ts, shared/load-more/load-more.ts, shared/load-more/load-more.html, shared/load-more/load-more.css, shared/rating/rating.ts, shared/rating/rating.html, shared/rating/rating.css, shared/quantity/quantity.ts, shared/quantity/quantity.html, shared/quantity/quantity.css, core/models.ts, core/games-data.ts, app.config.ts, styles.css]
 focus: core/cart-store.ts
 api: [внедрение зависимостей, зависимость, инжектор, провайдер, глобальная переменная, NG0203]

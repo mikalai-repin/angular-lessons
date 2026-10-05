@@ -23,9 +23,9 @@ function TableOfContents() {
     <details className="toc" ref={detailsRef}>
       <summary>Оглавление</summary>
       <nav className="toc-panel">
-        {[...course.chapters, ...course.devChapters].map((chapter) => (
-          <section key={chapter.slug} className={chapter.dev ? 'toc-dev' : undefined}>
-            <h3>{chapter.dev ? `Для разработки: ${chapter.title}` : `${chapter.index + 1}. ${chapter.title}`}</h3>
+        {course.chapters.map((chapter) => (
+          <section key={chapter.slug}>
+            <h3>{`${chapter.index + 1}. ${chapter.title}`}</h3>
             <ol>
               {chapter.steps.map((step) => (
                 <li key={step.id}>

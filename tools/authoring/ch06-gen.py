@@ -787,7 +787,7 @@ steps = {
 }
 
 # Запись на диск: start/, совпадающий с результатом предыдущего шага, не записывается (см. steps.py)
-write_steps(ROOT, steps)
+write_steps(ROOT, steps, base='05-components/09-practice')
 # Код шагов — в том виде, какой даёт форматирование в редакторе платформы
 opts = ['--print-width', '120', '--single-quote', '--trailing-comma', 'all', '--log-level', 'warn', '--write']
 subprocess.run(['npx', 'prettier', *opts, f'{ROOT}/**/*.ts'], cwd=PROJECT, check=True)

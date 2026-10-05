@@ -1,4 +1,4 @@
-// Проверка интерфейса платформы на песочнице: ошибки TypeScript, сборки и Angular в консоли,
+// Проверка интерфейса платформы на демо-магазине шага 1.1: ошибки TypeScript, сборки и Angular в консоли,
 // схлопывание повторов, адресная строка, вкладка «Сеть», ошибка 500 из переключателя.
 // node tools/e2e/checks/platform.mjs
 import { readFileSync } from 'node:fs';
@@ -18,7 +18,7 @@ const pageErrors = [];
 page.on('pageerror', (e) => pageErrors.push(e.message));
 
 // Код ученика с ошибками подкладываем в сохранённый прогресс — так же, как его сохранил бы редактор
-const files = readDir(`${CONTENT}/00-sandbox/03-errors/start`);
+const files = readDir(`${CONTENT}/01-first-app/01-what-is-angular/start`);
 // Ошибка только в типах: код при этом запускается, и шаблон каталога отрисовывается
 files['catalog/catalog.ts'] = files['catalog/catalog.ts'].replace("signal('')", "signal('')\n  protected wrong: number = 'строка';");
 // Неизвестный элемент внутри @for: Angular повторяет NG0303 для каждой карточки
@@ -27,9 +27,9 @@ files['app.ts'] = files['app.ts'].replace("styleUrl: './app.css'", "styleUrl: '.
 
 await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
 await page.evaluate((code) => {
-  localStorage.setItem('angular-course:v1', JSON.stringify({ steps: { 'sandbox/errors': { code } } }));
+  localStorage.setItem('angular-course:v1', JSON.stringify({ steps: { 'first-app/what-is-angular': { code } } }));
 }, files);
-await page.goto(`${BASE_URL}/sandbox/errors`, { waitUntil: 'networkidle0' });
+await page.goto(`${BASE_URL}/first-app/what-is-angular`, { waitUntil: 'networkidle0' });
 await wait(4000);
 
 const lines = () =>
@@ -56,9 +56,9 @@ expect(
 );
 await page.screenshot({ path: `${OUT}/platform-errors.png` });
 
-// Тот же шаг без ошибок (его старт — решение шага «Поиск»): адресная строка и сеть
+// Тот же шаг без ошибок: адресная строка и сеть
 await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/sandbox/errors`, { waitUntil: 'networkidle0' });
+await page.goto(`${BASE_URL}/first-app/what-is-angular`, { waitUntil: 'networkidle0' });
 await wait(3000);
 // После перезапуска старый iframe может ещё числиться в списке — берём последний
 const frame = () => page.frames().filter((f) => f.url().includes('/app')).at(-1);

@@ -1,5 +1,6 @@
-// Проверка песочницы (и заодно платформы): роутинг в iframe, учебный бэкенд, отмена запросов, ленивая загрузка.
-// node tools/e2e/checks/ch00-sandbox.mjs
+// Проверка среды превью на демо-магазине шага 1.1: роутинг в iframe, учебный бэкенд, отмена запросов,
+// ленивая загрузка. Демо-магазин — единственный код курса с роутером и HTTP до глав 10–11.
+// node tools/e2e/checks/preview.mjs
 import { appUrl, collect, compileDir, CONTENT, launch, navigate, openPreview, pageText, wait } from '../lib.mjs';
 
 const browser = await launch();
@@ -9,7 +10,7 @@ const expect = (ok, message) => {
   if (!ok) failures.push(message);
 };
 
-const compiled = compileDir(`${CONTENT}/00-sandbox/02-search/solution`);
+const compiled = compileDir(`${CONTENT}/01-first-app/01-what-is-angular/start`);
 expect(compiled.errors.length === 0, `сборка без ошибок ${JSON.stringify(compiled.errors)}`);
 
 // Задержка 400 мс: поиск по буквам должен отменять устаревшие запросы

@@ -1,6 +1,8 @@
 ---
 title: Когда что происходит
 startFrom: custom
+base: 05-components/09-practice
+baseHash: 'a1fcb1aca682'
 focus: shared/game-card/game-card.ts
 files: [main.ts, app.ts, app.html, app.css, shared/game-details/game-details.ts, shared/game-details/game-details.html, shared/game-details/game-details.css, shared/game-card/game-card.ts, shared/game-card/game-card.html, shared/game-card/game-card.css, shared/rating/rating.ts, shared/rating/rating.html, shared/rating/rating.css, shared/quantity/quantity.ts, shared/quantity/quantity.html, shared/quantity/quantity.css, core/models.ts, core/games-data.ts, app.config.ts, styles.css]
 api: [жизненный цикл, constructor, 'inject()', ElementRef, NG0950, NG0203]

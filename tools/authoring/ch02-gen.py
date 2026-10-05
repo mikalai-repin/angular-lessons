@@ -380,5 +380,5 @@ steps = {
 # Запись на диск: start/, совпадающий с результатом предыдущего шага, не записывается (см. steps.py)
 from steps import write_steps
 
-write_steps(ROOT, steps)
+write_steps(ROOT, steps, base='01-first-app/07-compiler')
 print('ok')

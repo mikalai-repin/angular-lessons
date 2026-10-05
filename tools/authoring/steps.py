@@ -5,12 +5,15 @@
 # У шага без решения (noSolution) 'solution' нет.
 #
 # На диск write_steps пишет только изменения (так же собирает шаги shared/step-chain.js):
-# - start/ — файлы, которые отличаются от результата предыдущего шага. Если отличий нет, папки start/ нет —
+# - start/ — файлы, которые отличаются от результата предыдущего шага. У первого шага главы предыдущий шаг —
+#   base: шаг прошлой главы, write_steps(root, steps, base='07-directives-pipes/07-practice'). Тогда в lesson.md
+#   первого шага write_steps сам пишет base и baseHash (хеш полного кода базы; его сверяет npm run validate).
+#   Без base (глава 1) start/ первого шага — полный снимок. Если отличий нет, папки start/ нет —
 #   это шаг startFrom: previous; иначе во frontmatter шага нужен startFrom: custom (проверит npm run validate);
 # - solution/ — файлы, которые отличаются от старта шага;
 # - файлы, которые пропали, во frontmatter перечисляются вручную: removedInStart / removedInSolution.
 #   write_steps сверяет их с lesson.md и печатает, чего не хватает.
-import os, re, shutil, subprocess
+import hashlib, os, re, shutil, subprocess
 
 PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -35,14 +38,41 @@ def frontmatter_list(stepdir, key):
     return sorted(s.strip() for s in found.group(1).split(',')) if found else []
 
 
-def write_steps(root, steps):
-    previous = {}
+def files_hash(files):
+    """Хеш набора файлов — тот же алгоритм, что filesHash в scripts/step-files.mjs."""
+    h = hashlib.sha1()
+    for name in sorted(files):
+        h.update(f'{name}\0{files[name]}\0'.encode())
+    return h.hexdigest()[:12]
+
+
+def set_frontmatter(stepdir, values):
+    """Записать поля во frontmatter lesson.md (после startFrom); нет lesson.md — пропустить."""
+    lesson = os.path.join(stepdir, 'lesson.md')
+    if not os.path.exists(lesson):
+        return
+    with open(lesson) as f:
+        text = f.read()
+    match = re.match(r'---\n(.*?)\n---', text, re.S)
+    lines = [l for l in match.group(1).split('\n') if not any(l.startswith(f'{k}:') for k in values)]
+    at = next((i + 1 for i, l in enumerate(lines) if l.startswith('startFrom:')), len(lines))
+    lines[at:at] = [f'{k}: {v}' for k, v in values.items()]
+    with open(lesson, 'w') as f:
+        f.write('---\n' + '\n'.join(lines) + '\n---' + text[match.end():])
+
+
+def write_steps(root, steps, base=None):
+    previous = read_dir(step_dir(f'{PROJECT}/content/{base}/result')) if base else {}
+    first = True
     for step, spec in steps.items():
         stepdir = os.path.join(root, step)
         os.makedirs(stepdir, exist_ok=True)
         full = {kind: read_dir(spec[kind]) if isinstance(spec.get(kind), str) else spec.get(kind)
                 for kind in ('start', 'solution')}
         start, solution = full['start'], full['solution']
+        if first and base:
+            set_frontmatter(stepdir, {'base': base, 'baseHash': f"'{files_hash(previous)}'"})
+        first = False
         own = {
             'start': {n: c for n, c in start.items() if previous.get(n) != c},
             'solution': {n: c for n, c in solution.items() if start.get(n) != c} if solution is not None else {},
@@ -68,7 +98,8 @@ def write_steps(root, steps):
 
 
 def step_dir(path):
-    """Папка с ПОЛНЫМ кодом шага по пути …/<шаг>/start или …/<шаг>/solution.
+    """Папка с ПОЛНЫМ кодом шага по пути …/<шаг>/start, …/<шаг>/solution или …/<шаг>/result (результат шага:
+    решение, а у шага без решения — старт).
 
     В content/ шаг хранит только изменения, поэтому полный код выгружается (scripts/step-files.mjs)
     в tools/e2e/out/steps/<глава>/<шаг>/<start|solution>. Генераторы читают через неё код прошлой главы:

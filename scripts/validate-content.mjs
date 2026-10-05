@@ -8,7 +8,7 @@ import ts from 'typescript';
 import { angularJitApplicationTransform } from '@angular/compiler-cli';
 import { parse as parseYaml } from 'yaml';
 import { compileFiles } from '../shared/compile-core.js';
-import { resolveChapterDir, writeFiles } from './step-files.mjs';
+import { filesHash, readResult, resolveChapterDir, writeFiles } from './step-files.mjs';
 
 const root = join(import.meta.dirname, '..', 'content');
 const checkDir = join(import.meta.dirname, '..', '.content-check');
@@ -32,8 +32,7 @@ function checkOverlay(where, kind, base, own, removed = []) {
   }
 }
 
-// Служебные главы (devChapters, песочница) проверяются так же, как обычные
-for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
+for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
   const chapterPath = join(root, chapterDir);
   if (!existsSync(join(chapterPath, 'chapter.json'))) {
     errors.push(`${chapterDir}: нет chapter.json`);
@@ -67,6 +66,26 @@ for (const chapterDir of [...course.chapters, ...(course.devChapters ?? [])]) {
 
     const startFrom = meta.startFrom ?? 'previous';
     const { own, start, solution } = step;
+    // База первого шага главы — результат шага прошлой главы (base) с хешем (baseHash)
+    if (meta.base !== undefined || meta.baseHash !== undefined) {
+      const baseChapter = String(meta.base ?? '').split('/')[0];
+      if (index !== 0) errors.push(`${where}: base и baseHash бывают только у первого шага главы`);
+      else if (!meta.base || !meta.baseHash) errors.push(`${where}: нужны оба поля — base и baseHash`);
+      else if (course.chapters.indexOf(baseChapter) < 0 || course.chapters.indexOf(baseChapter) >= chapterIndex) {
+        errors.push(`${where}: base ${meta.base} — не шаг одной из предыдущих глав курса`);
+      } else if (!isDir(join(root, meta.base))) {
+        errors.push(`${where}: base ${meta.base} — нет такого шага`);
+      } else {
+        previousResult = readResult(join(root, meta.base));
+        const actual = filesHash(previousResult);
+        if (String(meta.baseHash) !== actual) {
+          errors.push(
+            `${where}: база ${meta.base} изменилась (baseHash ${meta.baseHash}, сейчас ${actual}) — ` +
+              `проверьте, что изменения подходят главе, и перезапустите её генератор`,
+          );
+        }
+      }
+    }
     if (startFrom === 'previous') {
       if (index === 0) errors.push(`${where}: первый шаг главы должен иметь startFrom: custom`);
       if (isDir(join(step.path, 'start'))) errors.push(`${where}: startFrom: previous, но есть папка start/ — нужен startFrom: custom (или удалите её)`);

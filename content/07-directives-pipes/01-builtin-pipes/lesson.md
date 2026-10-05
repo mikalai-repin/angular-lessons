@@ -1,6 +1,8 @@
 ---
 title: Встроенные пайпы
 startFrom: custom
+base: 06-lifecycle/08-practice
+baseHash: 'f5a7a9bafe0a'
 focus: app.config.ts
 files: [main.ts, app.ts, app.html, app.css, app.config.ts, shared/game-card/game-card.ts, shared/game-card/game-card.html, shared/countdown/countdown.ts, shared/countdown/countdown.html, shared/game-details/game-details.ts, shared/game-details/game-details.html, shared/game-details/game-details.css, shared/game-card/game-card.css, shared/rating/rating.ts, shared/rating/rating.html, shared/rating/rating.css, shared/quantity/quantity.ts, shared/quantity/quantity.html, shared/quantity/quantity.css, shared/tabs/tabs.ts, shared/tabs/tabs.html, shared/tabs/tabs.css, shared/tabs/tab.ts, shared/tabs/tab.html, shared/countdown/countdown.css, shared/load-more/load-more.ts, shared/load-more/load-more.html, shared/load-more/load-more.css, core/models.ts, core/games-data.ts, styles.css]
 api: [пайп, currency, percent, date, number, json, slice, LOCALE_ID, registerLocaleData, NG0701]

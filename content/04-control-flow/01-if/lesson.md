@@ -1,6 +1,8 @@
 ---
 title: '@if'
 startFrom: custom
+base: 03-signals/08-practice
+baseHash: '4ffe3c758df4'
 focus: app.html
 files: [main.ts, app.ts, app.html, app.css, core/models.ts, core/games-data.ts, app.config.ts, styles.css]
 api: ['@if', '@else if', '@else', 'as']

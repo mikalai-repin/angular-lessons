@@ -1,6 +1,8 @@
 ---
 title: Свой компонент
 startFrom: custom
+base: 04-control-flow/07-practice
+baseHash: '7eb90e81dd18'
 focus: shared/game-card/game-card.ts
 files: [main.ts, app.ts, app.html, app.css, shared/game-card/game-card.ts, shared/game-card/game-card.html, shared/game-card/game-card.css, core/models.ts, core/games-data.ts, app.config.ts, styles.css]
 api: ['@Component', selector, imports, NG0304]

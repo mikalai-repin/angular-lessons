@@ -1,6 +1,7 @@
 # Генератор кода шагов главы 1: общие куски — константы, шаги — их комбинации.
 # Запуск: python3 tools/authoring/ch01-gen.py — ПЕРЕЗАПИСЫВАЕТ start/ и solution/ всех шагов главы 1.
-# Шаг 01 копирует демо-магазин из песочницы (content/00-sandbox/02-search/solution).
+# Шаг 01 — демо-магазин (роутинг, учебный бэкенд, поиск): его код ведётся руками в start/ шага 01, генератор
+# только переписывает его как есть. На нём же работают проверки платформы (checks/platform.mjs, checks/preview.mjs).
 # После запуска: npm run validate, проверка Prettier (см. docs/authoring-process.md).
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
 import os
@@ -9,8 +10,8 @@ ROOT = '/Users/mr/Desktop/Experimental/angular-learn/content/01-first-app'
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from steps import step_dir
-# Полный код решения песочницы (в content/ шаг хранит только изменения)
-SANDBOX = step_dir('/Users/mr/Desktop/Experimental/angular-learn/content/00-sandbox/02-search/solution')
+# Демо-магазин шага 01 — читаем его же полный старт
+DEMO = step_dir(f'{ROOT}/01-what-is-angular/start')
 
 MAIN_BASIC = """import { bootstrapApplication } from '@angular/platform-browser';
 import { App } from './app';
@@ -118,7 +119,12 @@ STYLES_CSS = """/* Глобальные стили магазина: дейст�
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   color: var(--text);
   background: #fff;
 }
@@ -177,7 +183,7 @@ def files_final():
             'app.config.ts': CONFIG, 'styles.css': STYLES_CSS}
 
 steps = {
-    '01-what-is-angular': {'start': SANDBOX},
+    '01-what-is-angular': {'start': DEMO},
     '02-first-component': {
         'start': {'main.ts': MAIN_BASIC, 'app.ts': APP_NO_DECORATOR},
         'solution': {'main.ts': MAIN_BASIC, 'app.ts': APP_INLINE},

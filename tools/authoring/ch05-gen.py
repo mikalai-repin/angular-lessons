@@ -865,7 +865,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from steps import write_steps
 
-write_steps(ROOT, steps)
+write_steps(ROOT, steps, base='04-control-flow/07-practice')
 # Код шагов — в том виде, какой даёт форматирование в редакторе платформы
 opts = ['--print-width', '120', '--single-quote', '--trailing-comma', 'all', '--log-level', 'warn', '--write']
 subprocess.run(['npx', 'prettier', *opts, f'{ROOT}/**/*.ts'], cwd=PROJECT, check=True)

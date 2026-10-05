@@ -10,8 +10,5 @@
     "06-lifecycle",
     "07-directives-pipes",
     "08-services-di"
-  ],
-  "devChapters": [
-    "00-sandbox"
   ]
 }

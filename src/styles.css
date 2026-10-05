@@ -1090,12 +1090,6 @@ button {
   }
 }
 
-/* Служебные главы (devChapters) в оглавлении — только в режиме разработки */
-.toc-dev {
-  opacity: 0.7;
-  border-top: 1px dashed var(--border);
-}
-
 .empty-course {
   padding: 32px;
   color: var(--text-muted);

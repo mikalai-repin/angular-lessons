@@ -1,15 +1,17 @@
 // Полный код шагов на диске (Node). Шаг хранит только изменения: start/ — поверх результата предыдущего шага
-// (только у startFrom: custom), solution/ — поверх старта, удаления — во frontmatter. Собирает шаги
+// (только у startFrom: custom; у первого шага главы — поверх результата шага прошлой главы из `base`),
+// solution/ — поверх старта, удаления — во frontmatter. Собирает шаги
 // shared/step-chain.js — тот же модуль, что у платформы (src/content/course.ts).
 // Используют валидатор (scripts/validate-content.mjs), браузерные проверки (tools/e2e/lib.mjs) и генераторы глав
 // (tools/authoring/steps.py → step_dir).
 //
 // Выгрузить полный код шага в папку, чтобы посмотреть или прочитать его целиком:
 //   npm run step content/06-lifecycle/05-content-children/solution [папка=tools/e2e/out/step]
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { resolveChapter } from '../shared/step-chain.js';
+import { resolveChapter, stepResult } from '../shared/step-chain.js';
 
 const isDir = (path) => existsSync(path) && statSync(path).isDirectory();
 
@@ -44,15 +46,33 @@ export function chapterSteps(chapterPath) {
     .map((name) => join(chapterPath, name));
 }
 
+// Главы, собранные за этот запуск: глава 8 собирает главу 7 ради базы, та — главу 6 и так далее
+const chapterCache = new Map();
+
 /** Полный код всех шагов главы: [{ path, meta, own: { start, solution }, start, solution }] */
 export function resolveChapterDir(chapterPath) {
+  chapterPath = resolve(chapterPath);
+  if (chapterCache.has(chapterPath)) return chapterCache.get(chapterPath);
   const steps = chapterSteps(chapterPath).map((path) => ({
     path,
     meta: readMeta(path),
     own: { start: readFiles(join(path, 'start')), solution: readFiles(join(path, 'solution')) },
   }));
-  const resolved = resolveChapter(steps.map(({ meta, own }) => ({ meta, ...own })));
-  return steps.map((step, index) => ({ ...step, ...resolved[index] }));
+  const content = dirname(chapterPath);
+  const resolved = resolveChapter(
+    steps.map(({ meta, own }) => ({ meta, ...own })),
+    (ref) => readResult(join(content, ref)),
+  );
+  const result = steps.map((step, index) => ({ ...step, ...resolved[index] }));
+  chapterCache.set(chapterPath, result);
+  return result;
+}
+
+/** Хеш набора файлов — им frontmatter `baseHash` фиксирует базу первого шага главы (тот же алгоритм в steps.py) */
+export function filesHash(files) {
+  const hash = createHash('sha1');
+  for (const name of Object.keys(files).sort()) hash.update(`${name}\0${files[name]}\0`);
+  return hash.digest('hex').slice(0, 12);
 }
 
 function resolveStep(stepPath) {
@@ -69,10 +89,10 @@ export function readStart(stepPath) {
 /** Код, которым шаг заканчивается: решение, а у шага без решения — старт */
 export function readResult(stepPath) {
   const step = resolveStep(stepPath);
-  return step.meta.noSolution ? step.start : step.solution;
+  return stepResult(step.meta, step);
 }
 
-/** Полный код шага по пути …/<шаг>/start или …/<шаг>/solution */
+/** Полный код шага по пути …/<шаг>/start, …/<шаг>/solution или …/<шаг>/result (решение или, у шага без решения, старт) */
 export function readStepDir(dir) {
   const step = resolveStep(dirname(resolve(dir)));
   return basename(dir) === 'start' ? step.start : readResult(step.path);
@@ -91,8 +111,8 @@ export function writeFiles(dir, files) {
 // Запуск из командной строки: выгрузить полный код шага
 if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename)) {
   const [dir, out = 'tools/e2e/out/step'] = process.argv.slice(2);
-  if (!dir || !['start', 'solution'].includes(basename(dir))) {
-    console.error('Использование: npm run step <…/шаг/start | …/шаг/solution> [папка]');
+  if (!dir || !['start', 'solution', 'result'].includes(basename(dir))) {
+    console.error('Использование: npm run step <…/шаг/start | …/шаг/solution | …/шаг/result> [папка]');
     process.exit(1);
   }
   const files = readStepDir(dir);

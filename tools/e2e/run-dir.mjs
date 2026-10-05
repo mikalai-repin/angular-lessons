@@ -1,6 +1,6 @@
 // Запускает код из папки шага в чистом превью: печатает консоль, запросы к бэкенду, текст страницы
 // и сохраняет скриншот.
-// node tools/e2e/run-dir.mjs content/00-sandbox/02-search/solution [адрес=/] [ждатьМс=2000]
+// node tools/e2e/run-dir.mjs content/01-first-app/01-what-is-angular/start [адрес=/] [ждатьМс=2000]
 import { basename, dirname, resolve } from 'node:path';
 import { appUrl, compileDir, launch, openPreview, OUT, pageText, ROOT } from './lib.mjs';
 

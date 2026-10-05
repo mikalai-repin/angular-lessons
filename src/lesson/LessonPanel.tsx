@@ -46,7 +46,7 @@ export function LessonPanel({ step, prev, next, hasSolution, hasBackup, onShowSo
       <div className="lesson-scroll" ref={scrollRef}>
         <header className="lesson-header">
           <div className="lesson-chapter">
-            {chapter.dev ? `Для разработки: ${chapter.title}` : `Глава ${chapter.index + 1}. ${chapter.title}`}
+            Глава {chapter.index + 1}. {chapter.title}
           </div>
           <div className="lesson-title-row">
             <h1>{step.meta.title}</h1>

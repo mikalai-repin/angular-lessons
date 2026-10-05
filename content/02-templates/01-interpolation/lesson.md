@@ -1,6 +1,8 @@
 ---
 title: Интерполяция
 startFrom: custom
+base: 01-first-app/07-compiler
+baseHash: '490c94f37c38'
 focus: app.ts
 api: ['{{ }}', выражение шаблона]
 ---
