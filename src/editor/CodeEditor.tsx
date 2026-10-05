@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { progress } from '../progress/storage';
 import { FileTree } from './FileTree';
 import { fileOfModel, formatEditor, modelUri, monaco } from './monaco';
@@ -14,9 +14,11 @@ interface Props {
   onSelect: (file: string) => void;
   onChange: (file: string, code: string) => void;
   onRun: () => void;
+  /** Кнопки в конце полосы вкладок (свернуть панель) */
+  actions?: ReactNode;
 }
 
-export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange, onRun }: Props) {
+export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange, onRun, actions }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   // Колбэки меняются каждый рендер — храним последние в ref, чтобы не пересоздавать подписки
@@ -120,6 +122,7 @@ export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange
             </button>
           ))}
         </div>
+        {actions}
       </div>
       <div className="editor-body">
         {showTree && <FileTree files={files} active={active} readonly={readonly} onSelect={selectFromTree} />}

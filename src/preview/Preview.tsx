@@ -47,6 +47,8 @@ interface Props {
   initialUrl: string;
   /** Настройки учебного бэкенда из шага */
   backend: BackendConfig;
+  /** Кнопки в конце адресной строки (свернуть панель) */
+  actions?: ReactNode;
 }
 
 const DEFAULT_BACKEND: Required<BackendConfig> = { latency: 300, failRate: 0 };
@@ -75,7 +77,7 @@ function statusClass(status: NetworkEntry['status']) {
   return status >= 400 ? 'failed' : 'ok';
 }
 
-export function Preview({ run, initialUrl, backend }: Props) {
+export function Preview({ run, initialUrl, backend, actions }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [entries, setEntries] = useState<ConsoleEntry[]>([]);
   const [network, setNetwork] = useState<NetworkEntry[]>([]);
@@ -221,6 +223,7 @@ export function Preview({ run, initialUrl, backend }: Props) {
           aria-label="Адрес приложения"
           onChange={(event) => setTypedUrl(event.target.value)}
         />
+        {actions}
       </form>
       <div className="preview-frame">
         {run && frame ? (

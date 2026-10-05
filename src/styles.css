@@ -125,6 +125,52 @@ button {
   background: var(--accent-soft);
 }
 
+/* Сворачивание панелей рабочей области */
+.pane {
+  height: 100%;
+}
+
+.pane[hidden] {
+  display: none;
+}
+
+.pane-collapse {
+  margin-left: auto;
+  font-size: 15px;
+}
+
+.editor-header .pane-collapse {
+  align-self: center;
+  margin: 0 8px 0 4px;
+}
+
+.pane-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 10px 0;
+  border: 0;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pane-strip:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.pane-strip-label {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.04em;
+}
+
 /* ---------- Оглавление ---------- */
 
 .toc {
@@ -211,6 +257,14 @@ button {
   flex: 1;
   overflow: auto;
   padding: 28px 32px 40px;
+}
+
+.lesson-chapter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Кнопка не должна сдвигать шапку урока вниз */
+  margin: -4px 0;
 }
 
 .lesson-chapter {

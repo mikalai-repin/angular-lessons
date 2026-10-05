@@ -16,6 +16,8 @@ interface Progress {
   autorun?: boolean;
   /** Открыто ли дерево файлов рядом с редактором */
   fileTree?: boolean;
+  /** Свёрнутые панели рабочей области (урок, код, результат) */
+  collapsed?: string[];
 }
 
 // localStorage может быть недоступен (приватный режим, запрет сайта) — тогда работаем без сохранения
@@ -70,6 +72,12 @@ export const progress = {
   getFileTree: () => state.fileTree ?? false,
   setFileTree: (value: boolean) => {
     state.fileTree = value;
+    write();
+  },
+
+  getCollapsed: () => state.collapsed ?? [],
+  setCollapsed: (value: string[]) => {
+    state.collapsed = value;
     write();
   },
 

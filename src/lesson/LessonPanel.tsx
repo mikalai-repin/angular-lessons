@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { stepPath, type Step } from '../content/course';
 import { renderMarkdown } from './markdown';
@@ -13,6 +13,8 @@ interface Props {
   onRestoreBackup: () => void;
   /** Вызывается перед переходом к следующему шагу (отметить шаг пройденным) */
   onNext: () => void;
+  /** Кнопки в шапке урока (свернуть панель) */
+  actions?: ReactNode;
 }
 
 export function LessonPanel({
@@ -24,6 +26,7 @@ export function LessonPanel({
   onShowSolution,
   onRestoreBackup,
   onNext,
+  actions,
 }: Props) {
   const navigate = useNavigate();
   const [html, setHtml] = useState('');
@@ -54,8 +57,11 @@ export function LessonPanel({
     <div className="lesson">
       <div className="lesson-scroll" ref={scrollRef}>
         <header className="lesson-header">
-          <div className="lesson-chapter">
-            Глава {chapter.index + 1}. {chapter.title}
+          <div className="lesson-chapter-row">
+            <div className="lesson-chapter">
+              Глава {chapter.index + 1}. {chapter.title}
+            </div>
+            {actions}
           </div>
           <div className="lesson-title-row">
             <h1>{step.meta.title}</h1>
