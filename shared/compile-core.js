@@ -94,14 +94,20 @@ export function inlineResources(ts, file, code, files) {
       } else if (key === 'styleUrl' && ts.isStringLiteralLike(value)) {
         text = `styles: [${JSON.stringify(readResource(property, value.text))}]`;
       } else if (key === 'styleUrls' && ts.isArrayLiteralExpression(value)) {
-        const styles = value.elements.filter(ts.isStringLiteralLike).map((e) => JSON.stringify(readResource(property, e.text)));
+        const styles = value.elements
+          .filter(ts.isStringLiteralLike)
+          .map((e) => JSON.stringify(readResource(property, e.text)));
         text = `styles: [${styles.join(', ')}]`;
       }
       if (text !== null) {
         // Многострочное значение (styleUrls на нескольких строках) сохраняет число строк
         const original = code.slice(property.getStart(sourceFile), property.end);
         const lineBreaks = original.split('\n').length - 1;
-        replacements.push({ start: property.getStart(sourceFile), end: property.end, text: text + '\n'.repeat(lineBreaks) });
+        replacements.push({
+          start: property.getStart(sourceFile),
+          end: property.end,
+          text: text + '\n'.repeat(lineBreaks),
+        });
       }
     }
   }

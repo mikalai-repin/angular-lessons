@@ -1,11 +1,21 @@
 <header class="header">
   <span class="logo">♞ Ход конём</span>
-  <span class="cart">В корзине: {{ cartCount() }} · {{ cartTotal() }} ₽</span>
+  <span class="cart"
+    >В корзине: {{ cartCount() }} · {{ cartTotal() }} ₽</span
+  >
 </header>
 <main class="page">
   <h1>Магазин настольных игр</h1>
-  <input #searchBox class="search" type="search" placeholder="Найти игру" (keydown.enter)="search(searchBox.value)" />
-  <p class="muted" [hidden]="!searchBox.value">Ищем: «{{ searchBox.value }}»</p>
+  <input
+    #searchBox
+    class="search"
+    type="search"
+    placeholder="Найти игру"
+    (keydown.enter)="search(searchBox.value)"
+  />
+  <p class="muted" [hidden]="!searchBox.value">
+    Ищем: «{{ searchBox.value }}»
+  </p>
 
   @if (cart().length > 0) {
     <section class="mini-cart">
@@ -15,11 +25,15 @@
         <b>Итого: {{ cartTotal() }} ₽</b>
       </p>
       @if (deliveryLeft() > 0) {
-        <p class="muted">До бесплатной доставки: {{ deliveryLeft() }} ₽</p>
+        <p class="muted">
+          До бесплатной доставки: {{ deliveryLeft() }} ₽
+        </p>
       } @else {
         <p class="muted">Доставка бесплатная</p>
       }
-      <button class="link-button" (click)="clearCart()">Очистить корзину</button>
+      <button class="link-button" (click)="clearCart()">
+        Очистить корзину
+      </button>
     </section>
   }
 

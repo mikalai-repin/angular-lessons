@@ -1,4 +1,11 @@
-import { Component, ElementRef, afterNextRender, input, output, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  afterNextRender,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { Game } from '../../core/models';
 import { Countdown } from '../countdown/countdown';
 import { Rating } from '../rating/rating';
@@ -20,10 +27,13 @@ export class GameDetails {
   readonly closed = output();
 
   // Элемент <dialog> из шаблона: #dialog
-  private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly dialogRef =
+    viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   constructor() {
     // Модальным <dialog> делает только метод showModal(), а вызвать его можно, когда элемент уже в документе
-    afterNextRender(() => this.dialogRef().nativeElement.showModal());
+    afterNextRender(() =>
+      this.dialogRef().nativeElement.showModal(),
+    );
   }
 }

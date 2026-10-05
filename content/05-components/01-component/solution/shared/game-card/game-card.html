@@ -30,7 +30,9 @@
   @if (game.inStock === 0) {
     <p class="stock stock-out">Нет в наличии</p>
   } @else if (game.inStock <= fewLeft) {
-    <p class="stock stock-few">Осталось {{ game.inStock }} шт.</p>
+    <p class="stock stock-few">
+      Осталось {{ game.inStock }} шт.
+    </p>
   } @else {
     <p class="stock stock-ok">В наличии</p>
   }

@@ -14,9 +14,16 @@ export class Rating {
 
   protected select(star: number, event: MouseEvent) {
     // Щелчок по левой половине звезды — половина звезды
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const selected = event.clientX - rect.left < rect.width / 2 ? star - 0.5 : star;
+    const rect = (
+      event.currentTarget as HTMLElement
+    ).getBoundingClientRect();
+    const selected =
+      event.clientX - rect.left < rect.width / 2
+        ? star - 0.5
+        : star;
     // Повторный щелчок по той же оценке сбрасывает её
-    this.value.update((value) => (value === selected ? 0 : selected));
+    this.value.update((value) =>
+      value === selected ? 0 : selected,
+    );
   }
 }

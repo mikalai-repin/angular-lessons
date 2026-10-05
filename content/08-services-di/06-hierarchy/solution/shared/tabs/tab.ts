@@ -1,4 +1,11 @@
-import { Component, InjectionToken, Signal, computed, inject, input } from '@angular/core';
+import {
+  Component,
+  InjectionToken,
+  Signal,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 
 // Что вкладке нужно от компонента Tabs, внутри которого она стоит
 export interface TabsParent {
@@ -24,5 +31,7 @@ export class Tab {
   // Tabs, внутри которого стоит вкладка: DI ищет TABS вверх по элементам
   private readonly tabs = inject(TABS);
   // Видна ли вкладка: выбрана ли в Tabs именно она
-  protected readonly active = computed(() => this.tabs.selectedTab() === this);
+  protected readonly active = computed(
+    () => this.tabs.selectedTab() === this,
+  );
 }

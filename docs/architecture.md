@@ -45,7 +45,7 @@
 | Редактор | Monaco Editor 0.57 | TS language service (встроенный TS **5.9**) с типами `@angular/*` и `rxjs`; языки `html` и `css` со своими воркерами |
 | Компиляция TS → JS | Веб-воркер `src/compiler/compile.worker.ts`: TypeScript 6.0 + `angularJitApplicationTransform` | TS-воркер Monaco не умеет применять трансформы; без трансформа не работают `input()`, `output()`, `model()`, `viewChild()` |
 | Шаблоны → код | JIT-компилятор `@angular/compiler` в iframe превью | |
-| Форматирование | Prettier 3.9.9: `typescript` для `.ts`, **`angular`** (плагин `html`) для `.html`, `css` (плагин `postcss`) | Шаблоны демо-магазина Prettier не меняет — стиль совпадает |
+| Форматирование | Prettier 3.9.9: `typescript` для `.ts`, **`angular`** (плагин `html`) для `.html`, `css` (плагин `postcss`); настройки — `shared/lesson-prettier.json`, общие с файлами уроков; встроенные форматтеры Monaco для HTML/CSS выключены | Код уроков на диске в том же формате: «Формат» его не меняет (`checks/platform.mjs`) |
 | Markdown уроков | `markdown-it` + контейнеры + Shiki: блоки `ts` подсвечиваются грамматикой **`angular-ts`**, `html` — **`angular-html`** | Подсвечиваются `@if`, привязки, шаблоны в декораторах |
 | Прогресс | `localStorage`, ключ `angular-course:v1` | |
 

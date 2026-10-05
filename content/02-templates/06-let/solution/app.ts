@@ -9,7 +9,8 @@ export class App {
   protected readonly title = 'Остров сокровищ';
   protected readonly price = 1990;
   protected readonly oldPrice = 2490;
-  protected readonly cover = '/assets/covers/treasure-island.svg';
+  protected readonly cover =
+    '/assets/covers/treasure-island.svg';
   protected readonly inStock: number = 12;
   protected readonly rating = 4.6;
 

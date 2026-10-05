@@ -23,7 +23,11 @@ await page.goto(`${BASE_URL}/lifecycle/lifecycle`, { waitUntil: 'networkidle0' }
 await wait(3000);
 
 // После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () => page.frames().filter((f) => f.url().includes('/app')).at(-1);
+const frame = () =>
+  page
+    .frames()
+    .filter((f) => f.url().includes('/app'))
+    .at(-1);
 const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
 const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
 const count = (selector) => frame().$$eval(selector, (els) => els.length);
@@ -49,8 +53,12 @@ const details = () =>
       backdropDiv: !!document.querySelector('app-game-details .backdrop'),
       title: d?.querySelector('h2')?.textContent.trim(),
       countdown: document.querySelector('app-countdown')?.textContent.trim() ?? null,
-      tabs: [...document.querySelectorAll('.tab')].map((b) => b.textContent.trim() + (b.classList.contains('active') ? '*' : '')),
-      visible: [...document.querySelectorAll('app-tab')].filter((t) => !t.hidden).map((t) => t.innerText.replace(/\s+/g, ' ').trim()),
+      tabs: [...document.querySelectorAll('.tab')].map(
+        (b) => b.textContent.trim() + (b.classList.contains('active') ? '*' : ''),
+      ),
+      visible: [...document.querySelectorAll('app-tab')]
+        .filter((t) => !t.hidden)
+        .map((t) => t.innerText.replace(/\s+/g, ' ').trim()),
       ink: ink ? { left: ink.style.left, width: ink.style.width } : null,
       activeTab: active ? { left: `${active.offsetLeft}px`, width: `${active.offsetWidth}px` } : null,
       focus: document.activeElement?.closest('dialog') ? 'dialog' : document.activeElement?.className,
@@ -81,7 +89,10 @@ expect((await count('.title-button')) === 0, 'шаг 1: в старте назв
 await showSolution();
 await openGame('Остров');
 let d = await details();
-expect(d.exists && d.open && !d.modal && d.backdropDiv, 'шаг 1: окно открыто атрибутом open, не модальное, с затемнением-div');
+expect(
+  d.exists && d.open && !d.modal && d.backdropDiv,
+  'шаг 1: окно открыто атрибутом open, не модальное, с затемнением-div',
+);
 await page.keyboard.press('Escape');
 await wait(300);
 expect((await details()).exists, 'шаг 1: Esc немодальное окно не закрывает');
@@ -99,7 +110,10 @@ await wait(300);
 await frame().click('.empty .link-button');
 await wait(300);
 const focus = await frame().evaluate(() => document.activeElement?.className);
-expect(focus === 'search' && (await count('app-game-card')) === 12, `шаг 2: после «Сбросить фильтры» фокус в поиске (${focus})`);
+expect(
+  focus === 'search' && (await count('app-game-card')) === 12,
+  `шаг 2: после «Сбросить фильтры» фокус в поиске (${focus})`,
+);
 await checkConsoleClean('шаг 2');
 
 // 3. После отрисовки
@@ -112,7 +126,10 @@ expect(d.modal && !d.backdropDiv && d.focus === 'dialog', 'шаг 3: окно м
 await page.keyboard.press('Escape');
 await wait(400);
 const back = await frame().evaluate(() => document.activeElement?.textContent.trim());
-expect(!(await details()).exists && back === 'Остров сокровищ', `шаг 3: Esc закрывает окно, фокус вернулся на название (${back})`);
+expect(
+  !(await details()).exists && back === 'Остров сокровищ',
+  `шаг 3: Esc закрывает окно, фокус вернулся на название (${back})`,
+);
 await checkConsoleClean('шаг 3');
 
 // 4. Уборка
@@ -123,7 +140,10 @@ await openGame('Остров');
 const first = (await details()).countdown;
 await wait(1200);
 const second = (await details()).countdown;
-expect(/^Скидка действует ещё \d\d:\d\d:\d\d$/.test(first ?? '') && first !== second, `шаг 4: таймер идёт (${first} → ${second})`);
+expect(
+  /^Скидка действует ещё \d\d:\d\d:\d\d$/.test(first ?? '') && first !== second,
+  `шаг 4: таймер идёт (${first} → ${second})`,
+);
 await page.keyboard.press('Escape');
 await wait(300);
 await openGame('Драконья');
@@ -138,11 +158,18 @@ expect((await title()) === 'Дочерние из проекции', 'шаг 5 �
 await showSolution();
 await openGame('Остров');
 d = await details();
-expect(d.tabs.join() === 'Описание*,Характеристики' && d.visible.length === 1 && d.visible[0].startsWith('Команды пиратов'), 'шаг 5: две вкладки, видно описание');
+expect(
+  d.tabs.join() === 'Описание*,Характеристики' && d.visible.length === 1 && d.visible[0].startsWith('Команды пиратов'),
+  'шаг 5: две вкладки, видно описание',
+);
 await frame().evaluate(() => document.querySelectorAll('.tab')[1].click());
 await wait(300);
 d = await details();
-expect(d.tabs.join() === 'Описание,Характеристики*' && d.visible[0] === 'Игроков 2–5 Партия 45 мин Возраст от 8 лет Теги пираты, карты', `шаг 5: «Характеристики» (${d.visible[0]})`);
+expect(
+  d.tabs.join() === 'Описание,Характеристики*' &&
+    d.visible[0] === 'Игроков 2–5 Партия 45 мин Возраст от 8 лет Теги пираты, карты',
+  `шаг 5: «Характеристики» (${d.visible[0]})`,
+);
 await page.keyboard.press('Escape');
 await wait(300);
 await openGame('Шахматы');
@@ -159,11 +186,17 @@ expect((await title()) === 'Замер после отрисовки', 'шаг 6
 await showSolution();
 await openGame('Остров');
 d = await details();
-expect(d.ink && d.ink.width !== '0px' && JSON.stringify(d.ink) === JSON.stringify(d.activeTab), `шаг 6: полоска под «Описанием» с первого открытия (${JSON.stringify(d.ink)})`);
+expect(
+  d.ink && d.ink.width !== '0px' && JSON.stringify(d.ink) === JSON.stringify(d.activeTab),
+  `шаг 6: полоска под «Описанием» с первого открытия (${JSON.stringify(d.ink)})`,
+);
 await frame().evaluate(() => document.querySelectorAll('.tab')[1].click());
 await wait(500);
 d = await details();
-expect(JSON.stringify(d.ink) === JSON.stringify(d.activeTab), `шаг 6: полоска переехала под «Характеристики» (${JSON.stringify(d.ink)})`);
+expect(
+  JSON.stringify(d.ink) === JSON.stringify(d.activeTab),
+  `шаг 6: полоска переехала под «Характеристики» (${JSON.stringify(d.ink)})`,
+);
 await page.keyboard.press('Escape');
 await wait(300);
 await checkConsoleClean('шаг 6');
@@ -185,7 +218,10 @@ const more = () => count('app-load-more');
 expect((await count('app-game-card')) === 6 && (await more()) === 1, 'шаг 8: 6 карточек и «Показать ещё»');
 await frame().evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 await wait(600);
-expect((await count('app-game-card')) === 12 && (await more()) === 0, 'шаг 8: прокрутка до кнопки — 12 карточек, кнопка исчезла');
+expect(
+  (await count('app-game-card')) === 12 && (await more()) === 0,
+  'шаг 8: прокрутка до кнопки — 12 карточек, кнопка исчезла',
+);
 await frame().evaluate(() => window.scrollTo(0, 0));
 await wait(300);
 await frame().type('.search', 'а');
@@ -193,7 +229,10 @@ await wait(400);
 expect((await count('app-game-card')) === 6 && (await more()) === 1, 'шаг 8: поиск «а» — снова 6 и кнопка');
 await frame().click('app-load-more button');
 await wait(400);
-expect((await count('app-game-card')) === 11 && (await more()) === 0, 'шаг 8: щелчок «Показать ещё» — все 11 найденных');
+expect(
+  (await count('app-game-card')) === 11 && (await more()) === 0,
+  'шаг 8: щелчок «Показать ещё» — все 11 найденных',
+);
 await frame().select('.filters select', 'cheap');
 await wait(400);
 expect((await count('app-game-card')) === 6, 'шаг 8: смена сортировки — первая порция');
@@ -204,11 +243,17 @@ await page.screenshot({ path: `${OUT}/ch06-practice.png` });
 await nextStep();
 expect((await title()) === 'Под капотом: обнаружение изменений', 'шаг 9 открыт');
 await frame().evaluate(() =>
-  [...document.querySelectorAll('app-game-card')].find((c) => c.textContent.includes('Драконья')).querySelector('.button').click(),
+  [...document.querySelectorAll('app-game-card')]
+    .find((c) => c.textContent.includes('Драконья'))
+    .querySelector('.button')
+    .click(),
 );
 await wait(500);
 let log = await consoleText();
-expect(log.includes('Проверены: App, Quantity, GameCard (из них созданы: Quantity)'), 'шаг 9: «В корзину» — App, Quantity, одна GameCard');
+expect(
+  log.includes('Проверены: App, Quantity, GameCard (из них созданы: Quantity)'),
+  'шаг 9: «В корзину» — App, Quantity, одна GameCard',
+);
 await openGame('Остров');
 await wait(2200);
 // Одинаковые строки подряд консоль платформы сворачивает в одну со счётчиком повторов
@@ -216,7 +261,10 @@ const last = await page.$$eval('.console-line', (els) => {
   const line = els.at(-1);
   return { text: line.textContent, count: line.querySelector('.console-count')?.textContent ?? '1' };
 });
-expect(last.text.endsWith('Проверены: Countdown') && Number(last.count) >= 2, `шаг 9: каждую секунду проверяется только Countdown (×${last.count})`);
+expect(
+  last.text.endsWith('Проверены: Countdown') && Number(last.count) >= 2,
+  `шаг 9: каждую секунду проверяется только Countdown (×${last.count})`,
+);
 await page.keyboard.press('Escape');
 await wait(300);
 await checkConsoleClean('шаг 9');

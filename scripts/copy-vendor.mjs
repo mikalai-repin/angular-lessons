@@ -88,11 +88,15 @@ if (stamp !== JSON.stringify(versions) || !existsSync(resolve(out, 'ts-angular.m
     logLevel: 'error',
   });
   writeFileSync(stampPath, JSON.stringify(versions));
-  console.log(`[vendor] собран ts-angular.mjs (TypeScript ${versions.typescript}, compiler-cli ${versions.compilerCli})`);
+  console.log(
+    `[vendor] собран ts-angular.mjs (TypeScript ${versions.typescript}, compiler-cli ${versions.compilerCli})`,
+  );
 }
 
 const template = readFileSync(resolve(root, 'scripts/preview.template.html'), 'utf8');
 const importMapJson = JSON.stringify({ imports: importMap }, null, 2).replace(/\n/g, '\n    ');
 writeFileSync(resolve(root, 'public/preview.html'), template.replace('<!--IMPORT_MAP-->', importMapJson));
 
-console.log(`[vendor] Angular: ${ANGULAR_PACKAGES.length} пакетов, ${Object.keys(importMap).length} записей в import map`);
+console.log(
+  `[vendor] Angular: ${ANGULAR_PACKAGES.length} пакетов, ${Object.keys(importMap).length} записей в import map`,
+);

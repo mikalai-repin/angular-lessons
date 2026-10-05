@@ -8,7 +8,14 @@ export interface WordForms {
   many: string; // 0, 5–20, 25–30 …
 }
 
-export function plural(count: number, forms: WordForms): string {
+export function plural(
+  count: number,
+  forms: WordForms,
+): string {
   const category = rules.select(count);
-  return category === 'one' ? forms.one : category === 'few' ? forms.few : forms.many;
+  return category === 'one'
+    ? forms.one
+    : category === 'few'
+      ? forms.few
+      : forms.many;
 }

@@ -9,6 +9,14 @@ export interface ShopConfig {
 }
 
 // Токен — ключ, по которому настройки выдаёт DI. factory — значение, если в провайдерах токена нет
-export const SHOP_CONFIG = new InjectionToken<ShopConfig>('SHOP_CONFIG', {
-  factory: () => ({ freeDeliveryFrom: 5000, fewLeft: 5, hitRating: 4.8, pageSize: 6 }),
-});
+export const SHOP_CONFIG = new InjectionToken<ShopConfig>(
+  'SHOP_CONFIG',
+  {
+    factory: () => ({
+      freeDeliveryFrom: 5000,
+      fewLeft: 5,
+      hitRating: 4.8,
+      pageSize: 6,
+    }),
+  },
+);

@@ -23,10 +23,13 @@ export class Tabs implements TabsParent {
   // Номер выбранной вкладки
   protected readonly selected = signal(0);
   // Выбранная вкладка. Каждая Tab сама сравнивает её с собой
-  readonly selectedTab = computed(() => this.tabs()[this.selected()]);
+  readonly selectedTab = computed(
+    () => this.tabs()[this.selected()],
+  );
 
   // Кнопки вкладок из шаблона Tabs: #tabButton
-  private readonly buttons = viewChildren<ElementRef<HTMLElement>>('tabButton');
+  private readonly buttons =
+    viewChildren<ElementRef<HTMLElement>>('tabButton');
   // Где стоит и какой ширины полоска под выбранной вкладкой
   protected readonly ink = signal({ left: 0, width: 0 });
 
@@ -34,9 +37,13 @@ export class Tabs implements TabsParent {
     // После отрисовки замерить кнопку выбранной вкладки — полоска встанет под неё
     afterRenderEffect({
       read: () => {
-        const button = this.buttons()[this.selected()]?.nativeElement;
+        const button =
+          this.buttons()[this.selected()]?.nativeElement;
         if (button) {
-          this.ink.set({ left: button.offsetLeft, width: button.offsetWidth });
+          this.ink.set({
+            left: button.offsetLeft,
+            width: button.offsetWidth,
+          });
         }
       },
     });

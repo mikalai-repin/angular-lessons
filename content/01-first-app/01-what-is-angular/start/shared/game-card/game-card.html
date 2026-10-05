@@ -8,6 +8,10 @@
     <s class="muted">{{ oldPrice }} ₽</s>
   }
 </div>
-<button class="button" [disabled]="game().inStock === 0" (click)="addToCart.emit(game())">
+<button
+  class="button"
+  [disabled]="game().inStock === 0"
+  (click)="addToCart.emit(game())"
+>
   {{ game().inStock === 0 ? 'Нет в наличии' : 'В корзину' }}
 </button>

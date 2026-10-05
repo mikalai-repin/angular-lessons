@@ -1,4 +1,10 @@
-import { DestroyRef, Directive, ElementRef, inject, input } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+} from '@angular/core';
 
 // Подсказка при наведении: <span appTooltip="Текст подсказки">
 @Directive({
@@ -13,7 +19,8 @@ export class Tooltip {
   readonly appTooltip = input.required<string>();
 
   // Хост — элемент, на котором стоит директива
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly host =
+    inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   // Элемент подсказки, пока она на экране
   private tip: HTMLElement | null = null;
 
@@ -30,7 +37,12 @@ export class Tooltip {
     document.body.append(this.tip);
     // Под хостом, но не за правым краем страницы
     const rect = this.host.getBoundingClientRect();
-    const left = Math.min(rect.left, document.documentElement.clientWidth - this.tip.offsetWidth - 8);
+    const left = Math.min(
+      rect.left,
+      document.documentElement.clientWidth -
+        this.tip.offsetWidth -
+        8,
+    );
     this.tip.style.left = `${left + window.scrollX}px`;
     this.tip.style.top = `${rect.bottom + window.scrollY + 6}px`;
   }

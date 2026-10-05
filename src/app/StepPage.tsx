@@ -4,7 +4,14 @@ import { Navigate, useParams } from 'react-router';
 import { findStep, neighbours, type FileMap, type Step } from '../content/course';
 import { CodeEditor } from '../editor/CodeEditor';
 import { compileStep } from '../compiler';
-import { collectDiagnostics, disposeModels, formatEditor, readModels, refreshDiagnostics, syncModels } from '../editor/monaco';
+import {
+  collectDiagnostics,
+  disposeModels,
+  formatEditor,
+  readModels,
+  refreshDiagnostics,
+  syncModels,
+} from '../editor/monaco';
 import { LessonPanel } from '../lesson/LessonPanel';
 import { Preview, type PreviewRun } from '../preview/Preview';
 import { progress } from '../progress/storage';

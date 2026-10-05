@@ -24,11 +24,19 @@ await page.goto(`${BASE_URL}/services-di/why-di`, { waitUntil: 'networkidle0' })
 await wait(3000);
 
 // После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () => page.frames().filter((f) => f.url().includes('/app')).at(-1);
+const frame = () =>
+  page
+    .frames()
+    .filter((f) => f.url().includes('/app'))
+    .at(-1);
 const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
 const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
 // Текст без неразрывных пробелов и лишних переводов строк: «1 990 ₽» пайпы пишут через U+00A0
-const clean = (s) => s.replace(/\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ').trim();
+const clean = (s) =>
+  s
+    .replace(/\u00a0|\u202f/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 const text = async (selector) => clean(await frame().$eval(selector, (e) => e.textContent));
 const header = () => text('app-header');
 const card = (name) =>
@@ -182,7 +190,10 @@ expect((await header()).includes('В корзине: 3 · 4 870 ₽'), 'шаг 8
 const search = await frame().$('.search');
 await search.type('кот');
 await wait(400);
-expect((await card('Остров сокровищ')) && !(await (await card('Остров сокровищ')).jsonValue()), 'шаг 8: карточка «Острова» скрыта поиском');
+expect(
+  (await card('Остров сокровищ')) && !(await (await card('Остров сокровищ')).jsonValue()),
+  'шаг 8: карточка «Острова» скрыта поиском',
+);
 await search.click({ clickCount: 3 });
 await page.keyboard.press('Backspace');
 await wait(500);

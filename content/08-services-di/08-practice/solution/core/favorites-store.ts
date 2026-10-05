@@ -14,6 +14,10 @@ export class FavoritesStore {
   }
 
   toggle(game: Game) {
-    this.ids.update((ids) => (ids.includes(game.id) ? ids.filter((id) => id !== game.id) : [...ids, game.id]));
+    this.ids.update((ids) =>
+      ids.includes(game.id)
+        ? ids.filter((id) => id !== game.id)
+        : [...ids, game.id],
+    );
   }
 }

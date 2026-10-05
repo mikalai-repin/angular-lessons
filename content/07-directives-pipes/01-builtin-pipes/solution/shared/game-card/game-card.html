@@ -24,23 +24,35 @@
   <ng-content select="[sticker]" />
 </div>
 <h2 class="title">
-  <button class="title-button" (click)="open.emit()">{{ game().title }}</button>
+  <button class="title-button" (click)="open.emit()">
+    {{ game().title }}
+  </button>
 </h2>
 <app-rating [value]="game().rating" readonly />
 <p class="price">
   {{ game().price | currency: 'RUB' : 'symbol' : '1.0-0' }}
   @if (game().oldPrice; as oldPrice) {
-    <s class="old-price">{{ oldPrice | currency: 'RUB' : 'symbol' : '1.0-0' }}</s>
+    <s class="old-price">{{
+      oldPrice | currency: 'RUB' : 'symbol' : '1.0-0'
+    }}</s>
   }
 </p>
 @if (game().inStock === 0) {
   <p class="stock stock-out">Нет в наличии</p>
 } @else if (game().inStock <= fewLeft) {
-  <p class="stock stock-few">Осталось {{ game().inStock }} шт.</p>
+  <p class="stock stock-few">
+    Осталось {{ game().inStock }} шт.
+  </p>
 } @else {
   <p class="stock stock-ok">В наличии</p>
 }
-<button class="button" [disabled]="inCart() >= game().inStock" (click)="add.emit()">В корзину</button>
+<button
+  class="button"
+  [disabled]="inCart() >= game().inStock"
+  (click)="add.emit()"
+>
+  В корзину
+</button>
 @if (inCart() > 0) {
   <p class="in-cart muted">В корзине: {{ inCart() }} шт.</p>
 }

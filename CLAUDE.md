@@ -66,6 +66,8 @@ spikes/jit-preview/   — первый прототип (только для с�
 - `npm run validate` — структура уроков, цепочка start/solution, сборка каждого шага и типы кода (после любых правок в `content/`)
 - `npm run step <…/шаг/solution> [папка]` — выгрузить полный код шага (в `content/` шаг хранит только изменения) в `tools/e2e/out/step/`
 - `npm run build` — проверка типов платформы и продакшен-сборка
+- `npx prettier --check .` — форматирование всего кода (`prettier.config.mjs`: код уроков — как кнопка «Формат», настройки в `shared/lesson-prettier.json`; Markdown не форматируется)
+- `python3 tools/authoring/format-content.py` — переформатировать код всех шагов после изменения `shared/lesson-prettier.json`
 - `npm run covers` — пересоздать SVG-обложки после изменения `public/backend/data/games.json`
 - `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, адрес, текст страницы, скриншот в `tools/e2e/out/`
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»

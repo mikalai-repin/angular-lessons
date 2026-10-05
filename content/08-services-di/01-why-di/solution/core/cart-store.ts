@@ -9,17 +9,34 @@ export class CartStore {
   // Позиции корзины. Массив не меняем, а заменяем новым
   readonly items = signal<CartItem[]>([]);
 
-  readonly count = computed(() => this.items().reduce((sum, item) => sum + item.quantity, 0));
-  readonly total = computed(() => this.items().reduce((sum, item) => sum + item.game.price * item.quantity, 0));
+  readonly count = computed(() =>
+    this.items().reduce((sum, item) => sum + item.quantity, 0),
+  );
+  readonly total = computed(() =>
+    this.items().reduce(
+      (sum, item) => sum + item.game.price * item.quantity,
+      0,
+    ),
+  );
   readonly summary = computed(() =>
     this.items()
       .map((item) => `${item.game.title} × ${item.quantity}`)
       .join(', '),
   );
-  readonly deliveryLeft = computed(() => Math.max(FREE_DELIVERY_FROM - this.total(), 0));
+  readonly deliveryLeft = computed(() =>
+    Math.max(FREE_DELIVERY_FROM - this.total(), 0),
+  );
 
   // Сколько штук каждой игры в корзине: id игры → количество
-  private readonly quantities = computed(() => new Map(this.items().map((item) => [item.game.id, item.quantity])));
+  private readonly quantities = computed(
+    () =>
+      new Map(
+        this.items().map((item) => [
+          item.game.id,
+          item.quantity,
+        ]),
+      ),
+  );
 
   // Метод читает сигнал, поэтому шаблон или computed, которые его вызвали, тоже зависят от корзины
   quantityOf(game: Game): number {
@@ -28,20 +45,32 @@ export class CartStore {
 
   add(game: Game) {
     this.items.update((items) => {
-      const existing = items.find((item) => item.game.id === game.id);
+      const existing = items.find(
+        (item) => item.game.id === game.id,
+      );
       if (!existing) {
         return [...items, { game, quantity: 1 }];
       }
-      return items.map((item) => (item === existing ? { ...item, quantity: item.quantity + 1 } : item));
+      return items.map((item) =>
+        item === existing
+          ? { ...item, quantity: item.quantity + 1 }
+          : item,
+      );
     });
   }
 
   setQuantity(game: Game, quantity: number) {
-    this.items.update((items) => items.map((item) => (item.game.id === game.id ? { ...item, quantity } : item)));
+    this.items.update((items) =>
+      items.map((item) =>
+        item.game.id === game.id ? { ...item, quantity } : item,
+      ),
+    );
   }
 
   remove(game: Game) {
-    this.items.update((items) => items.filter((item) => item.game.id !== game.id));
+    this.items.update((items) =>
+      items.filter((item) => item.game.id !== game.id),
+    );
   }
 
   clear() {

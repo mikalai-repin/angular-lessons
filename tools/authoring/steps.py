@@ -13,7 +13,7 @@
 # - solution/ — файлы, которые отличаются от старта шага;
 # - файлы, которые пропали, во frontmatter перечисляются вручную: removedInStart / removedInSolution.
 #   write_steps сверяет их с lesson.md и печатает, чего не хватает.
-import hashlib, os, re, shutil, subprocess
+import hashlib, json, os, re, shutil, subprocess
 
 PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -36,6 +36,31 @@ def frontmatter_list(stepdir, key):
         match = re.match(r'---\n(.*?)\n---', f.read(), re.S)
     found = re.search(rf'^{key}: \[(.*)\]$', match.group(1) if match else '', re.M)
     return sorted(s.strip() for s in found.group(1).split(',')) if found else []
+
+
+def format_snapshots(snapshots):
+    """Форматирует полные снимки шагов (список словарей «путь → код») так же, как кнопка «Формат» в редакторе
+    платформы: настройки — shared/lesson-prettier.json, шаблоны .html — парсер angular. Файл, который Prettier не
+    разобрал (намеренно сломанный старт), остаётся как есть."""
+    tmp = os.path.join(PROJECT, 'tools', 'e2e', 'out', 'fmt')
+    shutil.rmtree(tmp, ignore_errors=True)
+    for i, files in enumerate(snapshots):
+        for name, code in files.items():
+            path = os.path.join(tmp, str(i), name)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'w') as f:
+                f.write(code)
+    with open(os.path.join(PROJECT, 'shared', 'lesson-prettier.json')) as f:
+        options = json.load(f)
+    flags = ['--no-config', '--ignore-path', os.devnull, '--log-level', 'silent',
+             '--print-width', str(options['printWidth']), '--tab-width', str(options['tabWidth']),
+             '--trailing-comma', options['trailingComma']]
+    flags += ['--single-quote'] if options['singleQuote'] else []
+    flags += [] if options['semi'] else ['--no-semi']
+    prettier = os.path.join(PROJECT, 'node_modules', '.bin', 'prettier')
+    subprocess.run([prettier, *flags, '--write', f'{tmp}/**/*.{{ts,css}}'], cwd=PROJECT)
+    subprocess.run([prettier, *flags, '--parser', 'angular', '--write', f'{tmp}/**/*.html'], cwd=PROJECT)
+    return [read_dir(os.path.join(tmp, str(i))) if files else files for i, files in enumerate(snapshots)]
 
 
 def files_hash(files):
@@ -64,12 +89,19 @@ def set_frontmatter(stepdir, values):
 def write_steps(root, steps, base=None):
     previous = read_dir(step_dir(f'{PROJECT}/content/{base}/result')) if base else {}
     first = True
+    # Все снимки сразу — в формат кнопки «Формат»: так файл на диске совпадает с тем, что увидит ученик
+    snapshots = []
+    for spec in steps.values():
+        for kind in ('start', 'solution'):
+            value = spec.get(kind)
+            snapshots.append(read_dir(value) if isinstance(value, str) else value)
+    formatted = iter(format_snapshots([s if s is not None else {} for s in snapshots]))
     for step, spec in steps.items():
         stepdir = os.path.join(root, step)
         os.makedirs(stepdir, exist_ok=True)
-        full = {kind: read_dir(spec[kind]) if isinstance(spec.get(kind), str) else spec.get(kind)
-                for kind in ('start', 'solution')}
-        start, solution = full['start'], full['solution']
+        start, solution = next(formatted), next(formatted)
+        if spec.get('solution') is None:
+            solution = None
         if first and base:
             set_frontmatter(stepdir, {'base': base, 'baseHash': f"'{files_hash(previous)}'"})
         first = False
@@ -109,4 +141,17 @@ def step_dir(path):
     rel = os.path.relpath(path, os.path.join(PROJECT, 'content'))
     out = os.path.join(PROJECT, 'tools', 'e2e', 'out', 'steps', rel)
     subprocess.run(['node', 'scripts/step-files.mjs', path, out], cwd=PROJECT, check=True, stdout=subprocess.DEVNULL)
+    return out
+
+
+def legacy_dir(path):
+    """Как step_dir, но код переформатирован шириной 120 — так, как его форматировали генераторы глав 1–8 до перехода
+    на формат редактора (shared/lesson-prettier.json). Их якоря rep(…) написаны под этот вид кода прошлой главы;
+    результат генератора всё равно форматирует write_steps. Новые генераторы читают прошлую главу через step_dir."""
+    out = step_dir(path)
+    flags = ['--no-config', '--ignore-path', os.devnull, '--log-level', 'silent', '--print-width', '120',
+             '--single-quote', '--trailing-comma', 'all']
+    prettier = os.path.join(PROJECT, 'node_modules', '.bin', 'prettier')
+    subprocess.run([prettier, *flags, '--write', f'{out}/**/*.{{ts,css}}'], cwd=PROJECT)
+    subprocess.run([prettier, *flags, '--parser', 'angular', '--write', f'{out}/**/*.html'], cwd=PROJECT)
     return out

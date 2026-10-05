@@ -190,10 +190,20 @@ export function Preview({ run, initialUrl, backend }: Props) {
           start(target.startsWith('/') ? target : `/${target}`);
         }}
       >
-        <button type="button" className="icon-button" title="Назад" onClick={() => post({ type: 'history', delta: -1 })}>
+        <button
+          type="button"
+          className="icon-button"
+          title="Назад"
+          onClick={() => post({ type: 'history', delta: -1 })}
+        >
           ←
         </button>
-        <button type="button" className="icon-button" title="Вперёд" onClick={() => post({ type: 'history', delta: 1 })}>
+        <button
+          type="button"
+          className="icon-button"
+          title="Вперёд"
+          onClick={() => post({ type: 'history', delta: 1 })}
+        >
           →
         </button>
         <button

@@ -1,4 +1,11 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, inject, output } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  inject,
+  output,
+} from '@angular/core';
 
 // Сообщает, что хост-элемент появился на экране: <div (appInView)="…">
 @Directive({ selector: '[appInView]' })
@@ -7,7 +14,8 @@ export class InView {
   readonly visible = output({ alias: 'appInView' });
 
   constructor() {
-    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const host =
+      inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     const destroyRef = inject(DestroyRef);
 
     // IntersectionObserver — API браузера: создаём его после отрисовки, когда хост уже в документе

@@ -1,5 +1,9 @@
 <article class="tile" [class.sold-out]="game().inStock === 0">
-  <img class="cover" [src]="game().cover" [alt]="game().title" />
+  <img
+    class="cover"
+    [src]="game().cover"
+    [alt]="game().title"
+  />
   @let category = game().category;
   <span class="category">
     @switch (category) {
@@ -32,11 +36,19 @@
   @if (game().inStock === 0) {
     <p class="stock stock-out">Нет в наличии</p>
   } @else if (game().inStock <= fewLeft) {
-    <p class="stock stock-few">Осталось {{ game().inStock }} шт.</p>
+    <p class="stock stock-few">
+      Осталось {{ game().inStock }} шт.
+    </p>
   } @else {
     <p class="stock stock-ok">В наличии</p>
   }
-  <button class="button" [disabled]="inCart() >= game().inStock" (click)="add.emit()">В корзину</button>
+  <button
+    class="button"
+    [disabled]="inCart() >= game().inStock"
+    (click)="add.emit()"
+  >
+    В корзину
+  </button>
   @if (inCart() > 0) {
     <p class="in-cart muted">В корзине: {{ inCart() }} шт.</p>
   }

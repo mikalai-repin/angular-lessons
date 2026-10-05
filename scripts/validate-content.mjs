@@ -24,10 +24,12 @@ rmSync(checkDir, { recursive: true, force: true });
 // Файлы оверлея, совпадающие с базой (копии), и удаления, которых в базе нет
 function checkOverlay(where, kind, base, own, removed = []) {
   for (const name of Object.keys(own)) {
-    if (base[name] === own[name]) errors.push(`${where}/${kind}/${name}: совпадает с тем, что было до шага, — копия, удалите её`);
+    if (base[name] === own[name])
+      errors.push(`${where}/${kind}/${name}: совпадает с тем, что было до шага, — копия, удалите её`);
   }
   for (const name of removed) {
-    if (!(name in base)) errors.push(`${where}: removedIn${kind === 'start' ? 'Start' : 'Solution'}: файла ${name} и так нет`);
+    if (!(name in base))
+      errors.push(`${where}: removedIn${kind === 'start' ? 'Start' : 'Solution'}: файла ${name} и так нет`);
     if (name in own) errors.push(`${where}: ${name} и удалён, и лежит в ${kind}/`);
   }
 }
@@ -88,12 +90,15 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
     }
     if (startFrom === 'previous') {
       if (index === 0) errors.push(`${where}: первый шаг главы должен иметь startFrom: custom`);
-      if (isDir(join(step.path, 'start'))) errors.push(`${where}: startFrom: previous, но есть папка start/ — нужен startFrom: custom (или удалите её)`);
+      if (isDir(join(step.path, 'start')))
+        errors.push(`${where}: startFrom: previous, но есть папка start/ — нужен startFrom: custom (или удалите её)`);
       if (meta.removedInStart) errors.push(`${where}: removedInStart бывает только у startFrom: custom`);
     } else {
       checkOverlay(where, 'start', previousResult, own.start, meta.removedInStart);
       if (index > 0 && !Object.keys(own.start).length && !meta.removedInStart?.length) {
-        errors.push(`${where}: startFrom: custom, но старт ничем не отличается от результата предыдущего шага — нужен startFrom: previous`);
+        errors.push(
+          `${where}: startFrom: custom, но старт ничем не отличается от результата предыдущего шага — нужен startFrom: previous`,
+        );
       }
     }
     if (meta.noSolution) {
@@ -109,7 +114,10 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
     if (!start['main.ts']) errors.push(`${where}: в старте нет main.ts`);
 
     // Старт со startFrom: previous — результат предыдущего шага, он уже проверен
-    for (const [kind, files] of [['start', startFrom === 'custom' ? start : {}], ['solution', solution]]) {
+    for (const [kind, files] of [
+      ['start', startFrom === 'custom' ? start : {}],
+      ['solution', solution],
+    ]) {
       if (!Object.keys(files).length) continue;
       // brokenStart: стартовый код намеренно содержит ошибки (шаг про отладку) — не собираем и не проверяем типы
       if (kind === 'start' && meta.brokenStart) continue;

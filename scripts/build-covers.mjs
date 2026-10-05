@@ -26,7 +26,7 @@ function wrap(title, maxLength = 12) {
 function pattern(seed) {
   const shapes = [];
   let x = seed * 9301 + 49297;
-  const random = () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+  const random = () => (x = (x * 9301 + 49297) % 233280) / 233280;
   for (let i = 0; i < 7; i++) {
     const cx = Math.round(random() * 300);
     const cy = Math.round(random() * 260);

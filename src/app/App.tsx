@@ -29,10 +29,7 @@ function TableOfContents() {
             <ol>
               {chapter.steps.map((step) => (
                 <li key={step.id}>
-                  <Link
-                    to={stepPath(step)}
-                    className={location.pathname === stepPath(step) ? 'current' : undefined}
-                  >
+                  <Link to={stepPath(step)} className={location.pathname === stepPath(step) ? 'current' : undefined}>
                     {progress.isDone(step.id) && <span className="done-mark">✓</span>}
                     {step.meta.title}
                   </Link>

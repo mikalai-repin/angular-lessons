@@ -1,4 +1,10 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { CartStore } from '../../core/cart-store';
 import { Game } from '../../core/models';
@@ -13,7 +19,15 @@ import { Tooltip } from '../tooltip';
 // Карточка игры в каталоге
 @Component({
   selector: 'app-game-card',
-  imports: [DecimalPipe, DurationPipe, LazyImage, PlayersPipe, PricePipe, Rating, Tooltip],
+  imports: [
+    DecimalPipe,
+    DurationPipe,
+    LazyImage,
+    PlayersPipe,
+    PricePipe,
+    Rating,
+    Tooltip,
+  ],
   templateUrl: './game-card.html',
   styleUrl: './game-card.css',
   host: {
@@ -30,7 +44,9 @@ export class GameCard {
   // Корзина — общая для всего магазина: карточка сама кладёт в неё игру
   protected readonly cart = inject(CartStore);
   // Сколько штук этой игры уже в корзине
-  protected readonly inCart = computed(() => this.cart.quantityOf(this.game()));
+  protected readonly inCart = computed(() =>
+    this.cart.quantityOf(this.game()),
+  );
 
   // При каком остатке на складе писать «Осталось N шт.»
   protected readonly fewLeft = inject(SHOP_CONFIG).fewLeft;

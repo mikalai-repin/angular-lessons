@@ -13,7 +13,14 @@ const FEW_LEFT = 5;
 // Карточка игры в каталоге
 @Component({
   selector: 'app-game-card',
-  imports: [DecimalPipe, DurationPipe, PlayersPipe, PricePipe, Rating, Tooltip],
+  imports: [
+    DecimalPipe,
+    DurationPipe,
+    PlayersPipe,
+    PricePipe,
+    Rating,
+    Tooltip,
+  ],
   templateUrl: './game-card.html',
   styleUrl: './game-card.css',
   host: {

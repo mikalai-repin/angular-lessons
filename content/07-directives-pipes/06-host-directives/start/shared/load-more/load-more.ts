@@ -1,4 +1,11 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, inject, output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  afterNextRender,
+  inject,
+  output,
+} from '@angular/core';
 
 // «Показать ещё»: кнопка, которая срабатывает и сама, когда покупатель докрутил до неё
 @Component({
@@ -12,7 +19,8 @@ export class LoadMore {
 
   constructor() {
     // inject работает только здесь, в контексте внедрения, — не внутри afterNextRender
-    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const host =
+      inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     const destroyRef = inject(DestroyRef);
 
     // IntersectionObserver — API браузера: создаём его после отрисовки, когда хост уже в документе

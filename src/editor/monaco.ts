@@ -12,11 +12,14 @@ import { angularHtmlLanguage, defineCourseThemes } from './angular-html';
 // Поэтому кладём .d.ts пакетов по их настоящим путям, а для каждого подпути (`@angular/core/rxjs-interop`)
 // добавляем файл-заглушку `<подпуть>/index.d.ts` с `export * from '<настоящий файл>'`.
 
-const angularTypes = import.meta.glob('../../node_modules/@angular/{core,common,compiler,platform-browser,forms,router}/types/*.d.ts', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
+const angularTypes = import.meta.glob(
+  '../../node_modules/@angular/{core,common,compiler,platform-browser,forms,router}/types/*.d.ts',
+  {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  },
+) as Record<string, string>;
 
 const angularPackages = import.meta.glob(
   '../../node_modules/@angular/{core,common,compiler,platform-browser,forms,router}/package.json',
@@ -39,6 +42,7 @@ const localeTypes = import.meta.glob('../../node_modules/@angular/common/locales
 
 // Signal Forms ссылаются на типы Standard Schema
 import standardSchemaTypes from '../../node_modules/@standard-schema/spec/dist/index.d.ts?raw';
+import lessonPrettier from '../../shared/lesson-prettier.json';
 
 self.MonacoEnvironment = {
   getWorker(_id, label) {
@@ -102,18 +106,25 @@ for (const [path, source] of Object.entries(rxjsTypes)) {
   ts.typescriptDefaults.addExtraLib(source, NODE_MODULES + relativeToNodeModules(path));
 }
 ts.typescriptDefaults.addExtraLib(`export * from './dist/types/index';`, `${NODE_MODULES}rxjs/index.d.ts`);
-ts.typescriptDefaults.addExtraLib(`export * from '../dist/types/operators/index';`, `${NODE_MODULES}rxjs/operators/index.d.ts`);
+ts.typescriptDefaults.addExtraLib(
+  `export * from '../dist/types/operators/index';`,
+  `${NODE_MODULES}rxjs/operators/index.d.ts`,
+);
 ts.typescriptDefaults.addExtraLib(standardSchemaTypes, `${NODE_MODULES}@standard-schema/spec/index.d.ts`);
 
 // --- Форматирование кода (Prettier) ---
-/** Настройки — как в курсе PixiJS; шаблоны Angular разбирает парсер `angular` (он знает @if, @for, привязки) */
-const PRETTIER_OPTIONS = { printWidth: 64, singleQuote: true, trailingComma: 'all', tabWidth: 2, semi: true } as const;
+/** Настройки — общие с файлами уроков на диске (shared/lesson-prettier.json: по ним форматирует write_steps
+ *  в генераторах глав); шаблоны Angular разбирает парсер `angular` (он знает @if, @for, привязки) */
+const PRETTIER_OPTIONS = lessonPrettier as { printWidth: number; singleQuote: boolean; trailingComma: 'all' };
 
 /** Prettier весит заметно, поэтому грузим его только при первом форматировании */
 async function format(code: string, language: string) {
   const prettier = await import('prettier/standalone');
   if (language === 'typescript') {
-    const [typescript, estree] = await Promise.all([import('prettier/plugins/typescript'), import('prettier/plugins/estree')]);
+    const [typescript, estree] = await Promise.all([
+      import('prettier/plugins/typescript'),
+      import('prettier/plugins/estree'),
+    ]);
     return prettier.format(code, { ...PRETTIER_OPTIONS, parser: 'typescript', plugins: [typescript, estree] });
   }
   if (language === 'html') {
@@ -123,6 +134,19 @@ async function format(code: string, language: string) {
   const postcss = await import('prettier/plugins/postcss');
   return prettier.format(code, { ...PRETTIER_OPTIONS, parser: 'css', plugins: [postcss] });
 }
+
+// Встроенные форматтеры Monaco для HTML и CSS выключены: HTML-форматтер не знает шаблонов Angular (@if, @for —
+// без отступов, атрибуты склеиваются), а при двух форматтерах Monaco выбирает встроенный, а не наш Prettier
+monaco.html.htmlDefaults.setModeConfiguration({
+  ...monaco.html.htmlDefaults.modeConfiguration,
+  documentFormattingEdits: false,
+  documentRangeFormattingEdits: false,
+});
+monaco.css.cssDefaults.setModeConfiguration({
+  ...monaco.css.cssDefaults.modeConfiguration,
+  documentFormattingEdits: false,
+  documentRangeFormattingEdits: false,
+});
 
 // Стандартная команда Monaco «Format Document» (Shift+Alt+F и контекстное меню) теперь работает через Prettier
 for (const language of ['typescript', 'html', 'css']) {

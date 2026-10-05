@@ -2,7 +2,7 @@
 # Запуск: python3 tools/authoring/ch01-gen.py — ПЕРЕЗАПИСЫВАЕТ start/ и solution/ всех шагов главы 1.
 # Шаг 01 — демо-магазин (роутинг, учебный бэкенд, поиск): его код ведётся руками в start/ шага 01, генератор
 # только переписывает его как есть. На нём же работают проверки платформы (checks/platform.mjs, checks/preview.mjs).
-# После запуска: npm run validate, проверка Prettier (см. docs/authoring-process.md).
+# Код форматирует write_steps (как кнопка «Формат» в редакторе). После запуска: npm run validate.
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
 import os
 

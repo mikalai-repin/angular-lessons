@@ -1,8 +1,8 @@
 # Генератор кода шагов главы 3: общие куски — константы, шаги — их комбинации.
 # Запуск: python3 tools/authoring/ch03-gen.py — ПЕРЕЗАПИСЫВАЕТ start/ и solution/ всех шагов главы 3.
 # Старт главы — решение практикума главы 2 (08-practice) + стили главы в app.css.
-# После запуска: npm run validate, проверка Prettier (см. docs/authoring-process.md).
-# В конце прогоняет Prettier по коду шагов.
+# Код форматирует write_steps (как кнопка «Формат» в редакторе). После запуска: npm run validate.
+# Код форматирует write_steps (как кнопка «Формат» в редакторе).
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
 import os
 
@@ -551,9 +551,5 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from steps import write_steps
 
 write_steps(ROOT, steps, base='02-templates/08-practice')
-# Код шагов — в том виде, какой даёт форматирование в редакторе платформы
 import subprocess
-opts = ['--print-width', '120', '--single-quote', '--trailing-comma', 'all', '--log-level', 'warn', '--write']
-subprocess.run(['npx', 'prettier', *opts, f'{ROOT}/**/*.ts'], cwd=PROJECT, check=True)
-subprocess.run(['npx', 'prettier', *opts, '--parser', 'angular', f'{ROOT}/**/*.html'], cwd=PROJECT, check=True)
 print('ok')

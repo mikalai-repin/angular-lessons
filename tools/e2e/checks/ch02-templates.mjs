@@ -22,7 +22,11 @@ await page.goto(`${BASE_URL}/templates/interpolation`, { waitUntil: 'networkidle
 await wait(3000);
 
 // После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () => page.frames().filter((f) => f.url().includes('/app')).at(-1);
+const frame = () =>
+  page
+    .frames()
+    .filter((f) => f.url().includes('/app'))
+    .at(-1);
 const appText = () => frame().evaluate(() => document.body.innerText);
 const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
 const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
@@ -57,7 +61,10 @@ await next();
 expect((await title()) === 'Привязка свойств', 'шаг 2 открыт кнопкой «Далее»');
 await showSolution();
 const img = await frame().$eval('.cover', (e) => ({ src: e.getAttribute('src'), alt: e.alt }));
-expect(img.src === '/assets/covers/treasure-island.svg' && img.alt === 'Остров сокровищ', `шаг 2: [src] и [alt] ${JSON.stringify(img)}`);
+expect(
+  img.src === '/assets/covers/treasure-island.svg' && img.alt === 'Остров сокровищ',
+  `шаг 2: [src] и [alt] ${JSON.stringify(img)}`,
+);
 expect(!(await frame().$eval('.card button', (e) => e.disabled)), 'шаг 2: кнопка активна при inStock = 12');
 await checkConsoleClean('шаг 2');
 
@@ -68,8 +75,14 @@ const rating = await frame().$eval('.rating', (e) => ({
   label: e.getAttribute('aria-label'),
   width: e.querySelector('.stars').style.width,
 }));
-expect(rating.label === 'Рейтинг: 4.6 из 5' && rating.width === '92%', `шаг 3: aria-label и ширина звёзд ${JSON.stringify(rating)}`);
-expect(!(await frame().$eval('.card', (e) => e.classList.contains('sold-out'))), 'шаг 3: нет класса sold-out при inStock = 12');
+expect(
+  rating.label === 'Рейтинг: 4.6 из 5' && rating.width === '92%',
+  `шаг 3: aria-label и ширина звёзд ${JSON.stringify(rating)}`,
+);
+expect(
+  !(await frame().$eval('.card', (e) => e.classList.contains('sold-out'))),
+  'шаг 3: нет класса sold-out при inStock = 12',
+);
 await checkConsoleClean('шаг 3');
 
 // 4. События
@@ -110,7 +123,9 @@ await checkConsoleClean('шаг 6');
 // 7. Безопасность
 await next();
 await showSolution();
-const bold = await frame().$eval('.description b', (e) => e.textContent).catch(() => null);
+const bold = await frame()
+  .$eval('.description b', (e) => e.textContent)
+  .catch(() => null);
 expect(bold === 'меняется каждую партию', 'шаг 7: [innerHTML] выводит разметку');
 await checkConsoleClean('шаг 7');
 
@@ -122,7 +137,10 @@ text = await appText();
 expect(text.includes('Игроков: 2–5 · 45 мин · 8+') && text.includes('−20 %'), 'шаг 8: карточка из объекта game');
 await frame().click('.card button');
 await wait(300);
-expect((await consoleText()).includes('Добавлено в корзину: Остров сокровищ'), 'шаг 8: addToCart берёт название из game');
+expect(
+  (await consoleText()).includes('Добавлено в корзину: Остров сокровищ'),
+  'шаг 8: addToCart берёт название из game',
+);
 await checkConsoleClean('шаг 8');
 await page.screenshot({ path: `${OUT}/ch02-practice.png` });
 

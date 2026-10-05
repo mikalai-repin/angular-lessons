@@ -7,6 +7,15 @@
   @let g = game.value();
   <h1>{{ g.title }}</h1>
   <p>{{ g.description }}</p>
-  <p class="muted">Игроков: {{ g.players.min }}–{{ g.players.max }} · {{ g.playTime }} мин · {{ g.age }}+</p>
-  <button class="button" [disabled]="g.inStock === 0" (click)="cart.add(g)">В корзину — {{ g.price }} ₽</button>
+  <p class="muted">
+    Игроков: {{ g.players.min }}–{{ g.players.max }} ·
+    {{ g.playTime }} мин · {{ g.age }}+
+  </p>
+  <button
+    class="button"
+    [disabled]="g.inStock === 0"
+    (click)="cart.add(g)"
+  >
+    В корзину — {{ g.price }} ₽
+  </button>
 }

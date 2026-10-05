@@ -11,7 +11,9 @@ if (!chapterDir) {
 }
 const strip = (d) => d.replace(/^\d+-/, '');
 const root = `${CONTENT}/${chapterDir}`;
-const steps = readdirSync(root).filter((d) => statSync(`${root}/${d}`).isDirectory()).sort();
+const steps = readdirSync(root)
+  .filter((d) => statSync(`${root}/${d}`).isDirectory())
+  .sort();
 
 const browser = await launch();
 const page = await browser.newPage();
@@ -33,9 +35,13 @@ for (const step of steps) {
     await wait(3500);
   }
   await page.screenshot({ path: `${OUT}/${chapterDir}-${step}.png` });
-  const lines = await page.$$eval('.console-line', (els) => els.map((e) => e.className.replace('console-line console-', '') + ': ' + e.textContent));
+  const lines = await page.$$eval('.console-line', (els) =>
+    els.map((e) => e.className.replace('console-line console-', '') + ': ' + e.textContent),
+  );
   const broken = await page.$$eval('.broken-link', (e) => e.length);
-  const title = await page.$eval('.lesson-title-row h1', (e) => e.textContent).catch(() => '!! страница урока не отрисовалась');
+  const title = await page
+    .$eval('.lesson-title-row h1', (e) => e.textContent)
+    .catch(() => '!! страница урока не отрисовалась');
   console.log(`\n# ${step} — ${title}${page.url() !== url ? ` (переадресация на ${page.url()})` : ''}`);
   for (const line of lines) console.log('  ' + line.slice(0, 300));
   if (broken) console.log('  !! битых ссылок step:', broken);

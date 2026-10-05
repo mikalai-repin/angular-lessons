@@ -2,16 +2,16 @@
 # Запуск: python3 tools/authoring/ch06-gen.py — ПЕРЕЗАПИСЫВАЕТ start/ и solution/ всех шагов главы 6.
 # Старт главы — решение практикума главы 5 (09-practice) + готовый компонент GameDetails (окно «Подробнее»)
 # и стили кнопки-названия в game-card.css.
-# В конце прогоняет Prettier по коду шагов. После запуска: npm run validate.
+# Код форматирует write_steps (как кнопка «Формат» в редакторе). После запуска: npm run validate.
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
 import os, subprocess, sys
 
 PROJECT = '/Users/mr/Desktop/Experimental/angular-learn'
 ROOT = f'{PROJECT}/content/06-lifecycle'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from steps import step_dir, write_steps
+from steps import legacy_dir, write_steps
 
-CH05 = step_dir(f'{PROJECT}/content/05-components/09-practice/solution')
+CH05 = legacy_dir(f'{PROJECT}/content/05-components/09-practice/solution')
 
 def read(path):
     with open(path) as f:
@@ -788,9 +788,4 @@ steps = {
 
 # Запись на диск: start/, совпадающий с результатом предыдущего шага, не записывается (см. steps.py)
 write_steps(ROOT, steps, base='05-components/09-practice')
-# Код шагов — в том виде, какой даёт форматирование в редакторе платформы
-opts = ['--print-width', '120', '--single-quote', '--trailing-comma', 'all', '--log-level', 'warn', '--write']
-subprocess.run(['npx', 'prettier', *opts, f'{ROOT}/**/*.ts'], cwd=PROJECT, check=True)
-subprocess.run(['npx', 'prettier', *opts, '--parser', 'angular', f'{ROOT}/**/*.html'], cwd=PROJECT, check=True)
-subprocess.run(['npx', 'prettier', *opts, f'{ROOT}/**/*.css'], cwd=PROJECT, check=True)
 print('ok')

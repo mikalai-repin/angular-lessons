@@ -24,13 +24,18 @@ await page.goto(`${BASE_URL}/control-flow/if`, { waitUntil: 'networkidle0' });
 await wait(3000);
 
 // После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () => page.frames().filter((f) => f.url().includes('/app')).at(-1);
+const frame = () =>
+  page
+    .frames()
+    .filter((f) => f.url().includes('/app'))
+    .at(-1);
 const appText = async () => (await frame().evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
 const header = () => frame().$eval('.cart', (e) => e.textContent.trim());
 const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
 const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
 const count = (selector) => frame().$$eval(selector, (els) => els.length);
-const texts = (selector) => frame().$$eval(selector, (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()));
+const texts = (selector) =>
+  frame().$$eval(selector, (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()));
 const click = async (selector, times = 1, ms = 200) => {
   for (let i = 0; i < times; i++) {
     await frame().click(selector);
@@ -41,7 +46,9 @@ const click = async (selector, times = 1, ms = 200) => {
 const addTile = async (name, times = 1) => {
   for (let i = 0; i < times; i++) {
     await frame().evaluate((name) => {
-      const tile = [...document.querySelectorAll('.tile')].find((t) => t.querySelector('.tile-title').textContent.includes(name));
+      const tile = [...document.querySelectorAll('.tile')].find((t) =>
+        t.querySelector('.tile-title').textContent.includes(name),
+      );
       tile.querySelector('.button').click();
     }, name);
     await wait(200);
@@ -49,7 +56,9 @@ const addTile = async (name, times = 1) => {
 };
 const tile = (name) =>
   frame().evaluate((name) => {
-    const t = [...document.querySelectorAll('.tile')].find((t) => t.querySelector('.tile-title').textContent.includes(name));
+    const t = [...document.querySelectorAll('.tile')].find((t) =>
+      t.querySelector('.tile-title').textContent.includes(name),
+    );
     return { text: t.innerText.replace(/\s+/g, ' '), disabled: t.querySelector('.button').disabled };
   }, name);
 const type = async (text) => {
@@ -81,9 +90,15 @@ async function checkConsoleClean(step) {
 await showSolution();
 expect((await title()) === '@if', 'шаг 1 открыт');
 expect((await texts('.stock'))[0] === 'В наличии', 'шаг 1: «В наличии» у «Острова сокровищ»');
-expect((await count('.in-cart')) === 0 && (await count('.mini-cart')) === 0, 'шаг 1: «Уже в корзине» и мини-корзины нет в DOM');
+expect(
+  (await count('.in-cart')) === 0 && (await count('.mini-cart')) === 0,
+  'шаг 1: «Уже в корзине» и мини-корзины нет в DOM',
+);
 await click('.actions .button');
-expect((await count('.in-cart')) === 1 && (await count('.mini-cart')) === 1, 'шаг 1: после добавления оба блока появились');
+expect(
+  (await count('.in-cart')) === 1 && (await count('.mini-cart')) === 1,
+  'шаг 1: после добавления оба блока появились',
+);
 await click('button[aria-label="Следующая игра"]', 3);
 expect((await texts('.stock'))[0] === 'Осталось 3 шт.', 'шаг 1: «Ночной экспресс» — «Осталось 3 шт.»');
 await click('button[aria-label="Следующая игра"]', 3);
@@ -111,7 +126,9 @@ let rows = await texts('.cart-row-title');
 expect(rows.join('|') === '1. Остров сокровищ|2. Ночной экспресс', `шаг 3: нумерация ${rows.join('|')}`);
 expect((await texts('.cart-row-sum')).join('|') === '3980 ₽|3190 ₽', 'шаг 3: суммы строк');
 const zebra = () =>
-  frame().$$eval('.cart-row', (els) => els.map((e) => [e.classList.contains('even'), e.matches('.cart-row:nth-of-type(odd)')]));
+  frame().$$eval('.cart-row', (els) =>
+    els.map((e) => [e.classList.contains('even'), e.matches('.cart-row:nth-of-type(odd)')]),
+  );
 expect(JSON.stringify(await zebra()) === '[[true,true],[false,false]]', 'шаг 3: $even совпадает с :nth-of-type(odd)');
 expect(
   await frame().$eval('.cart-row:nth-of-type(2) button[aria-label="Убрать одну"]', (e) => e.disabled),
@@ -124,7 +141,10 @@ expect(
 );
 await click('.cart-row button[aria-label="Убрать из корзины"]');
 rows = await texts('.cart-row-title');
-expect(rows.join('|') === '1. Ночной экспресс' && JSON.stringify(await zebra()) === '[[true,true]]', 'шаг 3: после «×» перенумерация и «зебра»');
+expect(
+  rows.join('|') === '1. Ночной экспресс' && JSON.stringify(await zebra()) === '[[true,true]]',
+  'шаг 3: после «×» перенумерация и «зебра»',
+);
 await checkConsoleClean('шаг 3');
 
 // 4. @empty
@@ -200,10 +220,19 @@ expect((await count('.filters select')) === 1, 'шаг 8: старт — реш�
 // Эксперимент из текста шага 8: наблюдатель за DOM, сортировка с track game.id
 const files = readDir(`${CONTENT}/04-control-flow/08-track/start`);
 files['main.ts'] = files['main.ts']
-  .replace("import { appConfig } from './app.config';\n", "import { appConfig } from './app.config';\nimport { watchCatalog } from './dom-watch';\n")
-  .replace('bootstrapApplication(App, appConfig).catch', 'bootstrapApplication(App, appConfig)\n  .then(() => watchCatalog())\n  .catch');
+  .replace(
+    "import { appConfig } from './app.config';\n",
+    "import { appConfig } from './app.config';\nimport { watchCatalog } from './dom-watch';\n",
+  )
+  .replace(
+    'bootstrapApplication(App, appConfig).catch',
+    'bootstrapApplication(App, appConfig)\n  .then(() => watchCatalog())\n  .catch',
+  );
 await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate((code) => localStorage.setItem('angular-course:v1', JSON.stringify({ steps: { 'control-flow/track': { code } } })), files);
+await page.evaluate(
+  (code) => localStorage.setItem('angular-course:v1', JSON.stringify({ steps: { 'control-flow/track': { code } } })),
+  files,
+);
 await page.goto(`${BASE_URL}/control-flow/track`, { waitUntil: 'networkidle0' });
 await wait(4000);
 await frame().select('.filters select', 'cheap');

@@ -14,5 +14,7 @@ export class GamePage {
   readonly id = input.required<string>();
 
   protected readonly cart = inject(CartStore);
-  protected readonly game = httpResource<Game>(() => `/api/games/${this.id()}`);
+  protected readonly game = httpResource<Game>(
+    () => `/api/games/${this.id()}`,
+  );
 }

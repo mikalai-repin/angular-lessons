@@ -1,4 +1,9 @@
-import { Component, contentChildren, effect, signal } from '@angular/core';
+import {
+  Component,
+  contentChildren,
+  effect,
+  signal,
+} from '@angular/core';
 import { Tab } from './tab';
 
 // Вкладки: кнопки с названиями и содержимое выбранной вкладки
@@ -17,7 +22,9 @@ export class Tabs {
     // Выбранную вкладку показать, остальные спрятать
     effect(() => {
       const selected = this.selected();
-      this.tabs().forEach((tab, index) => tab.active.set(index === selected));
+      this.tabs().forEach((tab, index) =>
+        tab.active.set(index === selected),
+      );
     });
   }
 }

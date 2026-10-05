@@ -24,7 +24,11 @@ await page.goto(`${BASE_URL}/signals/problem`, { waitUntil: 'networkidle0' });
 await wait(3000);
 
 // После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () => page.frames().filter((f) => f.url().includes('/app')).at(-1);
+const frame = () =>
+  page
+    .frames()
+    .filter((f) => f.url().includes('/app'))
+    .at(-1);
 const appText = async () => (await frame().evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
 const header = () => frame().$eval('.cart', (e) => e.textContent.trim());
 const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
@@ -99,10 +103,7 @@ await add();
 await next();
 await add();
 expect((await header()) === 'В корзине: 3 · 5270 ₽', `шаг 4: шапка «${await header()}»`);
-expect(
-  (await appText()).includes('Остров сокровищ × 2, Драконья почта × 1'),
-  'шаг 4: список позиций в мини-корзине',
-);
+expect((await appText()).includes('Остров сокровищ × 2, Драконья почта × 1'), 'шаг 4: список позиций в мини-корзине');
 await checkConsoleClean('шаг 4');
 
 // 5. effect: строка в консоли на каждое изменение корзины, смена игры — без строк
@@ -124,7 +125,10 @@ await add();
 await next();
 text = await consoleText();
 expect((text.match(/Корзина:/g) ?? []).length === 2, 'шаг 6: смена игры не запускает эффект');
-expect(text.includes('Корзина: Зельевары × 1 (на экране — Зельевары)'), 'шаг 6: название открытой игры через untracked');
+expect(
+  text.includes('Корзина: Зельевары × 1 (на экране — Зельевары)'),
+  'шаг 6: название открытой игры через untracked',
+);
 await checkConsoleClean('шаг 6');
 
 // 7. linkedSignal: количество сбрасывается при смене игры, ограничено складом
@@ -210,8 +214,14 @@ expect(
 // Граф сигналов из текста шага 9
 files = readDir(`${CONTENT}/03-signals/09-signal-graph/start`);
 files['main.ts'] = files['main.ts']
-  .replace("import { appConfig } from './app.config';\n", "import { appConfig } from './app.config';\nimport { printSignalGraph } from './signal-graph';\n")
-  .replace('bootstrapApplication(App, appConfig).catch', 'bootstrapApplication(App, appConfig)\n  .then((appRef) => printSignalGraph(appRef.components[0].instance))\n  .catch');
+  .replace(
+    "import { appConfig } from './app.config';\n",
+    "import { appConfig } from './app.config';\nimport { printSignalGraph } from './signal-graph';\n",
+  )
+  .replace(
+    'bootstrapApplication(App, appConfig).catch',
+    'bootstrapApplication(App, appConfig)\n  .then((appRef) => printSignalGraph(appRef.components[0].instance))\n  .catch',
+  );
 text = await runWithCode('signals/signal-graph', files);
 for (const line of [
   'gameIndex (signal): читает —; его читают шаблон, game',

@@ -20,5 +20,7 @@ export class Countdown {
   // Текущее время, раз в секунду. Таймер остановится сам, когда компонент уничтожат
   private readonly now = injectNow();
   // Сколько миллисекунд осталось. Строкой «07:16:10» его сделает пайп в шаблоне
-  protected readonly left = computed(() => untilMidnight(this.now()));
+  protected readonly left = computed(() =>
+    untilMidnight(this.now()),
+  );
 }

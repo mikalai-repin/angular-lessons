@@ -7,11 +7,20 @@
     <img class="cover" [src]="cover" [alt]="title" />
     <div class="body">
       <h2 class="title">{{ title }}</h2>
-      <span class="rating" role="img" [attr.aria-label]="'Рейтинг: ' + rating + ' из 5'">
-        <span class="stars" [style.width.%]="(rating / 5) * 100"></span>
+      <span
+        class="rating"
+        role="img"
+        [attr.aria-label]="'Рейтинг: ' + rating + ' из 5'"
+      >
+        <span
+          class="stars"
+          [style.width.%]="(rating / 5) * 100"
+        ></span>
       </span>
       <p class="price">{{ price }} ₽</p>
-      <button class="button" [disabled]="inStock === 0">В корзину</button>
+      <button class="button" [disabled]="inStock === 0">
+        В корзину
+      </button>
     </div>
   </article>
 </main>

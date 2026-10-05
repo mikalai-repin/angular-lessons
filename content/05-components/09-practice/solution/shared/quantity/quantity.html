@@ -1,3 +1,15 @@
-<button aria-label="Меньше" [disabled]="value() <= min()" (click)="change(-1)">−</button>
+<button
+  aria-label="Меньше"
+  [disabled]="value() <= min()"
+  (click)="change(-1)"
+>
+  −
+</button>
 <span class="value">{{ value() }}</span>
-<button aria-label="Больше" [disabled]="value() >= max()" (click)="change(1)">+</button>
+<button
+  aria-label="Больше"
+  [disabled]="value() >= max()"
+  (click)="change(1)"
+>
+  +
+</button>

@@ -6,7 +6,8 @@ export interface Game {
   cover: string;
   price: number; // в рублях
   oldPrice?: number; // цена до скидки, если скидка есть
-  category: 'family' | 'strategy' | 'party' | 'cooperative' | 'kids';
+  category:
+    'family' | 'strategy' | 'party' | 'cooperative' | 'kids';
   players: { min: number; max: number };
   playTime: number; // минуты
   age: number; // с какого возраста

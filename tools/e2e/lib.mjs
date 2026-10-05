@@ -71,10 +71,12 @@ export async function openPreview(
       if (e.data.type === 'url') window.__url = e.data.url;
     });
   }, SOURCE);
-  await page.evaluate(
-    (run) => window.postMessage({ type: 'run', entry: 'main.js', ...run }, '*'),
-    { files: compiled.files, styles: compiled.styles, url, backend },
-  );
+  await page.evaluate((run) => window.postMessage({ type: 'run', entry: 'main.js', ...run }, '*'), {
+    files: compiled.files,
+    styles: compiled.styles,
+    url,
+    backend,
+  });
   await wait(waitMs);
   await collect(page, logs, network);
   return { page, logs, network };

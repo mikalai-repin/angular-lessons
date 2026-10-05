@@ -3,21 +3,40 @@
 </header>
 <main class="page">
   <h1>Магазин настольных игр</h1>
-  <input #searchBox class="search" type="search" placeholder="Найти игру" (keydown.enter)="search(searchBox.value)" />
-  <p class="muted" [hidden]="!searchBox.value">Ищем: «{{ searchBox.value }}»</p>
+  <input
+    #searchBox
+    class="search"
+    type="search"
+    placeholder="Найти игру"
+    (keydown.enter)="search(searchBox.value)"
+  />
+  <p class="muted" [hidden]="!searchBox.value">
+    Ищем: «{{ searchBox.value }}»
+  </p>
 
   @let soldOut = game.inStock === 0;
-  @let discount = game.oldPrice ? ((1 - game.price / game.oldPrice) * 100).toFixed(0) : 0;
+  @let discount =
+    game.oldPrice
+      ? ((1 - game.price / game.oldPrice) * 100).toFixed(0)
+      : 0;
 
   <article class="card" [class.sold-out]="soldOut">
     <img class="cover" [src]="game.cover" [alt]="game.title" />
     <div class="body">
       <h2 class="title">{{ game.title }}</h2>
-      <span class="rating" role="img" [attr.aria-label]="'Рейтинг: ' + game.rating + ' из 5'">
-        <span class="stars" [style.width.%]="(game.rating / 5) * 100"></span>
+      <span
+        class="rating"
+        role="img"
+        [attr.aria-label]="'Рейтинг: ' + game.rating + ' из 5'"
+      >
+        <span
+          class="stars"
+          [style.width.%]="(game.rating / 5) * 100"
+        ></span>
       </span>
       <p class="meta muted">
-        Игроков: {{ game.players.min }}–{{ game.players.max }} · {{ game.playTime }} мин · {{ game.age }}+
+        Игроков: {{ game.players.min }}–{{ game.players.max }} ·
+        {{ game.playTime }} мин · {{ game.age }}+
       </p>
       <p class="price">
         {{ game.price }} ₽
@@ -27,7 +46,11 @@
         </span>
       </p>
       <p class="description" [innerHTML]="game.description"></p>
-      <button class="button" [disabled]="soldOut" (click)="addToCart()">
+      <button
+        class="button"
+        [disabled]="soldOut"
+        (click)="addToCart()"
+      >
         {{ soldOut ? 'Нет в наличии' : 'В корзину' }}
       </button>
     </div>

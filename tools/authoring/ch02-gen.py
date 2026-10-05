@@ -1,7 +1,7 @@
 # Генератор кода шагов главы 2: общие куски — константы, шаги — их комбинации.
 # Запуск: python3 tools/authoring/ch02-gen.py — ПЕРЕЗАПИСЫВАЕТ start/ и solution/ всех шагов главы 2.
 # Старт главы — решение главы 1 (07-compiler) с main.ts из ng new.
-# После запуска: npm run validate, проверка Prettier (см. docs/authoring-process.md).
+# Код форматирует write_steps (как кнопка «Формат» в редакторе). После запуска: npm run validate.
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
 import json, os
 

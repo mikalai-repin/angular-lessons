@@ -2,7 +2,7 @@
 title: Проблема
 startFrom: custom
 base: 02-templates/08-practice
-baseHash: 'c20ab8738cb5'
+baseHash: '64e4ffdcfa27'
 focus: app.ts
 files: [main.ts, app.ts, app.html, app.css, core/models.ts, core/games-data.ts, app.config.ts, styles.css]
 api: [обнаружение изменений, зонлесс, OnPush]

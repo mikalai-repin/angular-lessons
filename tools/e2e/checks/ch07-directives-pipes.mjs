@@ -23,13 +23,22 @@ await page.goto(`${BASE_URL}/directives-pipes/builtin-pipes`, { waitUntil: 'netw
 await wait(3000);
 
 // После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () => page.frames().filter((f) => f.url().includes('/app')).at(-1);
+const frame = () =>
+  page
+    .frames()
+    .filter((f) => f.url().includes('/app'))
+    .at(-1);
 const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
 const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
 const count = (selector) => frame().$$eval(selector, (els) => els.length);
 // Текст без неразрывных пробелов и лишних переводов строк: «1 990 ₽» пайпы пишут через U+00A0
 const text = (selector) =>
-  frame().$eval(selector, (e) => e.textContent.replace(/\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ').trim());
+  frame().$eval(selector, (e) =>
+    e.textContent
+      .replace(/\u00a0|\u202f/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
 const card = (name) =>
   frame().evaluateHandle(
     (name) => [...document.querySelectorAll('app-game-card')].find((c) => c.textContent.includes(name)),
@@ -37,7 +46,12 @@ const card = (name) =>
   );
 const cardText = async (name, selector) =>
   (await card(name)).evaluate(
-    (c, selector) => c.querySelector(selector)?.textContent.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim() ?? null,
+    (c, selector) =>
+      c
+        .querySelector(selector)
+        ?.textContent.replace(/\u00a0/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim() ?? null,
     selector,
   );
 const openGame = async (name) => {
@@ -79,13 +93,18 @@ expect((await title()) === 'Встроенные пайпы', 'шаг 1 откр
 expect((await cardText('Остров', '.price')) === '1990 ₽ 2490 ₽', 'шаг 1: в старте цены без разрядов');
 await showSolution();
 expect((await cardText('Остров', '.price')) === '1 990 ₽ 2 490 ₽', 'шаг 1: currency — «1 990 ₽ 2 490 ₽»');
-const stickers = await frame().$$eval('.sticker.sale', (els) => els.map((e) => e.textContent.replace(/\u00a0/g, ' ').trim()));
+const stickers = await frame().$$eval('.sticker.sale', (els) =>
+  els.map((e) => e.textContent.replace(/\u00a0/g, ' ').trim()),
+);
 expect(stickers.join() === '−20 %,−11 %', `шаг 1: percent на стикерах первых шести карточек (${stickers})`);
 await openGame('Остров');
 const t1 = await text('app-countdown');
 await wait(1200);
 const t2 = await text('app-countdown');
-expect(/^Скидка действует ещё \d\d:\d\d:\d\d$/.test(t1) && t1 !== t2, `шаг 1: date в таймере, время идёт (${t1} → ${t2})`);
+expect(
+  /^Скидка действует ещё \d\d:\d\d:\d\d$/.test(t1) && t1 !== t2,
+  `шаг 1: date в таймере, время идёт (${t1} → ${t2})`,
+);
 await page.keyboard.press('Escape');
 await wait(300);
 await checkConsoleClean('шаг 1');
@@ -99,7 +118,9 @@ for (const name of ['Остров', 'Остров', 'Ночной']) {
   await wait(200);
 }
 expect((await text('.cart')) === 'В корзине: 3 · 7 170 ₽', 'шаг 2: шапка «В корзине: 3 · 7 170 ₽»');
-const rows = await frame().$$eval('.cart-row-sum', (els) => els.map((e) => e.textContent.replace(/\u00a0/g, ' ').trim()));
+const rows = await frame().$$eval('.cart-row-sum', (els) =>
+  els.map((e) => e.textContent.replace(/\u00a0/g, ' ').trim()),
+);
 expect(rows.join() === '3 980 ₽,3 190 ₽', `шаг 2: строки корзины (${rows})`);
 expect((await text('.mini-cart b')) === 'Итого: 7 170 ₽', 'шаг 2: итог');
 expect((await text('.mini-cart .muted')) === 'Доставка бесплатная', 'шаг 2: доставка');
@@ -124,7 +145,8 @@ const metas = await frame().$$eval('.meta', (els) =>
   ),
 );
 expect(
-  metas.slice(0, 4).join(' | ') === '2–5 игроков · 45 мин | 2–4 игрока · 30 мин | 1–4 игрока · 1 ч | 2–5 игроков · 1 ч 30 мин',
+  metas.slice(0, 4).join(' | ') ===
+    '2–5 игроков · 45 мин | 2–4 игрока · 30 мин | 1–4 игрока · 1 ч | 2–5 игроков · 1 ч 30 мин',
   `шаг 3: строка характеристик в карточках (${metas.slice(0, 4).join(' | ')})`,
 );
 await frame().click('app-load-more button');
@@ -157,13 +179,21 @@ await showSolution();
 await (await frame().$('.sticker.sale')).hover();
 await wait(200);
 let tips = await tooltips();
-expect(tips.length === 1 && tips[0].text === 'Цена действует до конца дня' && tips[0].inside, `шаг 5: подсказка у стикера скидки (${JSON.stringify(tips)})`);
+expect(
+  tips.length === 1 && tips[0].text === 'Цена действует до конца дня' && tips[0].inside,
+  `шаг 5: подсказка у стикера скидки (${JSON.stringify(tips)})`,
+);
 await page.screenshot({ path: `${OUT}/ch07-tooltip.png` });
 await (await frame().$('app-game-card:nth-of-type(3) app-rating')).hover();
 await wait(200);
 tips = await tooltips();
-expect(tips.length === 1 && tips[0].text === 'Рейтинг 4,7' && tips[0].inside, `шаг 5: подсказка у звёзд, прежняя убрана (${JSON.stringify(tips)})`);
-const hit = await frame().evaluateHandle(() => [...document.querySelectorAll('.sticker')].find((s) => s.textContent.trim() === 'Хит'));
+expect(
+  tips.length === 1 && tips[0].text === 'Рейтинг 4,7' && tips[0].inside,
+  `шаг 5: подсказка у звёзд, прежняя убрана (${JSON.stringify(tips)})`,
+);
+const hit = await frame().evaluateHandle(() =>
+  [...document.querySelectorAll('.sticker')].find((s) => s.textContent.trim() === 'Хит'),
+);
 await hit.hover();
 await wait(200);
 tips = await tooltips();
@@ -190,7 +220,10 @@ await showSolution();
 expect((await count('app-game-card')) === 6, 'шаг 6: первая порция');
 await frame().evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 await wait(600);
-expect((await count('app-game-card')) === 12 && (await count('app-load-more')) === 0, 'шаг 6: InView в LoadMore — прокрутка показала все 12');
+expect(
+  (await count('app-game-card')) === 12 && (await count('app-load-more')) === 0,
+  'шаг 6: InView в LoadMore — прокрутка показала все 12',
+);
 await frame().evaluate(() => window.scrollTo(0, 0));
 await wait(300);
 await frame().type('.search', 'а');
@@ -216,16 +249,25 @@ const covers = () =>
     })),
   );
 let c = await covers();
-expect(c.length === 6 && c.every((i) => i.lazy && (i.src ? i.loaded : i.below)), 'шаг 7: обложки на экране загружены, остальные без src');
+expect(
+  c.length === 6 && c.every((i) => i.lazy && (i.src ? i.loaded : i.below)),
+  'шаг 7: обложки на экране загружены, остальные без src',
+);
 await frame().click('app-load-more button');
 await wait(600);
 c = await covers();
 const waiting = c.filter((i) => !i.src);
-expect(c.length === 12 && waiting.length > 0 && waiting.every((i) => i.below), `шаг 7: после «Показать ещё» ниже экрана — без src (${waiting.length})`);
+expect(
+  c.length === 12 && waiting.length > 0 && waiting.every((i) => i.below),
+  `шаг 7: после «Показать ещё» ниже экрана — без src (${waiting.length})`,
+);
 await frame().evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 await wait(900);
 c = await covers();
-expect(c.every((i) => i.src && i.loaded), 'шаг 7: прокрутка — все обложки загружены и проявились');
+expect(
+  c.every((i) => i.src && i.loaded),
+  'шаг 7: прокрутка — все обложки загружены и проявились',
+);
 const lighthouse = await (await card('Маяк')).evaluate((e) => getComputedStyle(e.querySelector('img')).opacity);
 expect(lighthouse === '0.6', `шаг 7: обложка «Маяка» по-прежнему полупрозрачная (${lighthouse})`);
 await checkConsoleClean('шаг 7');
@@ -234,7 +276,11 @@ await checkConsoleClean('шаг 7');
 await nextStep();
 expect((await title()) === 'Под капотом: директивы и компоненты', 'шаг 8 открыт');
 const dirs = await frame().evaluate(() => {
-  const names = (el) => window.ng.getDirectives(el).map((d) => d.constructor.name).join();
+  const names = (el) =>
+    window.ng
+      .getDirectives(el)
+      .map((d) => d.constructor.name)
+      .join();
   return [
     names(document.querySelector('app-game-card img')),
     names(document.querySelector('app-game-card app-rating')),

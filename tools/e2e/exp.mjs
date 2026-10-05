@@ -11,9 +11,21 @@ if (!dir || !scenario) {
   process.exit(1);
 }
 const browser = await launch();
-const { page, logs, network } = await openPreview(browser, compileDir(resolve(ROOT, dir)), { url, waitMs: Number(waitMs) });
+const { page, logs, network } = await openPreview(browser, compileDir(resolve(ROOT, dir)), {
+  url,
+  waitMs: Number(waitMs),
+});
 const mod = await import(resolve(scenario));
-await mod.default({ page, logs, network, wait, navigate: (u, ms) => navigate(page, u, ms), pageText: () => pageText(page), appUrl: () => appUrl(page), collect: () => collect(page, logs, network) });
+await mod.default({
+  page,
+  logs,
+  network,
+  wait,
+  navigate: (u, ms) => navigate(page, u, ms),
+  pageText: () => pageText(page),
+  appUrl: () => appUrl(page),
+  collect: () => collect(page, logs, network),
+});
 await collect(page, logs, network);
 console.log(logs.join('\n'));
 await browser.close();

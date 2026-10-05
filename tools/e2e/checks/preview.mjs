@@ -21,7 +21,10 @@ await page.type('.search', 'шах', { delay: 50 });
 await wait(1200);
 await collect(page, logs, network);
 const searches = network.filter((e) => e.url.startsWith('/api/games?q=%D1'));
-expect(searches.some((e) => e.status === 'canceled'), `устаревшие запросы поиска отменены: ${searches.map((e) => e.status).join(', ')}`);
+expect(
+  searches.some((e) => e.status === 'canceled'),
+  `устаревшие запросы поиска отменены: ${searches.map((e) => e.status).join(', ')}`,
+);
 expect((await pageText(page)).includes('Найдено игр: 1'), 'поиск «шах» нашёл одну игру');
 
 await page.click('app-game-card a.cover');
@@ -36,7 +39,10 @@ expect((await pageText(page)).includes('Корзина (2)'), 'счётчик к
 
 await navigate(page, '/cart', 800);
 const cartText = await pageText(page);
-expect(cartText.includes('Шахматы «Классика» × 2') && cartText.includes('Итого: 5980'), 'ленивая корзина открылась через адресную строку');
+expect(
+  cartText.includes('Шахматы «Классика» × 2') && cartText.includes('Итого: 5980'),
+  'ленивая корзина открылась через адресную строку',
+);
 
 await navigate(page, '/nope', 500);
 expect((await pageText(page)).includes('Нет такой страницы'), 'адрес /nope → 404');

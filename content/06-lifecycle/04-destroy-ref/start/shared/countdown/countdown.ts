@@ -10,7 +10,11 @@ function untilMidnight(now: number): number {
 // 3 ч 5 мин 9 с → «03:05:09»
 function formatTime(ms: number): string {
   const seconds = Math.floor(ms / 1000);
-  return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
+  return [
+    Math.floor(seconds / 3600),
+    Math.floor(seconds / 60) % 60,
+    seconds % 60,
+  ]
     .map((n) => String(n).padStart(2, '0'))
     .join(':');
 }

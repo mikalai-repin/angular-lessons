@@ -88,7 +88,15 @@ export function createBackend({ originalFetch, report }) {
       },
     ],
     ['GET', '/api/categories', () => json(200, db.categories)],
-    ['GET', '/api/games/:id/reviews', (_r, { id }) => json(200, db.reviews.filter((r) => String(r.gameId) === id))],
+    [
+      'GET',
+      '/api/games/:id/reviews',
+      (_r, { id }) =>
+        json(
+          200,
+          db.reviews.filter((r) => String(r.gameId) === id),
+        ),
+    ],
     [
       'POST',
       '/api/games/:id/reviews',
@@ -113,7 +121,9 @@ export function createBackend({ originalFetch, report }) {
       '/api/login',
       (_r, _p, _q, body) => {
         const user = db.users.find((u) => u.email === body?.email && u.password === body?.password);
-        return user ? json(200, { token: user.token, user: publicUser(user) }) : error(401, 'Неверный e-mail или пароль');
+        return user
+          ? json(200, { token: user.token, user: publicUser(user) })
+          : error(401, 'Неверный e-mail или пароль');
       },
     ],
     [
@@ -142,7 +152,13 @@ export function createBackend({ originalFetch, report }) {
       '/api/orders',
       (request) => {
         const [user, denied] = requireUser(request);
-        return denied ?? json(200, db.orders.filter((o) => o.userId === user.id));
+        return (
+          denied ??
+          json(
+            200,
+            db.orders.filter((o) => o.userId === user.id),
+          )
+        );
       },
     ],
     [
@@ -157,7 +173,12 @@ export function createBackend({ originalFetch, report }) {
           if (game.inStock < item.quantity) return error(409, `«${game.title}»: на складе только ${game.inStock}`);
         }
         for (const item of body.items) db.games.find((g) => g.id === item.gameId).inStock -= item.quantity;
-        const order = { id: db.orders.length + 1, userId: user?.id ?? null, ...body, createdAt: new Date().toISOString() };
+        const order = {
+          id: db.orders.length + 1,
+          userId: user?.id ?? null,
+          ...body,
+          createdAt: new Date().toISOString(),
+        };
         db.orders.push(order);
         return json(201, order);
       },
@@ -208,7 +229,9 @@ export function createBackend({ originalFetch, report }) {
       if (match && r.method === request.method) return r.handler(request, match.groups ?? {}, url.searchParams, body);
     }
     const pathExists = routes.some((r) => r.regexp.test(url.pathname));
-    return pathExists ? error(405, `Метод ${request.method} не поддерживается`) : error(404, `Нет такого адреса API: ${url.pathname}`);
+    return pathExists
+      ? error(405, `Метод ${request.method} не поддерживается`)
+      : error(404, `Нет такого адреса API: ${url.pathname}`);
   }
 
   const wait = (ms, signal) =>
@@ -247,7 +270,8 @@ export function createBackend({ originalFetch, report }) {
 
     let result;
     if (requestBody === undefined) result = error(400, 'Тело запроса — не JSON');
-    else if (Math.random() < config.failRate) result = error(500, 'Сервер недоступен (ошибка включена во вкладке «Сеть»)');
+    else if (Math.random() < config.failRate)
+      result = error(500, 'Сервер недоступен (ошибка включена во вкладке «Сеть»)');
     else {
       try {
         result = route(request, url, requestBody);

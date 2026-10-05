@@ -15,7 +15,16 @@ interface Props {
   onNext: () => void;
 }
 
-export function LessonPanel({ step, prev, next, hasSolution, hasBackup, onShowSolution, onRestoreBackup, onNext }: Props) {
+export function LessonPanel({
+  step,
+  prev,
+  next,
+  hasSolution,
+  hasBackup,
+  onShowSolution,
+  onRestoreBackup,
+  onNext,
+}: Props) {
   const navigate = useNavigate();
   const [html, setHtml] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);

@@ -1,4 +1,12 @@
-import { Component, ElementRef, computed, effect, linkedSignal, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DecimalPipe, PercentPipe } from '@angular/common';
 import { CartItem, Game } from './core/models';
 import { GAMES } from './core/games-data';
@@ -25,7 +33,18 @@ type SortKey = 'default' | 'cheap' | 'expensive' | 'rating';
 
 @Component({
   selector: 'app-root',
-  imports: [DecimalPipe, PercentPipe, GameCard, GameDetails, Header, LoadMore, PricePipe, Rating, Quantity, Tooltip],
+  imports: [
+    DecimalPipe,
+    PercentPipe,
+    GameCard,
+    GameDetails,
+    Header,
+    LoadMore,
+    PricePipe,
+    Rating,
+    Quantity,
+    Tooltip,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -37,14 +56,18 @@ export class App {
   protected readonly sortBy = signal<SortKey>('default');
 
   // Поле поиска из шаблона: #searchBox
-  private readonly searchBox = viewChild.required<ElementRef<HTMLInputElement>>('searchBox');
+  private readonly searchBox =
+    viewChild.required<ElementRef<HTMLInputElement>>(
+      'searchBox',
+    );
 
   // Игры, которые видит покупатель: найденные, отфильтрованные и отсортированные
   protected readonly visibleGames = computed(() => {
     const query = this.query().trim().toLowerCase();
     const games = GAMES.filter(
       (game) =>
-        (game.title.toLowerCase().includes(query) || game.tags.some((tag) => tag.includes(query))) &&
+        (game.title.toLowerCase().includes(query) ||
+          game.tags.some((tag) => tag.includes(query))) &&
         (!this.inStockOnly() || game.inStock > 0) &&
         game.rating >= this.minRating(),
     );
@@ -66,7 +89,9 @@ export class App {
     source: this.visibleGames,
     computation: () => PAGE_SIZE,
   });
-  protected readonly shownGames = computed(() => this.visibleGames().slice(0, this.shownCount()));
+  protected readonly shownGames = computed(() =>
+    this.visibleGames().slice(0, this.shownCount()),
+  );
   protected readonly hitRating = HIT_RATING;
 
   // Игра, открытая в окне «Подробнее»; null — окно закрыто
@@ -75,19 +100,34 @@ export class App {
   // TODO: корзину — в core/cart-store.ts, а здесь взять готовый экземпляр cartStore
   // Корзина — массив позиций. Его не меняем, а заменяем новым
   protected readonly cart = signal<CartItem[]>([]);
-  protected readonly cartCount = computed(() => this.cart().reduce((sum, item) => sum + item.quantity, 0));
+  protected readonly cartCount = computed(() =>
+    this.cart().reduce((sum, item) => sum + item.quantity, 0),
+  );
   protected readonly cartTotal = computed(() =>
-    this.cart().reduce((sum, item) => sum + item.game.price * item.quantity, 0),
+    this.cart().reduce(
+      (sum, item) => sum + item.game.price * item.quantity,
+      0,
+    ),
   );
   protected readonly cartSummary = computed(() =>
     this.cart()
       .map((item) => `${item.game.title} × ${item.quantity}`)
       .join(', '),
   );
-  protected readonly deliveryLeft = computed(() => Math.max(FREE_DELIVERY_FROM - this.cartTotal(), 0));
+  protected readonly deliveryLeft = computed(() =>
+    Math.max(FREE_DELIVERY_FROM - this.cartTotal(), 0),
+  );
 
   // Сколько штук каждой игры в корзине: id игры → количество
-  protected readonly inCart = computed(() => new Map(this.cart().map((item) => [item.game.id, item.quantity])));
+  protected readonly inCart = computed(
+    () =>
+      new Map(
+        this.cart().map((item) => [
+          item.game.id,
+          item.quantity,
+        ]),
+      ),
+  );
 
   constructor() {
     // Побочный эффект: сообщение в консоли при каждом изменении корзины
@@ -98,20 +138,32 @@ export class App {
 
   protected addToCart(game: Game) {
     this.cart.update((items) => {
-      const existing = items.find((item) => item.game.id === game.id);
+      const existing = items.find(
+        (item) => item.game.id === game.id,
+      );
       if (!existing) {
         return [...items, { game, quantity: 1 }];
       }
-      return items.map((item) => (item === existing ? { ...item, quantity: item.quantity + 1 } : item));
+      return items.map((item) =>
+        item === existing
+          ? { ...item, quantity: item.quantity + 1 }
+          : item,
+      );
     });
   }
 
   protected setQuantity(item: CartItem, quantity: number) {
-    this.cart.update((items) => items.map((i) => (i.game.id === item.game.id ? { ...i, quantity } : i)));
+    this.cart.update((items) =>
+      items.map((i) =>
+        i.game.id === item.game.id ? { ...i, quantity } : i,
+      ),
+    );
   }
 
   protected removeFromCart(item: CartItem) {
-    this.cart.update((items) => items.filter((i) => i.game.id !== item.game.id));
+    this.cart.update((items) =>
+      items.filter((i) => i.game.id !== item.game.id),
+    );
   }
 
   protected showMore() {

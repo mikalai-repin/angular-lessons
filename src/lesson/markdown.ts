@@ -52,7 +52,11 @@ function parseLineRanges(spec: string): Set<number> {
  */
 function parseFenceInfo(info: string) {
   const rangeMatch = /\{([\d,\s-]+)\}/.exec(info);
-  const words = info.replace(/\{[^}]*\}/, '').trim().split(/\s+/).filter(Boolean);
+  const words = info
+    .replace(/\{[^}]*\}/, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   return {
     lang: words[0] ?? '',
     file: words[1],

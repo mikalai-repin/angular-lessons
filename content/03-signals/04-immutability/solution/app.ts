@@ -13,18 +13,29 @@ export class App {
   protected readonly gamesCount = GAMES.length;
 
   // Всё остальное о карточке вычисляется из gameIndex
-  protected readonly game = computed(() => GAMES[this.gameIndex()]);
-  protected readonly soldOut = computed(() => this.game().inStock === 0);
+  protected readonly game = computed(
+    () => GAMES[this.gameIndex()],
+  );
+  protected readonly soldOut = computed(
+    () => this.game().inStock === 0,
+  );
   protected readonly discount = computed(() => {
     const { price, oldPrice } = this.game();
-    return oldPrice ? Math.round((1 - price / oldPrice) * 100) : 0;
+    return oldPrice
+      ? Math.round((1 - price / oldPrice) * 100)
+      : 0;
   });
 
   // Корзина — массив позиций. Его не меняем, а заменяем новым
   protected readonly cart = signal<CartItem[]>([]);
-  protected readonly cartCount = computed(() => this.cart().reduce((sum, item) => sum + item.quantity, 0));
+  protected readonly cartCount = computed(() =>
+    this.cart().reduce((sum, item) => sum + item.quantity, 0),
+  );
   protected readonly cartTotal = computed(() =>
-    this.cart().reduce((sum, item) => sum + item.game.price * item.quantity, 0),
+    this.cart().reduce(
+      (sum, item) => sum + item.game.price * item.quantity,
+      0,
+    ),
   );
   protected readonly cartSummary = computed(() =>
     this.cart()
@@ -33,21 +44,31 @@ export class App {
   );
 
   protected showPrevious() {
-    this.gameIndex.update((index) => (index - 1 + GAMES.length) % GAMES.length);
+    this.gameIndex.update(
+      (index) => (index - 1 + GAMES.length) % GAMES.length,
+    );
   }
 
   protected showNext() {
-    this.gameIndex.update((index) => (index + 1) % GAMES.length);
+    this.gameIndex.update(
+      (index) => (index + 1) % GAMES.length,
+    );
   }
 
   protected addToCart() {
     const game = this.game();
     this.cart.update((items) => {
-      const existing = items.find((item) => item.game.id === game.id);
+      const existing = items.find(
+        (item) => item.game.id === game.id,
+      );
       if (!existing) {
         return [...items, { game, quantity: 1 }];
       }
-      return items.map((item) => (item === existing ? { ...item, quantity: item.quantity + 1 } : item));
+      return items.map((item) =>
+        item === existing
+          ? { ...item, quantity: item.quantity + 1 }
+          : item,
+      );
     });
   }
 

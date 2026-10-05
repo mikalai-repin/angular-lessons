@@ -1,4 +1,12 @@
-import { Component, ElementRef, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DecimalPipe, PercentPipe } from '@angular/common';
 import { CartStore } from './core/cart-store';
 import { Game } from './core/models';
@@ -24,7 +32,18 @@ type SortKey = 'default' | 'cheap' | 'expensive' | 'rating';
 
 @Component({
   selector: 'app-root',
-  imports: [DecimalPipe, PercentPipe, GameCard, GameDetails, Header, LoadMore, PricePipe, Rating, Quantity, Tooltip],
+  imports: [
+    DecimalPipe,
+    PercentPipe,
+    GameCard,
+    GameDetails,
+    Header,
+    LoadMore,
+    PricePipe,
+    Rating,
+    Quantity,
+    Tooltip,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -36,14 +55,18 @@ export class App {
   protected readonly sortBy = signal<SortKey>('default');
 
   // Поле поиска из шаблона: #searchBox
-  private readonly searchBox = viewChild.required<ElementRef<HTMLInputElement>>('searchBox');
+  private readonly searchBox =
+    viewChild.required<ElementRef<HTMLInputElement>>(
+      'searchBox',
+    );
 
   // Игры, которые видит покупатель: найденные, отфильтрованные и отсортированные
   protected readonly visibleGames = computed(() => {
     const query = this.query().trim().toLowerCase();
     const games = GAMES.filter(
       (game) =>
-        (game.title.toLowerCase().includes(query) || game.tags.some((tag) => tag.includes(query))) &&
+        (game.title.toLowerCase().includes(query) ||
+          game.tags.some((tag) => tag.includes(query))) &&
         (!this.inStockOnly() || game.inStock > 0) &&
         game.rating >= this.minRating(),
     );
@@ -65,7 +88,9 @@ export class App {
     source: this.visibleGames,
     computation: () => PAGE_SIZE,
   });
-  protected readonly shownGames = computed(() => this.visibleGames().slice(0, this.shownCount()));
+  protected readonly shownGames = computed(() =>
+    this.visibleGames().slice(0, this.shownCount()),
+  );
   protected readonly hitRating = HIT_RATING;
 
   // Игра, открытая в окне «Подробнее»; null — окно закрыто

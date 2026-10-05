@@ -1,4 +1,9 @@
-import { LOCALE_ID, Pipe, PipeTransform, inject } from '@angular/core';
+import {
+  LOCALE_ID,
+  Pipe,
+  PipeTransform,
+  inject,
+} from '@angular/core';
 import { formatCurrency } from '@angular/common';
 
 // Цена в рублях без копеек: 1990 → «1 990 ₽»
@@ -8,6 +13,12 @@ export class PricePipe implements PipeTransform {
   private readonly locale = inject(LOCALE_ID);
 
   transform(value: number): string {
-    return formatCurrency(value, this.locale, '₽', 'RUB', '1.0-0');
+    return formatCurrency(
+      value,
+      this.locale,
+      '₽',
+      'RUB',
+      '1.0-0',
+    );
   }
 }

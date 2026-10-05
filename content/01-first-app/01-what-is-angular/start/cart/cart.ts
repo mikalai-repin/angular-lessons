@@ -8,7 +8,12 @@ import { CartStore } from '../core/cart-store';
     @for (item of cart.list(); track item.game.id) {
       <p>
         {{ item.game.title }} × {{ item.quantity }}
-        <button class="button" (click)="cart.remove(item.game.id)">Убрать</button>
+        <button
+          class="button"
+          (click)="cart.remove(item.game.id)"
+        >
+          Убрать
+        </button>
       </p>
     } @empty {
       <p class="muted">Корзина пуста</p>

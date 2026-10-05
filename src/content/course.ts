@@ -173,7 +173,9 @@ function loadCourse(): Course {
       lessons.map(({ meta, own }) => ({ meta, ...own })),
       resultOf,
     );
-    lessons.forEach(({ stepDir, meta }, index) => results.set(`${chapterDir}/${stepDir}`, stepResult(meta, resolved[index])));
+    lessons.forEach(({ stepDir, meta }, index) =>
+      results.set(`${chapterDir}/${stepDir}`, stepResult(meta, resolved[index])),
+    );
     chapter.steps = lessons.map(({ stepDir, meta, body }, index): Step => {
       const { start, solution } = resolved[index];
       return {

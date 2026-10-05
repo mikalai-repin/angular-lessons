@@ -15,12 +15,19 @@ export function logChangeDetection() {
 
   ng.ɵsetProfiler((event: number, context: any) => {
     // context — экземпляр компонента; у блоков @if и @for он свой, их пропускаем
-    const name = context?.constructor?.ɵcmp ? context.constructor.name : null;
-    if (event === TEMPLATE_CREATE_START && name) created.push(name);
-    if (event === TEMPLATE_UPDATE_START && name) checked.push(name);
+    const name = context?.constructor?.ɵcmp
+      ? context.constructor.name
+      : null;
+    if (event === TEMPLATE_CREATE_START && name)
+      created.push(name);
+    if (event === TEMPLATE_UPDATE_START && name)
+      checked.push(name);
     if (event === CHANGE_DETECTION_END && checked.length > 0) {
       console.log(
-        `Проверены: ${summary(checked)}` + (created.length > 0 ? ` (из них созданы: ${summary(created)})` : ''),
+        `Проверены: ${summary(checked)}` +
+          (created.length > 0
+            ? ` (из них созданы: ${summary(created)})`
+            : ''),
       );
       checked = [];
       created = [];
@@ -31,6 +38,11 @@ export function logChangeDetection() {
 // ['App', 'GameCard', 'GameCard'] → «App, GameCard ×2»
 function summary(names: string[]): string {
   const counts = new Map<string, number>();
-  for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
-  return [...counts].map(([name, count]) => (count > 1 ? `${name} ×${count}` : name)).join(', ');
+  for (const name of names)
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  return [...counts]
+    .map(([name, count]) =>
+      count > 1 ? `${name} ×${count}` : name,
+    )
+    .join(', ');
 }

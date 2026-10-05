@@ -3,5 +3,10 @@ import { App } from './app';
 import { appConfig } from './app.config';
 
 bootstrapApplication(App, appConfig)
-  .then((appRef) => console.log('Магазин запущен. Корневых компонентов:', appRef.component.length))
+  .then((appRef) =>
+    console.log(
+      'Магазин запущен. Корневых компонентов:',
+      appRef.component.length,
+    ),
+  )
   .catch((err) => console.error(err));

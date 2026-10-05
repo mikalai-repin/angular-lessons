@@ -1,6 +1,9 @@
 <header class="header">
   <span class="logo">♞ Ход конём</span>
-  <span class="cart">В корзине: {{ cartCount() }} · {{ cartTotal() | price }}</span>
+  <span class="cart"
+    >В корзине: {{ cartCount() }} ·
+    {{ cartTotal() | price }}</span
+  >
 </header>
 <main class="page">
   <h1>Магазин настольных игр</h1>
@@ -18,39 +21,63 @@
       <h2>Корзина</h2>
       @for (item of cart(); track item.game.id) {
         <div class="cart-row" [class.even]="$even">
-          <span class="cart-row-title">{{ $index + 1 }}. {{ item.game.title }}</span>
+          <span class="cart-row-title"
+            >{{ $index + 1 }}. {{ item.game.title }}</span
+          >
           <app-quantity
             min="1"
             [max]="item.game.inStock"
             [value]="item.quantity"
             (valueChange)="setQuantity(item, $event)"
           />
-          <span class="cart-row-sum">{{ item.game.price * item.quantity | price }}</span>
-          <button class="icon-button" aria-label="Убрать из корзины" (click)="removeFromCart(item)">×</button>
+          <span class="cart-row-sum">{{
+            item.game.price * item.quantity | price
+          }}</span>
+          <button
+            class="icon-button"
+            aria-label="Убрать из корзины"
+            (click)="removeFromCart(item)"
+          >
+            ×
+          </button>
         </div>
       }
       <p>
         <b>Итого: {{ cartTotal() | price }}</b>
       </p>
       @if (deliveryLeft() > 0) {
-        <p class="muted">До бесплатной доставки: {{ deliveryLeft() | price }}</p>
+        <p class="muted">
+          До бесплатной доставки: {{ deliveryLeft() | price }}
+        </p>
       } @else {
         <p class="muted">Доставка бесплатная</p>
       }
-      <button class="link-button" (click)="clearCart()">Очистить корзину</button>
+      <button class="link-button" (click)="clearCart()">
+        Очистить корзину
+      </button>
     </section>
   }
 
   <div class="filters">
     <label>
-      <input #inStock type="checkbox" [checked]="inStockOnly()" (change)="inStockOnly.set(inStock.checked)" />
+      <input
+        #inStock
+        type="checkbox"
+        [checked]="inStockOnly()"
+        (change)="inStockOnly.set(inStock.checked)"
+      />
       Только в наличии
     </label>
     <span class="rating-filter">
       Рейтинг от
       <app-rating [(value)]="minRating" />
     </span>
-    <select #sort aria-label="Сортировка" [value]="sortBy()" (change)="changeSort(sort.value)">
+    <select
+      #sort
+      aria-label="Сортировка"
+      [value]="sortBy()"
+      (change)="changeSort(sort.value)"
+    >
       <option value="default">По умолчанию</option>
       <option value="cheap">Сначала дешёвые</option>
       <option value="expensive">Сначала дорогие</option>
@@ -71,13 +98,17 @@
           <span sticker class="sticker">Хит</span>
         }
         @if (game.oldPrice; as oldPrice) {
-          <span sticker class="sticker sale">−{{ 1 - game.price / oldPrice | percent }}</span>
+          <span sticker class="sticker sale"
+            >−{{ 1 - game.price / oldPrice | percent }}</span
+          >
         }
       </app-game-card>
     } @empty {
       <div class="empty">
         <p class="muted">Ничего не найдено</p>
-        <button class="link-button" (click)="resetFilters()">Сбросить фильтры</button>
+        <button class="link-button" (click)="resetFilters()">
+          Сбросить фильтры
+        </button>
       </div>
     }
   </div>

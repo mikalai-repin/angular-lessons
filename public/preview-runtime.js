@@ -120,7 +120,9 @@ function formatValue(value, depth = 0) {
       // kind узла: signal, computed, linkedSignal, input…; у computed вместо значения бывают
       // служебные символы: UNSET (ещё ни разу не читали) и ERRORED (вычисление бросило исключение)
       const kind = node.kind && node.kind !== 'unknown' ? node.kind : 'computation' in node ? 'computed' : 'signal';
-      const special = { UNSET: 'ещё не вычислен', ERRORED: 'ошибка' }[typeof node.value === 'symbol' && node.value.description];
+      const special = { UNSET: 'ещё не вычислен', ERRORED: 'ошибка' }[
+        typeof node.value === 'symbol' && node.value.description
+      ];
       return `${kind}(${special ?? (depth >= 2 ? '…' : formatValue(node.value, depth + 1))})`;
     }
     return `ƒ ${value.name || 'anonymous'}()`;
