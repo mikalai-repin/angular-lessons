@@ -1,0 +1,87 @@
+<app-header />
+<main class="page">
+  <h1>Магазин настольных игр</h1>
+  <input
+    #searchBox
+    class="search"
+    type="search"
+    placeholder="Найти игру"
+    [value]="query()"
+    (input)="query.set(searchBox.value)"
+  />
+
+  <app-mini-cart />
+
+  <div class="filters">
+    <label>
+      <input
+        #inStock
+        type="checkbox"
+        [checked]="inStockOnly()"
+        (change)="inStockOnly.set(inStock.checked)"
+      />
+      Только в наличии
+    </label>
+    <span class="rating-filter">
+      Рейтинг от
+      <app-rating [(value)]="minRating" />
+    </span>
+    <select
+      #sort
+      aria-label="Сортировка"
+      [value]="sortBy()"
+      (change)="changeSort(sort.value)"
+    >
+      <option value="default">По умолчанию</option>
+      <option value="cheap">Сначала дешёвые</option>
+      <option value="expensive">Сначала дорогие</option>
+      <option value="rating">По рейтингу</option>
+    </select>
+  </div>
+
+  <div class="grid">
+    @for (game of shownGames(); track game.id) {
+      <app-game-card
+        [game]="game"
+        (open)="selectedGame.set(game)"
+      >
+        @if (game.rating >= hitRating) {
+          <span
+            sticker
+            class="sticker"
+            [appTooltip]="
+              'Рейтинг ' + (hitRating | number) + ' и выше'
+            "
+            >Хит</span
+          >
+        }
+        @if (game.oldPrice; as oldPrice) {
+          <span
+            sticker
+            class="sticker sale"
+            appTooltip="Цена действует до конца дня"
+          >
+            −{{ 1 - game.price / oldPrice | percent }}
+          </span>
+        }
+      </app-game-card>
+    } @empty {
+      <div class="empty">
+        <p class="muted">Ничего не найдено</p>
+        <button class="link-button" (click)="resetFilters()">
+          Сбросить фильтры
+        </button>
+      </div>
+    }
+  </div>
+  @if (shownCount() < visibleGames().length) {
+    <app-load-more (more)="showMore()" />
+  }
+
+  @if (selectedGame(); as game) {
+    <app-game-details
+      [game]="game"
+      (closed)="selectedGame.set(null)"
+    />
+  }
+</main>

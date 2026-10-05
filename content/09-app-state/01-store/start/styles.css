@@ -1,0 +1,84 @@
+/* Глобальные стили магазина: действуют на всю страницу (как styles.css в проекте Angular CLI) */
+:root {
+  --brand: #c3002f;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --surface: #f5f5f7;
+  --radius: 10px;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: var(--text);
+  background: #fff;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: var(--brand);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.button:disabled {
+  background: #bbb;
+  cursor: default;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+/* Подсказка при наведении (директива Tooltip). У директивы нет своих стилей — они глобальные */
+.tooltip {
+  position: absolute;
+  z-index: 10;
+  max-width: 200px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--text);
+  color: #fff;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+/* Ленивая картинка (директива LazyImage): проявляется, когда загрузилась */
+.lazy {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.lazy.loaded {
+  opacity: 1;
+}
+
+/* Кнопка-ссылка: «Сбросить фильтры», «Очистить корзину» */
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

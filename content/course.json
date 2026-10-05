@@ -9,6 +9,7 @@
     "05-components",
     "06-lifecycle",
     "07-directives-pipes",
-    "08-services-di"
+    "08-services-di",
+    "09-app-state"
   ]
 }

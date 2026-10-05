@@ -48,9 +48,12 @@ app.config.ts                provideRouter, provideHttpClient, …
 app.routes.ts                маршруты
 layout/
   header/                    шапка: логотип, избранное, сводка корзины (глава 8)
+cart/
+  mini-cart/                 мини-корзина: позиции, итоги, промокод (глава 9; в главе 10 — страница /cart)
 core/
-  cart-store.ts              CartStore: позиции, сумма, количество (сигналы), сохранение в localStorage
-  favorites-store.ts         FavoritesStore: избранное (глава 8)
+  cart-store.ts              CartStore: закрытое состояние, итоги (computed), промокод (linkedSignal), склад, localStorage
+  favorites-store.ts         FavoritesStore: избранное (глава 8), сохранение в localStorage (глава 9)
+  promo-codes.ts             промокоды KNIGHT10 / CHESS500 (до главы 13 — список в коде)
   shop-config.ts             SHOP_CONFIG: настройки магазина (InjectionToken)
   analytics.ts               учебная аналитика, загружается лениво (injectAsync)
   auth.ts                    AuthStore, текущий пользователь, токен
@@ -71,7 +74,6 @@ shared/
   lazy-image.ts              ленивая обложка: img[appLazy] + хост-директива InView
 catalog/                     каталог, фильтры, поиск
 game/                        страница игры, отзывы
-cart/                        корзина
 checkout/                    оформление заказа
 account/                     вход, кабинет
 admin/                       админка (ленивый раздел)
@@ -135,7 +137,7 @@ interface Game {
 | 6 | Окно «Подробнее» (`GameDetails`: `<dialog>` + `showModal()`, вкладки `Tabs`/`Tab` «Описание / Характеристики» с полоской, таймер скидки `Countdown`), название карточки — кнопка, фокус в поиске после сброса фильтров, «Показать ещё» (`LoadMore` с `IntersectionObserver`, порции по 6) |
 | 7 | Локаль `ru`; все цены пайпом `price` («1 990 ₽»), стикер скидки «−20 %» (`percent`), таймер через `date`, подпись звёзд «Рейтинг 4,6 из 5» (`formatNumber`); строка «2–5 игроков · 45 мин» в карточке и «1 час 30 минут» в окне (`players`, `duration`); подсказки `Tooltip` у стикеров и звёзд; `InView` — хост-директива `LoadMore`; ленивые обложки `LazyImage` (`img[appLazy]`) |
 | 8 | Шапка — компонент `Header` (`layout/header/`); корзина — сервис `CartStore` (`@Service()`), её берут `App`, `Header`, `GameCard`, `GameDetails` (у карточки и окна ушли `inCart`/`add`); `injectNow()` для `Countdown`; демо-корзина `DemoCartStore` через `useClass`; настройки `SHOP_CONFIG` и `DEFAULT_CURRENCY_CODE`; `Tab` находит `Tabs` через токен `TABS` (`useExisting`); ленивая аналитика (`injectAsync` + `onIdle`); «Избранное» (`FavoritesStore`, сердечко в карточке, «♥ N» в шапке) |
-| 9 | Корзина: количество, промокод, сохранение в `localStorage` (`effect`) |
+| 9 | Демо-корзина убрана; мини-корзина — компонент `MiniCart` (`cart/mini-cart/`); `CartStore` — хранилище: закрытый `state` + `asReadonly()`, `readonly CartItem[]`, сохранение в `localStorage` (`effect`, только id и количество, проверка при загрузке), итоги (`subtotal`, `savings`, `delivery` по `deliveryPrice: 390`, `total`), промокоды `KNIGHT10`/`CHESS500` (`linkedSignal` от `subtotal`: ниже порога — снимается), правила склада (`available`, `add`/`setQuantity`/`loadCart`); избранное тоже сохраняется |
 | 10 | Маршруты: главная, каталог, игра, корзина, 404; ленивая загрузка |
 | 11 | Каталог и игра с сервера; загрузка, ошибки, поиск, фильтры в URL |
 | 12 | RxJS-поиск с отменой запросов; интерцептор; `toSignal` |

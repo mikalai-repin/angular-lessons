@@ -1,0 +1,10 @@
+<header class="header">
+  <span class="logo">♞ Ход конём</span>
+  <span class="favorites" title="Избранное"
+    >♥ {{ favorites.count() }}</span
+  >
+  <span class="cart"
+    >В корзине: {{ cart.count() }} ·
+    {{ cart.subtotal() | price }}</span
+  >
+</header>
