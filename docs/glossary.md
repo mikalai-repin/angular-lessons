@@ -139,8 +139,14 @@
 | English | Русский | Комментарий |
 |---|---|---|
 | dependency injection, DI | внедрение зависимостей, DI | |
-| service | сервис | |
+| dependency | зависимость | объект, который компонент получает через DI |
+| service | сервис | класс с `@Service()` / `@Injectable` |
 | injector | инжектор | |
+| provider | провайдер | `{ provide, useClass/useValue/useFactory/useExisting }` |
+| token | токен | ключ, по которому DI ищет зависимость: класс или `InjectionToken` |
+| inject function | inject-функция | своя функция, которая вызывает `inject()` (`injectNow`) |
+| lazy service | ленивый сервис | `injectAsync` |
+| platform injector | инжектор платформы | |
 | injection context | контекст внедрения | |
 | injection token | токен внедрения | `InjectionToken` |
 | root injector | корневой инжектор | |

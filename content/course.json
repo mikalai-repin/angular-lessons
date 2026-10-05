@@ -8,7 +8,8 @@
     "04-control-flow",
     "05-components",
     "06-lifecycle",
-    "07-directives-pipes"
+    "07-directives-pipes",
+    "08-services-di"
   ],
   "devChapters": [
     "00-sandbox"

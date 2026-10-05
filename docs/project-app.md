@@ -46,8 +46,13 @@ main.ts                      bootstrapApplication
 app.ts / app.html / app.css  корневой компонент: шапка, <router-outlet>
 app.config.ts                provideRouter, provideHttpClient, …
 app.routes.ts                маршруты
+layout/
+  header/                    шапка: логотип, избранное, сводка корзины (глава 8)
 core/
-  cart.ts                    CartStore: позиции, сумма, количество (сигналы), сохранение в localStorage
+  cart-store.ts              CartStore: позиции, сумма, количество (сигналы), сохранение в localStorage
+  favorites-store.ts         FavoritesStore: избранное (глава 8)
+  shop-config.ts             SHOP_CONFIG: настройки магазина (InjectionToken)
+  analytics.ts               учебная аналитика, загружается лениво (injectAsync)
   auth.ts                    AuthStore, текущий пользователь, токен
   auth.guard.ts              гард входа и роли
   auth.interceptor.ts        добавляет токен к запросам
@@ -129,7 +134,7 @@ interface Game {
 | 5 | Компоненты `GameCard` (`input()`/`output()`, стикеры «Хит»/«Скидка» через `ng-content`, хост-элемент), `Rating` (звёзды, `model()`, фильтр «Рейтинг от» с половинками, `readonly`), `Quantity` (`− N +` в строках корзины) — в `shared/` |
 | 6 | Окно «Подробнее» (`GameDetails`: `<dialog>` + `showModal()`, вкладки `Tabs`/`Tab` «Описание / Характеристики» с полоской, таймер скидки `Countdown`), название карточки — кнопка, фокус в поиске после сброса фильтров, «Показать ещё» (`LoadMore` с `IntersectionObserver`, порции по 6) |
 | 7 | Локаль `ru`; все цены пайпом `price` («1 990 ₽»), стикер скидки «−20 %» (`percent`), таймер через `date`, подпись звёзд «Рейтинг 4,6 из 5» (`formatNumber`); строка «2–5 игроков · 45 мин» в карточке и «1 час 30 минут» в окне (`players`, `duration`); подсказки `Tooltip` у стикеров и звёзд; `InView` — хост-директива `LoadMore`; ленивые обложки `LazyImage` (`img[appLazy]`) |
-| 8 | `CartStore` в DI, шапка и карточки работают с одной корзиной |
+| 8 | Шапка — компонент `Header` (`layout/header/`); корзина — сервис `CartStore` (`@Service()`), её берут `App`, `Header`, `GameCard`, `GameDetails` (у карточки и окна ушли `inCart`/`add`); `injectNow()` для `Countdown`; демо-корзина `DemoCartStore` через `useClass`; настройки `SHOP_CONFIG` и `DEFAULT_CURRENCY_CODE`; `Tab` находит `Tabs` через токен `TABS` (`useExisting`); ленивая аналитика (`injectAsync` + `onIdle`); «Избранное» (`FavoritesStore`, сердечко в карточке, «♥ N» в шапке) |
 | 9 | Корзина: количество, промокод, сохранение в `localStorage` (`effect`) |
 | 10 | Маршруты: главная, каталог, игра, корзина, 404; ленивая загрузка |
 | 11 | Каталог и игра с сервера; загрузка, ошибки, поиск, фильтры в URL |
