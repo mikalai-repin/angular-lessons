@@ -1,0 +1,30 @@
+<header class="header">
+  <a class="logo" routerLink="/">♞ Ход конём</a>
+  <nav class="nav">
+    <a
+      routerLink="/"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ariaCurrentWhenActive="page"
+      >Главная</a
+    >
+    <a
+      routerLink="/catalog"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+      >Каталог</a
+    >
+  </nav>
+  <!-- TODO: избранное — ссылка на /account/favorites -->
+  <span class="favorites" title="Избранное"
+    >♥ {{ favorites.count() }}</span
+  >
+  <a
+    class="cart"
+    routerLink="/cart"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    >В корзине: {{ cart.count() }} ·
+    {{ cart.subtotal() | price }}</a
+  >
+</header>

@@ -1,0 +1,150 @@
+/* Плитка игры. Классы можно называть коротко: стили компонента действуют только на его шаблон */
+:host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.cover {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 6px;
+}
+
+.category {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 90%);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Место для стикеров, которые передаёт родитель */
+.stickers {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+}
+
+/* Название — ссылка на страницу игры */
+.title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.title-link:hover {
+  text-decoration: underline;
+}
+
+/* Строка характеристик: игроки и время партии. Переносится только между частями */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 4px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.meta span {
+  white-space: nowrap;
+}
+
+.meta span:not(:last-child)::after {
+  content: ' ·';
+}
+
+.price {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.old-price {
+  margin-left: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.stock,
+.in-cart {
+  margin: 0;
+  font-size: 13px;
+}
+
+.stock-out {
+  color: var(--brand);
+}
+
+.stock-few {
+  color: #b25e00;
+}
+
+.stock-ok {
+  color: #1d7f3a;
+}
+
+/* Кнопка прижата к низу карточки: кнопки соседних карточек стоят на одной линии */
+.button {
+  margin-top: auto;
+}
+
+/* Ряд кнопок внизу карточки: «В корзину» и «В избранное» */
+.actions {
+  display: flex;
+  align-self: stretch;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.actions .button {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+  padding-inline: 6px;
+  white-space: nowrap;
+}
+
+.favorite {
+  flex: none;
+  width: 34px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--brand);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.favorite.active {
+  border-color: var(--brand);
+}
+
+:host(.sold-out) .cover {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+:host(.sold-out) .price {
+  color: var(--muted);
+}

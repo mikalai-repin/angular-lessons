@@ -1,0 +1,18 @@
+<h1>Личный кабинет</h1>
+<!-- Ссылки без «/» в начале — относительные: от адреса этой страницы, /account -->
+<nav class="sections">
+  <a
+    routerLink="favorites"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    >Избранное</a
+  >
+  <a
+    routerLink="orders"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    >Заказы</a
+  >
+</nav>
+<!-- Сюда роутер выводит дочернюю страницу: FavoritesPage или OrdersPage -->
+<router-outlet />

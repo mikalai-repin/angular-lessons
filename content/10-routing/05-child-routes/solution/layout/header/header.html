@@ -1,0 +1,34 @@
+<header class="header">
+  <a class="logo" routerLink="/">♞ Ход конём</a>
+  <nav class="nav">
+    <a
+      routerLink="/"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ariaCurrentWhenActive="page"
+      >Главная</a
+    >
+    <a
+      routerLink="/catalog"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+      >Каталог</a
+    >
+  </nav>
+  <a
+    class="favorites"
+    routerLink="/account/favorites"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    title="Избранное"
+    >♥ {{ favorites.count() }}</a
+  >
+  <a
+    class="cart"
+    routerLink="/cart"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    >В корзине: {{ cart.count() }} ·
+    {{ cart.subtotal() | price }}</a
+  >
+</header>

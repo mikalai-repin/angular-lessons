@@ -1,0 +1,12 @@
+@if (favorites.games().length > 0) {
+  <div class="grid">
+    @for (game of favorites.games(); track game.id) {
+      <app-game-card [game]="game" />
+    }
+  </div>
+} @else {
+  <p class="muted">
+    В избранном пока пусто. Отмечайте игры сердечком в
+    <a routerLink="/catalog">каталоге</a>.
+  </p>
+}

@@ -1,0 +1,54 @@
+@if (game(); as game) {
+  <a class="back-link" routerLink="/catalog">← Каталог</a>
+  <div class="head">
+    <img class="cover" [src]="game.cover" [alt]="game.title" />
+    <div class="summary">
+      <h1 class="title">{{ game.title }}</h1>
+      <app-rating [value]="game.rating" readonly />
+      <p class="price">
+        {{ game.price | price }}
+        @if (game.oldPrice; as oldPrice) {
+          <s class="old-price">{{ oldPrice | price }}</s>
+        }
+      </p>
+      @if (game.oldPrice) {
+        <app-countdown />
+      }
+      <button
+        class="button"
+        [disabled]="cart.available(game) === 0"
+        (click)="cart.add(game)"
+      >
+        В корзину
+      </button>
+      @if (inCart() > 0) {
+        <p class="in-cart muted">
+          В корзине: {{ inCart() }} шт.
+        </p>
+      }
+    </div>
+  </div>
+  <app-tabs>
+    <app-tab label="Описание">
+      <p class="description" [innerHTML]="game.description"></p>
+    </app-tab>
+    <app-tab label="Характеристики">
+      <dl class="specs">
+        <dt>Игроки</dt>
+        <dd>{{ game.players | players }}</dd>
+        <dt>Партия</dt>
+        <dd>{{ game.playTime | duration: 'long' }}</dd>
+        <dt>Возраст</dt>
+        <dd>от {{ game.age }} лет</dd>
+        <dt>Теги</dt>
+        <dd>{{ game.tags.join(', ') }}</dd>
+      </dl>
+    </app-tab>
+  </app-tabs>
+} @else {
+  <h1>Игра не найдена</h1>
+  <p class="muted">
+    Такой игры в каталоге нет.
+    <a routerLink="/catalog">Перейти в каталог</a>
+  </p>
+}

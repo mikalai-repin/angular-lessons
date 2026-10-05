@@ -1,0 +1,51 @@
+/* Шапка магазина: логотип, избранное и корзина в первом ряду, меню — во втором */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 10px 16px;
+  background: var(--brand);
+  color: #fff;
+}
+
+.logo {
+  margin-right: auto;
+  color: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cart,
+.favorites {
+  color: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Меню: отдельный ряд на всю ширину */
+.nav {
+  display: flex;
+  order: 1;
+  gap: 16px;
+  width: 100%;
+  font-size: 14px;
+}
+
+.nav a,
+a.cart,
+a.favorites {
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+/* Ссылка на текущую страницу: класс active ставит routerLinkActive */
+.nav a.active,
+a.cart.active,
+a.favorites.active {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

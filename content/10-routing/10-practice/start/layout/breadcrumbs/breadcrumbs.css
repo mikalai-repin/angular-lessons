@@ -1,0 +1,15 @@
+/* Хлебные крошки над заголовком страницы */
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Разделитель после каждой ссылки */
+.breadcrumbs a::after {
+  content: ' ›';
+  color: var(--muted);
+}

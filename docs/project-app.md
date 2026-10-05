@@ -48,8 +48,12 @@ app.config.ts                provideRouter, provideHttpClient, …
 app.routes.ts                маршруты
 layout/
   header/                    шапка: логотип, избранное, сводка корзины (глава 8)
+layout/breadcrumbs/          хлебные крошки из data маршрутов (глава 10)
+layout/shop-title-strategy.ts заголовок вкладки «… — Ход конём» (глава 10)
+home/                        главная: приветствие, «Хиты», «Со скидкой» (глава 10)
 cart/
-  mini-cart/                 мини-корзина: позиции, итоги, промокод (глава 9; в главе 10 — страница /cart)
+  cart-page/                 страница корзины: позиции, итоги, промокод, «Оформить заказ» (глава 10; до неё — мини-корзина)
+not-found/                   «Нет такой страницы» (глава 10)
 core/
   cart-store.ts              CartStore: закрытое состояние, итоги (computed), промокод (linkedSignal), склад, localStorage
   favorites-store.ts         FavoritesStore: избранное (глава 8), сохранение в localStorage (глава 9)
@@ -72,10 +76,10 @@ shared/
   tooltip.ts                 директива атрибута (подсказка при наведении)
   in-view.ts                 директива «появился на экране» (IntersectionObserver)
   lazy-image.ts              ленивая обложка: img[appLazy] + хост-директива InView
-catalog/                     каталог, фильтры, поиск
-game/                        страница игры, отзывы
-checkout/                    оформление заказа
-account/                     вход, кабинет
+catalog/                     каталог, фильтры, поиск (фильтры — query-параметры, глава 10)
+game/                        страница игры (game-page, game-title — резолвер заголовка), отзывы
+checkout/                    оформление заказа (глава 10 — сводка, комментарий и гарды; форма — глава 13)
+account/                     кабинет: account.routes.ts (ленивый), favorites-page, orders-page (глава 10); вход — глава 14
 admin/                       админка (ленивый раздел)
 ```
 
@@ -138,7 +142,7 @@ interface Game {
 | 7 | Локаль `ru`; все цены пайпом `price` («1 990 ₽»), стикер скидки «−20 %» (`percent`), таймер через `date`, подпись звёзд «Рейтинг 4,6 из 5» (`formatNumber`); строка «2–5 игроков · 45 мин» в карточке и «1 час 30 минут» в окне (`players`, `duration`); подсказки `Tooltip` у стикеров и звёзд; `InView` — хост-директива `LoadMore`; ленивые обложки `LazyImage` (`img[appLazy]`) |
 | 8 | Шапка — компонент `Header` (`layout/header/`); корзина — сервис `CartStore` (`@Service()`), её берут `App`, `Header`, `GameCard`, `GameDetails` (у карточки и окна ушли `inCart`/`add`); `injectNow()` для `Countdown`; демо-корзина `DemoCartStore` через `useClass`; настройки `SHOP_CONFIG` и `DEFAULT_CURRENCY_CODE`; `Tab` находит `Tabs` через токен `TABS` (`useExisting`); ленивая аналитика (`injectAsync` + `onIdle`); «Избранное» (`FavoritesStore`, сердечко в карточке, «♥ N» в шапке) |
 | 9 | Демо-корзина убрана; мини-корзина — компонент `MiniCart` (`cart/mini-cart/`); `CartStore` — хранилище: закрытый `state` + `asReadonly()`, `readonly CartItem[]`, сохранение в `localStorage` (`effect`, только id и количество, проверка при загрузке), итоги (`subtotal`, `savings`, `delivery` по `deliveryPrice: 390`, `total`), промокоды `KNIGHT10`/`CHESS500` (`linkedSignal` от `subtotal`: ниже порога — снимается), правила склада (`available`, `add`/`setQuantity`/`loadCart`); избранное тоже сохраняется |
-| 10 | Маршруты: главная, каталог, игра, корзина, 404; ленивая загрузка |
+| 10 | Роутер: главная (`Home`), каталог (`Catalog`, фильтры в query-параметрах), страница игры `/games/:id` вместо окна, корзина `/cart`, кабинет `/account` (вложенные «Избранное»/«Заказы», ленивый `loadChildren`), оформление `/checkout` (гарды: непустая корзина, недописанный комментарий), заголовки вкладки (`ShopTitleStrategy`, резолвер названия игры), 404 и переадресации, плавная смена страниц и прокрутка, хлебные крошки |
 | 11 | Каталог и игра с сервера; загрузка, ошибки, поиск, фильтры в URL |
 | 12 | RxJS-поиск с отменой запросов; интерцептор; `toSignal` |
 | 13 | Оформление заказа, вход, отзыв — Signal Forms с валидацией |

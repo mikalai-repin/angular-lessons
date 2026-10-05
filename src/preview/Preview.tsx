@@ -33,10 +33,11 @@ export interface PreviewRun {
 
 interface PreviewMessage {
   source: 'angular-course-preview';
-  type: 'ready' | 'console' | 'error' | 'url' | 'network';
+  type: 'ready' | 'console' | 'error' | 'url' | 'network' | 'title';
   level?: ConsoleEntry['level'];
   text?: string;
   url?: string;
+  title?: string;
   entry?: NetworkEntry;
 }
 
@@ -87,6 +88,8 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
   /** Адрес, который показывает адресная строка (приложение сообщает о каждом переходе) */
   const [url, setUrl] = useState(initialUrl);
   const [typedUrl, setTypedUrl] = useState(initialUrl);
+  /** Заголовок вкладки приложения — document.title внутри iframe */
+  const [title, setTitle] = useState('');
   /** Текущий iframe: ключ (новый ключ — новый iframe) и адрес, с которого приложение стартует */
   const [frame, setFrame] = useState<{ key: string; startUrl: string } | null>(null);
   const urlRef = useRef(initialUrl);
@@ -101,6 +104,7 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
     urlRef.current = startUrl;
     setUrl(startUrl);
     setTypedUrl(startUrl);
+    setTitle('');
     setNetwork([]);
     setSelectedRequest(null);
     setEntries([
@@ -143,6 +147,8 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
         urlRef.current = data.url;
         setUrl(data.url);
         setTypedUrl(data.url);
+      } else if (data.type === 'title' && data.title !== undefined) {
+        setTitle(data.title);
       } else if (data.type === 'network' && data.entry) {
         const entry = data.entry;
         setNetwork((list) => {
@@ -183,6 +189,9 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
 
   return (
     <div className="preview">
+      <div className="preview-tab" title="Заголовок вкладки — document.title приложения">
+        <span className="preview-tab-title">{title || '\u00a0'}</span>
+      </div>
       <form
         className="address-bar"
         onSubmit={(event) => {

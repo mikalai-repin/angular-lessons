@@ -1,0 +1,19 @@
+/* Меню разделов кабинета */
+.sections {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #d2d2d7;
+}
+
+.sections a {
+  padding: 6px 0;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+/* Текущий раздел: класс active ставит routerLinkActive */
+.sections a.active {
+  border-bottom: 2px solid var(--brand);
+  color: var(--text);
+}

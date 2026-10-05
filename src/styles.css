@@ -801,6 +801,26 @@ button {
   background: var(--surface);
 }
 
+/* Заголовок вкладки приложения (document.title) — как вкладка браузера над адресной строкой */
+.preview-tab {
+  display: flex;
+  padding: 4px 8px 0;
+  background: var(--surface-2);
+}
+
+.preview-tab-title {
+  max-width: 100%;
+  padding: 3px 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: var(--surface);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Адресная строка приложения в превью */
 .address-bar {
   display: flex;

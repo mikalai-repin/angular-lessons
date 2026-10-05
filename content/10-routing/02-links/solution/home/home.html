@@ -1,0 +1,22 @@
+<section class="hero">
+  <h1>Настольные игры для всей семьи</h1>
+  <p>
+    Стратегии, кооперативы, игры для компании и для детей.
+    Доставка бесплатно от {{ freeDeliveryFrom | price }}.
+  </p>
+  <a class="button" routerLink="/catalog">Весь каталог</a>
+</section>
+
+<h2 class="section-title">Хиты</h2>
+<div class="grid">
+  @for (game of hits; track game.id) {
+    <app-game-card [game]="game" />
+  }
+</div>
+
+<h2 class="section-title">Со скидкой</h2>
+<div class="grid">
+  @for (game of sale; track game.id) {
+    <app-game-card [game]="game" />
+  }
+</div>

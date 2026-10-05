@@ -1,0 +1,111 @@
+/* Страница корзины */
+.cart {
+  max-width: 480px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #d2d2d7;
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.cart h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.cart p {
+  margin: 0 0 6px;
+}
+
+.cart-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.cart-row.even {
+  background: var(--surface);
+}
+
+.cart-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cart-row-sum {
+  min-width: 64px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.icon-button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Итоги: название слева, сумма справа */
+.summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 8px 6px;
+}
+
+.summary dt,
+.summary dd {
+  margin: 0;
+}
+
+.summary dd {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.summary .total {
+  font-weight: 700;
+}
+
+.summary .icon-button {
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  font-size: 13px;
+}
+
+/* «Оформить заказ» и «Очистить корзину» */
+.cart > .button {
+  margin-right: 12px;
+}
+
+/* Промокод */
+.promo {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.promo-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.cart .promo-error {
+  color: var(--brand);
+}

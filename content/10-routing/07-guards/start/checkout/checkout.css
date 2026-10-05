@@ -1,0 +1,16 @@
+/* Поле комментария */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 480px;
+  font-size: 14px;
+}
+
+.field textarea {
+  padding: 8px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+}

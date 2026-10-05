@@ -1,5 +1,5 @@
 // Проверка интерфейса платформы на демо-магазине шага 1.1: ошибки TypeScript, сборки и Angular в консоли,
-// схлопывание повторов, адресная строка, вкладка «Сеть», ошибка 500 из переключателя.
+// схлопывание повторов, адресная строка, заголовок вкладки, вкладка «Сеть», ошибка 500 из переключателя.
 // node tools/e2e/checks/platform.mjs
 import { readFileSync } from 'node:fs';
 import { BASE_URL, CONTENT, launch, OUT, readDir, wait } from '../lib.mjs';
@@ -75,6 +75,9 @@ await frame().click('app-game-card a.cover');
 await wait(1500);
 const address = () => page.$eval('.address-input', (e) => e.value);
 expect((await address()) === '/games/1', `клик по ссылке в приложении меняет адресную строку: ${await address()}`);
+// Заголовок вкладки над адресной строкой — document.title приложения (title маршрута «Игра — Ход конём»)
+const tabTitle = () => page.$eval('.preview-tab-title', (e) => e.textContent);
+expect((await tabTitle()) === 'Игра — Ход конём', `заголовок вкладки следует за маршрутом: ${await tabTitle()}`);
 
 await page.click('.address-input', { clickCount: 3 });
 await page.type('.address-input', '/cart\n');
@@ -82,6 +85,10 @@ await wait(2500);
 expect(
   (await frame().evaluate(() => document.body.innerText)).includes('Корзина пуста'),
   'ввод адреса /cart открывает корзину с нуля',
+);
+expect(
+  (await tabTitle()) === 'Корзина — Ход конём',
+  `после перезапуска — заголовок новой страницы: ${await tabTitle()}`,
 );
 
 await page.click('.icon-button[title="Назад"]');

@@ -4,7 +4,7 @@
 //   iframe → родитель: { type: 'ready' }
 //   родитель → iframe: { type: 'run', files: { 'main.js': '<js>', … }, entry: 'main.js', styles: ['<css>'],
 //                        url: '/catalog', backend: { latency, failRate } }
-//   iframe → родитель: { type: 'console', level, text } | { type: 'error', text } | { type: 'url', url }
+//   iframe → родитель: { type: 'console', level, text } | { type: 'error', text } | { type: 'url', url } | { type: 'title', title }
 //                      | { type: 'network', entry: { id, method, url, status, ms, … } }
 //   родитель → iframe: { type: 'navigate', url } | { type: 'history', delta } | { type: 'backend-config', config }
 //
@@ -213,6 +213,16 @@ for (const method of ['pushState', 'replaceState']) {
   };
 }
 window.addEventListener('popstate', reportUrl);
+
+// Заголовок вкладки (document.title): его меняет Title / TitleStrategy роутера — показываем над адресной строкой
+let lastReportedTitle = null;
+function reportTitle() {
+  if (document.title === lastReportedTitle) return;
+  lastReportedTitle = document.title;
+  send({ type: 'title', title: document.title });
+}
+new MutationObserver(reportTitle).observe(document.head, { subtree: true, childList: true, characterData: true });
+reportTitle();
 
 /** Переход по адресу из адресной строки: как будто пользователь сменил URL, а роутер узнал об этом из popstate */
 function navigate(url) {

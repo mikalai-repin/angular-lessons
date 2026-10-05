@@ -169,6 +169,15 @@
 | routing | роутинг, маршрутизация | «роутинг» в тексте, «маршрут» для одного пути |
 | route parameter | параметр маршрута | `:id` |
 | query parameter | query-параметр | `?q=` |
+| route config / routes | карта маршрутов | массив `Routes` в `app.routes.ts` |
+| link commands | команды (ссылки) | `[routerLink]="['/games', id]"` |
+| active link | активная ссылка | `routerLinkActive` |
+| child routes | вложенные (дочерние) маршруты | `children` |
+| redirect | переадресация | `redirectTo` |
+| route data | данные маршрута | `data`, `resolve` |
+| breadcrumbs | хлебные крошки | практикум главы 10 |
+| view transition | плавная смена страниц (View Transitions) | `withViewTransitions()` |
+| recognition | распознавание (маршрута) | подбор маршрутов по адресу, «под капотом» главы 10 |
 | router outlet | место вывода маршрута, `router-outlet` | |
 | lazy loading | ленивая загрузка | |
 | guard | гард | `CanActivateFn` |

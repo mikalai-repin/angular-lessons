@@ -1,0 +1,20 @@
+<a class="back-link" routerLink="/cart">← Корзина</a>
+<h1>Оформление заказа</h1>
+<p>
+  Товаров: {{ cart.count() }} шт. на
+  {{ cart.subtotal() | price }}, к оплате
+  <b>{{ cart.total() | price }}</b
+  >.
+</p>
+<label class="field">
+  Комментарий к заказу
+  <textarea
+    #commentBox
+    rows="3"
+    [value]="comment()"
+    (input)="comment.set(commentBox.value)"
+  ></textarea>
+</label>
+<p class="muted">
+  Адрес доставки и способ оплаты появятся здесь позже.
+</p>
