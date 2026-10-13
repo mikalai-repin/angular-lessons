@@ -1,6 +1,6 @@
 # Программа курса
 
-> **Состояние:** рабочий план. Состав шагов уточняется при написании главы; расхождения фиксируются в `docs/authoring-process.md`, раздел «Фактическое состояние», как в курсе PixiJS.
+> **Состояние:** у написанных глав (1–10) в таблицах — **фактический** состав шагов: папка шага, что он вводит, с чего начинается (`custom` — своя заготовка поверх результата прошлого шага, `noSolution` — шаг без задания). У остальных — план: он уточняется при написании главы, а после неё таблица заменяется фактической.
 
 Курс состоит из **трёх частей**:
 
@@ -12,7 +12,7 @@
 
 Врезки **«Под капотом»** — необязательные блоки о внутреннем устройстве. Врезки **«Вы встретите в старом коде»** — как то же самое писали до Angular 17–20 (`*ngIf`, `@Input()`, NgModule, zone.js). Ученику придётся читать старый код, но писать его он не должен.
 
-Обозначения:
+Обозначения в плане ненаписанных глав:
 - **API** — что впервые вводится в шаге.
 - **Результат** — что ученик видит в превью после шага.
 
@@ -24,119 +24,120 @@
 
 Цель: понять, что такое Angular, чем он отличается от библиотек вроде React, и запустить первое приложение.
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 1.1 | Что такое Angular | Фреймворк против библиотеки; что входит в Angular «из коробки» (роутер, формы, HTTP, DI, тесты); компилятор шаблонов; Angular 22 и как он изменился с 2016 года | — (теория + демо готового магазина) |
-| 1.2 | Первый компонент | `@Component`, `selector`, `template`, класс компонента; `<app-root>` в странице | «Ход конём» на экране |
-| 1.3 | Запуск приложения | `bootstrapApplication`, `main.ts`, что происходит при старте | — |
-| 1.4 | Шаблон в отдельном файле | `templateUrl`, `styleUrl`, `styles`; почему стили компонента не «текут» наружу (обзорно) | Заголовок со своим стилем |
-| 1.5 | Конфигурация приложения | `app.config.ts`, `ApplicationConfig`, `providers`, `provideBrowserGlobalErrorListeners` | — |
-| 1.6 | Отладка | Консоль превью, ошибки `NG0xxx` и angular.dev/errors, режим разработки, глобальный `ng` (проверить) | Намеренная ошибка и её разбор |
-| **Под капотом** | Компилятор | Шаблон — это не HTML, а код: JIT в превью против AOT в настоящем проекте; что делает декоратор | — |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-what-is-angular | Что такое Angular, AOT/JIT, интерфейс курса (`noSolution`) | Демо-магазин (роутинг, бэкенд, поиск; ведётся руками, на нём работают `checks/platform.mjs` и `checks/preview.mjs`) |
+| 02-first-component | `@Component`, `selector`, `template`, NG0906, селектор по умолчанию `ng-component` | `main.ts` + `app.ts` без декоратора (custom) |
+| 03-bootstrap | `bootstrapApplication`, `ApplicationRef`, NG05104 (выводится дважды: `ErrorHandler` и `.catch`), `ng-version` | решение 02 |
+| 04-template-files | `templateUrl`, `styleUrl`, глобальный `styles.css`, инкапсуляция (`_ngcontent-ng-c…`) | custom: `app.html` с TODO, `app.css` и `styles.css` готовые |
+| 05-app-config | `ApplicationConfig`, `providers`, `provideBrowserGlobalErrorListeners` | custom: `app.config.ts` с TODO |
+| 06-debugging | Метки ошибок TS / Сборка / выполнение, чтение ошибки JIT (`@4:28` — с нуля), коды NG, `ng.getComponent($0)` | custom, **`brokenStart: true`**: `styleUrl: './app.scss'`, `</h2>`, `appRef.component` |
+| 07-compiler | `ɵcmp.template`, инструкции, `consts`, `rf & 1` / `rf & 2`, сравнение с AOT (`ngc`) | решение 06 (`noSolution`) |
 
 ### Глава 2. Шаблоны и привязки
 
 Цель: связать данные класса с разметкой и обработать действия пользователя.
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 2.1 | Интерполяция | `{{ }}`, выражения шаблона и их ограничения | Название и цена игры из класса |
-| 2.2 | Привязка свойств | `[src]`, `[disabled]`, свойство DOM против атрибута HTML | Обложка игры |
-| 2.3 | Атрибуты, классы, стили | `[attr.aria-label]`, `[class.sold-out]`, `[class]`, `[style.width.px]` | Карточка «нет в наличии» серая |
-| 2.4 | События | `(click)`, `$event`, `(keydown.enter)` | Кнопка «В корзину» пишет в консоль |
-| 2.5 | Ссылки на элементы | `#input`, передача элемента в обработчик | Поле поиска выводит текст |
-| 2.6 | Локальные переменные | `@let` | Цена со скидкой в шаблоне |
-| 2.7 | Безопасность | Экранирование, `[innerHTML]` и санитайзер | Описание с разметкой |
-| **Практикум** | Карточка игры | Обложка, название, цена, старая цена, игроки, кнопка | |
-| **Под капотом** | Контекст шаблона | Почему в шаблоне нет `window`, как выражения превращаются в функции | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-interpolation | Вводный шаг главы, `{{ }}`, выражения шаблона и их ограничения, `protected readonly` | custom: решение 1.7, `main.ts` как в `ng new`, карточка в `app.html` статичной разметкой, `app.css` со стилями всей главы |
+| 02-property-binding | `[src]`, `[alt]`, `[disabled]`, свойство DOM и атрибут HTML, NG0303 / NG8002, `inStock: number` | решение 01 |
+| 03-attr-class-style | `[attr.aria-label]` (рейтинг `role="img"`), `[class.sold-out]`, `[style.width.%]`, групповые `[class]`/`[style]`, legacy `ngClass` | решение 02 |
+| 04-events | `(click)`, `(keydown.enter)`, `$event`, именование обработчиков | решение 03 |
+| 05-template-refs | `#searchBox`, `[hidden]`, загадка «шаблон обновляется только после событий» | решение 04 |
+| 06-let | `@let soldOut`, `@let discount`, `toFixed` вместо `Math`, ошибки AOT NG8015–8017 | решение 05 |
+| 07-security | экранирование интерполяции, `[innerHTML]`, санитизация, `unsafe:`, `DomSanitizer` (упоминание) | решение 06 |
+| 08-practice | практикум: один объект `game = GAMES[0]`, характеристики, текст кнопки, `[hidden]` для скидки; «Итоги главы» | custom: + `core/models.ts`, `core/games-data.ts`, TODO в `app.ts` |
+| 09-template-context | `ɵcmp.template`: блок обновления, `ctx.`, `textInterpolateN`, `domProperty` + санитайзер, `@let` → `const`, обработчики и `markViewDirty` | решение 08 (`noSolution`) |
 
 ### Глава 3. Сигналы
 
 Цель: понять реактивность Angular — главное изменение последних лет.
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 3.1 | Проблема | Поменяли поле класса — экран не обновился. Почему (зонлесс + OnPush по умолчанию) | Счётчик «застрял» |
-| 3.2 | `signal` | Чтение вызовом, `set`, `update`; сигнал в шаблоне | Счётчик «В корзине: N» работает |
-| 3.3 | `computed` | Производные значения, ленивость, кэш | Сумма и скидка |
-| 3.4 | Неизменяемость | Массивы и объекты в сигналах, `update` с новой копией, `equal` | Список позиций |
-| 3.5 | `effect` | Побочные эффекты, когда эффект нужен и когда нет | Лог изменений корзины |
-| 3.6 | `untracked` | Чтение без подписки | |
-| 3.7 | `linkedSignal` | Сигнал, который сбрасывается от источника | Выбранное издание сбрасывается при смене игры |
-| **Практикум** | Мини-корзина | Добавить, убрать, итог, бесплатная доставка от суммы | |
-| **Под капотом** | Граф сигналов | Производители и потребители, «грязные» флаги, push-pull; почему `computed` не пересчитывается лишний раз | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-problem | Вводный шаг главы; поле в `(click)` обновляет экран, в `setTimeout` — нет (отставание на одно нажатие); зонлесс; OnPush и эксперимент с `Eager`; legacy zone.js | custom: решение 2.8 + «В корзине: 0» в шапке, `app.css` со стилями всей главы, TODO в `app.ts` |
+| 02-signal | `signal`, чтение вызовом, `set`/`update`, `readonly`; `{{ cartCount }}` → `[Signal: 0]`, AOT NG8109; TS2540; `signal(1)` в консоли превью; в конце задержка убирается | решение 01 |
+| 03-computed | переключатель игр (`gameIndex` + `computed` `game`/`soldOut`/`discount`), «храните минимум», ленивость и кэш (эксперимент с `console.log`), `@let` → `computed`, TS2339, NG0600 | решение 02 |
+| 04-immutability | `CartItem`, `cart = signal<CartItem[]>`, `cartCount`/`cartTotal`/`cartSummary`; эксперимент с `push` (мини-корзина без списка, шапка `0 · 0 ₽`), `Object.is`, `readonly CartItem[]`, `equal` | решение 03 |
+| 05-effect | `effect` в конструкторе (лог корзины), контекст внедрения, NG0203, время запуска и объединение изменений, «когда эффект не нужен», `onCleanup`, эффекты компонента и корневые | решение 04 |
+| 06-untracked | название открытой игры в логе через `untracked`, реактивный контекст, чужой код в эффектах | решение 05 |
+| 07-linked-signal | выбор количества `linkedSignal<number>(() => (this.game().inStock > 0 ? 1 : 0))`, литеральный тип `0 \| 1`, ловушка с `soldOut()`, полная форма `source`/`computation`/`previous` | решение 06 |
+| 08-practice | практикум: `inCart`, `available`, `deliveryLeft`, «Убрать», «Очистить», склад, бесплатная доставка от `FREE_DELIVERY_FROM = 5000`; «Итоги главы» | custom: TODO в `app.ts`/`app.html`, константа `FREE_DELIVERY_FROM` |
+| 09-signal-graph | граф сигналов магазина (`signal-graph.ts` — помощник по внутренним полям узлов), производители и потребители, активный потребитель, динамические зависимости, push-pull, отсечение по равенству, живые потребители, `markAncestorsForTraversal`, планировщик, `debugName` в AOT | custom: решение 08 + `signal-graph.ts` (`noSolution`) |
 
 ### Глава 4. Управляющие блоки
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 4.1 | `@if` | `@if`, `@else if`, `@else`, `as` | «Нет в наличии» |
-| 4.2 | `@for` | `@for (… of …; track …)` — зачем `track` обязателен | Список карточек |
-| 4.3 | Переменные `@for` | `$index`, `$first`, `$last`, `$even`, `$count` | Нумерация, разделители |
-| 4.4 | `@empty` | Пустой список | «Ничего не найдено» |
-| 4.5 | `@switch` | `@case`, `@default` | Бейдж категории |
-| 4.6 | `ng-container` и `ng-template` | Группировка без лишнего элемента; шаблон как значение (обзорно) | |
-| **Практикум** | Витрина | Фильтр «только в наличии», сортировка, пустое состояние | |
-| **Под капотом** | Как работает `track` | Сопоставление элементов, перемещение DOM вместо пересоздания; эксперимент с `track $index` | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-if | вводный шаг главы; `@if`, `as` (сужение типа в AOT, ловушка с `0`), `@else if` / `@else` — строка наличия (`FEW_LEFT = 5`), все `[hidden]` → `@if` (кроме «Ищем»), `@if` против `[hidden]`; legacy `*ngIf`, миграция `control-flow` | custom: решение 3.8, `app.css` со стилями всей главы |
+| 02-for | каталог-сетка `@for (game of games; track game.id)`, зачем `track`, `@let` и `@if` внутри `@for`; legacy `*ngFor` + `trackBy` | custom: из `app.ts` убраны сигналы открытой игры и `linkedSignal`, `games = GAMES`, `addToCart(game)`, `inCart` — `Map`; в `app.html` TODO на месте каталога, мини-корзина наверху |
+| 03-for-variables | строки корзины `@for (item of cart(); track item.game.id)`, `$index` (номер), `$even` («зебра»), таблица переменных, `let i = $index`; `changeQuantity`, `removeFromCart` | решение 02 |
+| 04-empty | `query` + `visibleGames` (название и теги), `(input)="query.set(…)"`, `@empty`; «Ищем» и `search()` удалены | решение 03 |
+| 05-switch | бейдж категории `@switch` с пятью `@case` и `@default never;`, объединение `@case`, словарь `Record` как альтернатива; legacy `ngSwitch` | решение 04 |
+| 06-ng-template | обзор (`noSolution`): `<ng-container>`, `<ng-template>` + `NgTemplateOutlet` (`priceTpl`, `let-game`, `$implicit`), `let-` — `any`; блоки — тоже шаблоны | решение 05 |
+| 07-practice | практикум: «Только в наличии», сортировка (`SortKey`, `changeSort`), «Сбросить фильтры» с `[value]`/`[checked]`; «Итоги главы» | custom: TODO в `app.ts` и `app.html` |
+| 08-track | наблюдатель `dom-watch.ts` (`MutationObserver`: создано / перемещено / удалено / тексты), `track game.id` / `$index` / копии + `track game` (NG0956) / `game.category` (NG0955), `ɵɵrepeaterCreate`, алгоритм `reconcile` | custom: решение 07 + `dom-watch.ts` (`noSolution`) |
 
 ### Глава 5. Компоненты и их связь
 
 Цель: разбить интерфейс на компоненты и связать их.
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 5.1 | Свой компонент | Новый файл, `imports` в `@Component` | `GameCard` |
-| 5.2 | Входные данные | `input()`, `input.required()` | Карточки из массива |
-| 5.3 | Преобразование входов | `transform`, `booleanAttribute`, `numberAttribute`, `alias` | `<app-game-card compact>` |
-| 5.4 | События компонента | `output()`, `emit` | «В корзину» в карточке → счётчик в шапке |
-| 5.5 | Двусторонняя привязка | `model()`, `[(value)]` | Звёзды рейтинга |
-| 5.6 | Проекция содержимого | `<ng-content>`, `select`, несколько слотов | Карточка-обёртка с бейджами |
-| 5.7 | Хост-элемент | `host: { class, '(click)', '[attr.role]' }` | |
-| 5.8 | Стили компонента | Инкапсуляция, `:host`, `ViewEncapsulation` | |
-| **Практикум** | Компонент «Количество» | `− 2 +` с `model()`, ограничения min/max | |
-| **Под капотом** | Инкапсуляция стилей | Атрибуты `_ngcontent-…`, как Angular переписывает CSS | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-component | вводный шаг главы, дерево компонентов; `GameCard` (`shared/game-card/`), `selector`, `imports`, NG0304 / NG8001, короткие классы в стилях компонента; 12 одинаковых карточек (`game = GAMES[0]`); эксперимент «`.tile` в `app.css` не действует»; legacy `NgModule` | custom: решение 4.7, `app.css` очищен от большой карточки главы 3, стили плитки — блоком в конце (ученик удаляет), стили главы; заготовки `game-card.ts`/`.html`, готовый `game-card.css` |
+| 02-inputs | `input.required<Game>()`, `input(0)` (`inCart`), `[game]`, TS2339 на `set`, `@let category` для `@default never;` (AOT TS2322), NG0950 / NG8008 / NG0303 / NG8002 / TS2322; эксперимент с начальной корзиной; legacy `@Input()` | решение 01 |
+| 03-outputs | `output()`, `emit()`, `(add)`, `$event` и `output<T>()`, TS2345, «данные вниз — события вверх», не всплывает, синхронно; эксперимент с выходом `click`; legacy `EventEmitter` | решение 02 |
+| 04-model | `Rating` (`shared/rating/`), `model(0)`, `valueChange`, `[(value)]="minRating"` (без вызова; `Unsupported expression in a two-way binding`), фильтр «Рейтинг от» с половинками, `@if` в звёздах; эксперимент «односторонняя привязка к модели»; `input` + `linkedSignal` как черновик; `ɵɵtwoWayBindingSet` | custom: решение 03 + заготовки `rating.ts`/`.html`, готовый `rating.css` |
+| 05-input-transforms | `readonly` с `booleanAttribute` (без него `''` → ложь, AOT TS2322), `numberAttribute`, свои преобразования, `alias`; legacy сеттеры и `coerceBooleanProperty` | решение 04 |
+| 06-content-projection | стикеры «Хит» (`HIT_RATING = 4.8`) и «Скидка», `<ng-content select="[sticker]">`, слот по умолчанию, `@if` с одним корнем, NG8011, стили содержимого — у родителя, запасное содержимое | решение 05 |
+| 07-host | `host` у `Rating`: `role` img/slider, `aria-*`, `tabindex`, `[class.readonly]`, `(keydown.arrowright/left)` → `step(±0.5)`; `:host`, `:host(:focus-visible)`, `:host(.readonly)`; `hostBindings`; legacy `@HostBinding`/`@HostListener` | решение 06 |
+| 08-styles | карточка без `<article>`: `host: { role: 'article', '[class.sold-out]' }`, `:host`, `:host(.sold-out)`; таблица «что куда достаёт»; эксперименты `ViewEncapsulation.None` и `ShadowDom`; legacy `::ng-deep` | решение 07 |
+| 09-practice | практикум: `Quantity` (`shared/quantity/`, `model.required`, `min`/`max` с `numberAttribute`), `[value]` + `(valueChange)` вместо `[(value)]="item.quantity"` (мутация — шапка не обновляется), `setQuantity`; «Итоги главы» | custom: заготовки `quantity.ts`/`.html`, готовый `quantity.css`, TODO в `app.ts`/`app.html` |
+| 10-encapsulation | `_nghost`/`_ngcontent`, идентификатор компонента, переписанные селекторы, специфичность, `<style>` появляется/удаляется (5 → 6 → 5 с `Quantity`), компонент без стилей → `None`, `%COMP%` и `%NS%` (`provideCssVarNamespacing`) в AOT, теневой DOM | решение 09 (`noSolution`) |
 
 ### Глава 6. Жизненный цикл и DOM
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 6.1 | Когда что происходит | Жизненный цикл, конструктор против первого рендера; `inject()`, `ElementRef`, контекст внедрения | Окно «Подробнее» (`@if` создаёт и уничтожает) |
-| 6.2 | Доступ к элементам | `viewChild()`, `viewChildren()`, `ElementRef`, `read` | Фокус в поиске после сброса фильтров |
-| 6.3 | После отрисовки | `afterNextRender`, `afterEveryRender`, `<dialog>` + `showModal()` | Окно «Подробнее» — модальное |
-| 6.4 | Уборка | `DestroyRef.onDestroy`, таймеры и слушатели | Таймер «Скидка действует ещё …» |
-| 6.5 | Дочерние из проекции | `contentChildren()`, `contentChild()`, `descendants` | Вкладки «Описание / Характеристики» (`Tabs`/`Tab`) |
-| 6.6 | Замер после отрисовки | `afterRenderEffect`, фазы `earlyRead`/`write`/`mixedReadWrite`/`read` | Полоска под выбранной вкладкой |
-| 6.7 | Классические хуки | `ngOnInit`, `ngOnChanges`, `ngOnDestroy` — порядок и когда уместны | |
-| **Практикум** | «Показать ещё» | `IntersectionObserver` в `afterNextRender` + `DestroyRef`, `linkedSignal` | Каталог порциями |
-| **Под капотом** | Обнаружение изменений | Дерево представлений, когда Angular проверяет компонент, OnPush и `Eager`, журнал профайлера | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-lifecycle | вводный шаг главы; окно «Подробнее» (`@if` создаёт/уничтожает `GameDetails`), выход `open` у карточки, схема жизни компонента; эксперименты: NG0950 в конструкторе, `inject(ElementRef)` — хост пуст и не в документе, эффект — до обновления шаблона, NG0203; legacy — DI через конструктор | custom: решение 5.9 + готовый `GameDetails` (`<dialog open>` + `.backdrop`), стили `.title-button`, TODO в карточке и `App` |
+| 02-view-child | `viewChild.required<ElementRef<HTMLInputElement>>('searchBox')`, фокус после «Сбросить фильтры» (без него — `BODY`); `viewChildren` — сигнал, видит только свой шаблон (1 `Rating` из 13), `read: ElementRef`, NG0951; legacy `@ViewChild`/`QueryList` | решение 01 |
+| 03-after-next-render | `<dialog>` + `showModal()` в `afterNextRender`, `(close)`, `::backdrop`; эксперименты: конструктор (NG0951), `effect` (работает, но заголовок пуст), `afterEveryRender`; SSR; фазы — `deep` | решение 02 |
+| 04-destroy-ref | `Countdown` (`shared/countdown/`): сигнал `now` + `setInterval` + `DestroyRef.onDestroy`; эксперимент «три открытия — три таймера»; что убирать самим, `host`-слушатели снимаются; `onCleanup` против `DestroyRef`; legacy `ngOnDestroy` | custom: заготовка `countdown.ts` с готовыми `untilMidnight`/`formatTime`, готовые `.html`/`.css`, TODO в окне |
+| 05-content-children | `Tabs`/`Tab` (`shared/tabs/`): `contentChildren(Tab)`, `Tab.active` — сигнал, который меняет эффект `Tabs`, `[hidden]` у хоста; вкладка «Характеристики» (`<dl class="specs">`); эксперименты: вкладка в `@if`, в `<div>` (`descendants`), `contentChild`, `viewChildren(Tab)` = 0; legacy `@ContentChildren` | custom: заготовки `tabs.ts`, `tabs.html`, `tab.ts`, готовые `tabs.css` (с `.ink`), `tab.html`; `.specs` в `game-details.css` |
+| 06-after-render-effect | полоска под вкладкой: `viewChildren('tabButton')`, сигнал `ink`, `afterRenderEffect({ read })`; фазы; эксперименты: `earlyRead` (0 при открытии), `effect` (отставание на отрисовку: 86/110 вместо 83/116), счёт запусков против `afterEveryRender` | решение 05 |
+| 07-lifecycle-hooks | `ngOnChanges` (`SimpleChanges<T>`), `ngOnInit`, `ngAfterViewInit`, `ngOnDestroy` — порядок по логу вместе с `effect`/`afterNextRender`/`DestroyRef`; хуки против функций (`noSolution`) | решение 06 |
+| 08-practice | практикум: `LoadMore` (`shared/load-more/`, `inject(ElementRef)`, `IntersectionObserver` в `afterNextRender`, `DestroyRef`), `PAGE_SIZE = 6`, `shownCount = linkedSignal<Game[], number>`, `shownGames`, `showMore`; «Итоги главы» | custom: заготовки `load-more.ts`/`.html`, готовый `.css`, TODO в `app.ts`/`app.html` |
+| 09-change-detection | что такое проверка, дерево представлений, журнал `cd-log.ts` (`ng.ɵsetProfiler`): «В корзину», «+», тик таймера, вкладка, `Eager`; планировщик; legacy `Default`/zone.js/`markForCheck` (`noSolution`) | custom: решение 08 + `cd-log.ts`, `main.ts` вызывает `logChangeDetection()` |
 
 ### Глава 7. Директивы и пайпы
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 7.1 | Встроенные пайпы | `currency`, `date`, `number`, `percent`, `json`, `slice`; локаль `ru` | Цены в рублях |
-| 7.2 | Свой пайп | `@Pipe`, `PipeTransform`, параметры | «2–4 игрока», «45 мин» |
-| 7.3 | Чистые и нечистые | `pure`, почему чистые быстрые | |
-| 7.4 | Директива атрибута | `@Directive`, `host`, `input()` в директиве | Подсказка при наведении |
-| 7.5 | Композиция директив | `hostDirectives` | |
-| **Практикум** | Директива «ленивая картинка» | Загрузка обложки при появлении в зоне видимости | |
-| **Под капотом** | Директивы и компоненты | Компонент = директива с шаблоном; как Angular сопоставляет селекторы | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-builtin-pipes | вводный шаг главы; пайп, параметры через `:`, встроенные пайпы (таблица), `LOCALE_ID` + `registerLocaleData` (провайдер — коротко, подробно в гл. 8), `currency: 'RUB' : 'symbol' : '1.0-0'` в карточке, `percent` на стикере («−20 %», приоритет `\|`), `date: 'HH:mm:ss' : 'UTC'` в `Countdown` (`formatTime` удалена); эксперименты: без `LOCALE_ID`, без данных (NG02100/NG0701), скобки (`−NaN`), `json` | custom: решение 6.8 + `.tooltip`/`.lazy` в `styles.css`, `.meta` в `game-card.css`, TODO в `app.config.ts`, `app.html`, `game-card.html`, `countdown.html` |
+| 02-custom-pipe | `@Pipe`, `transform`, `PipeTransform`, `inject(LOCALE_ID)`, `formatCurrency`; `price` во всех восьми местах (`App`, `GameCard`, `GameDetails`); `formatNumber` в `Rating` (`label` — пайпы в `host` нельзя); NG0302 / NG8004, TS2345 (`∞ ₽` в JIT) | custom: заготовка `price-pipe.ts`, TODO в `rating.ts` |
+| 03-pipe-params | `players` (`Game['players']`), `duration` с параметром `format: 'short' \| 'long'`, готовый `plural.ts` (`Intl.PluralRules`); строка `.meta` в карточке, характеристики в окне; цепочка `\| uppercase`; TS2345 для `'lng'`; `deep` «пайп или метод» | custom: `plural.ts`, заготовки `players-pipe.ts`/`duration-pipe.ts`, TODO в `game-card.html`/`game-details.html` |
+| 04-pure-pipes | `pure`, счётчики вызовов (`PlayersPipe` чистый/нечистый, нечистый `price` в `App`), экземпляр на каждое место, изменение на месте, нечистые встроенные, таблица «метод / пайп / `computed`»; `deep` про `ɵɵpipeBind1` (`noSolution`) | решение 03 |
+| 05-directive | `@Directive`, селектор `[appTooltip]` = имя входа, `host` (`mouseenter`/`mouseleave`), `inject(ElementRef)`, элемент в `body` + `DestroyRef`, глобальные стили; подсказки у стикеров (`hitRating \| number`) и звёзд; NG0303 / NG8002, статический атрибут молча; ограничения (только мышь); legacy `@HostListener` | custom: заготовка `tooltip.ts`, TODO в `app.html`/`game-card.html` |
+| 06-host-directives | `InView` из `LoadMore` (`output({ alias: 'appInView' })`, совпадение по имени привязки), `hostDirectives: [InView]`, `inject(InView).visible.subscribe`; эксперименты: порядок конструкторов, закрытые выходы и `outputs: ['appInView']`, дубль по селектору, NG0310 | custom: заготовка `in-view.ts`, TODO в `load-more.ts` |
+| 07-practice | практикум: `LazyImage` (`img[appLazy]`, `hostDirectives: [InView]`, `seen`/`src` (`computed`)/`loaded`, `class: 'lazy'`, `[attr.src]`, `(load)`); «Итоги главы»; `NgOptimizedImage` и `loading="lazy"` | custom: заготовка `lazy-image.ts`, TODO в `game-card.html` |
+| 08-directives-inside | `ɵdir`/`ɵcmp`/`ɵpipe` (вывод `ngc`), сравнение полей, селектор-массив, `consts` с маркером `3`, сопоставление при первом создании шаблона (`directiveRegistry`), порядок на элементе и `ng.getDirectives`, NG0300, `ɵɵpipe`/`ɵɵpipeBind1` (`noSolution`) | решение 07 |
 
 ### Глава 8. Сервисы и внедрение зависимостей
 
 Цель: понять DI — то, что отличает Angular от большинства фронтенд-библиотек.
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 8.1 | Зачем DI | Общая корзина для шапки и карточек; почему не глобальная переменная | |
-| 8.2 | Первый сервис | `@Service()` и `@Injectable({ providedIn: 'root' })`, `inject()` | `CartStore` |
-| 8.3 | Контекст внедрения | Где можно вызывать `inject`, `runInInjectionContext` | |
-| 8.4 | Провайдеры | `useClass`, `useValue`, `useFactory`, `useExisting` | Подмена сервиса для демо |
-| 8.5 | Токены | `InjectionToken` для настроек (валюта, порог доставки) | |
-| 8.6 | Иерархия инжекторов | `providers` у компонента, `viewProviders`, `{ optional, self, skipSelf, host }` | Свой экземпляр на каждую карточку |
-| 8.7 | Ленивые сервисы | `injectAsync`, `onIdle` | |
-| **Практикум** | Избранное | Сервис избранного, сердечко на карточках и счётчик в шапке | |
-| **Под капотом** | Как ищется зависимость | Дерево элементов и дерево окружения, `NullInjector`, ошибка NG0201 | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-why-di | вводный шаг главы; курьер `App`, корзина — класс `CartStore` + глобальный `cartStore = new CartStore()`, методы по игре (`quantityOf`, `add`, `setQuantity`, `remove`), эксперимент «эффект в конструкторе» (NG0203 при загрузке модуля), чем плоха глобальная переменная, понятия зависимость/инжектор/провайдер | custom: решение 7.7 + `Header` (`layout/header/`, входы `count`/`total`, стили из `app.css`), `.actions`/`.favorite` в `game-card.css`, заготовка `core/cart-store.ts`, TODO в `app.ts`/`header.ts` |
+| 02-first-service | `@Service()`, `inject(CartStore)`, класс-токен, корневой инжектор, ленивое создание, эффект в сервисе; `GameCard`/`GameDetails` без `inCart`/`add`; эксперименты: один экземпляр, без декоратора — NG0201; `@Injectable({ providedIn: 'root' })`; legacy — конструктор | решение 01 |
+| 03-injection-context | контекст внедрения, NG0203 в методе, inject-функция `injectNow()` (`shared/now.ts`, `assertInInjectionContext`, `DestroyRef` вызвавшего) в `Countdown`; эксперименты: `setTimeout` (с проверкой и без — висящий таймер), `await`, `runInInjectionContext` + `Injector` | custom: заготовка `now.ts`, TODO в `countdown.ts` |
+| 04-providers | провайдер, `useClass`/`useValue`/`useFactory`/`useExisting`, `DemoCartStore` (`@Service({ autoProvided: false })`) в `app.config.ts`; эксперименты: `useFactory` + `isDevMode`, `useValue: new …` (NG0203), `inject(DemoCartStore)` (NG0201), два экземпляра против `useExisting`, DEPRECATED без декоратора | custom: заготовка `demo-cart-store.ts`, TODO в `app.config.ts` |
+| 05-tokens | `InjectionToken<ShopConfig>` `SHOP_CONFIG` с `factory` вместо `FREE_DELIVERY_FROM`/`FEW_LEFT`/`HIT_RATING`/`PAGE_SIZE`, порядок полей (TS2729), `DEFAULT_CURRENCY_CODE` + `getCurrencySymbol` в `price`; эксперименты: акция 3000, новый токен с тем же описанием, токен без фабрики (NG0201), `'EUR'`; legacy `@Inject` и строки | custom: заготовка `shop-config.ts`, TODO в `cart-store.ts`, `app.ts`, `game-card.ts`, `price-pipe.ts`, `app.config.ts` |
+| 06-hierarchy | инжекторы окружения и элементов, путь поиска; `Tab` через токен `TABS` + `useExisting` у `Tabs` (`implements TabsParent`), эффект-почтальон удалён; CDK-аккордеон; эксперименты: `providers: [CartStore]` в карточке, вкладка вне `Tabs` + `optional`, `self`/`host`; `skipSelf` (CDK), `viewProviders` и `@if` | решение 05 |
+| 07-lazy-services | `injectAsync(() => import('./analytics').then((m) => m.Analytics), { prefetch: onIdle })` в `CartStore`, событие в `add`; эксперименты: без `prefetch`, `autoProvided: false` | custom: готовый `core/analytics.ts`, TODO в `cart-store.ts` |
+| 08-practice | практикум: `FavoritesStore`, сердечко в `.actions` (`aria-pressed`), «♥ N» в шапке; «Итоги главы» | custom: заготовка `favorites-store.ts`, TODO в `game-card.html`/`header.html` |
+| 09-di-inside | журнал `di-log.ts` (Alt+щелчок: `ɵgetInjectorResolutionPath`, `ɵgetDependenciesFromInjectable`), `ɵfac`/`ɵprov`/`ɵɵdefineService`/`ɵɵProvidersFeature`, `R3Injector.get`, NG0201/NG0200, `NodeInjector`, фильтр Блума (`noSolution`) | custom: решение 08 + `di-log.ts`, `main.ts` вызывает `logInjectorsOnAltClick()` |
 
 ---
 
@@ -144,30 +145,30 @@
 
 ### Глава 9. Состояние приложения
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 9.1 | Хранилище на сигналах | Приватный `signal` + публичный `asReadonly()`/`computed`, методы-действия | |
-| 9.2 | Сохранение | `effect` + `localStorage`, восстановление при старте | Корзина переживает перезапуск |
-| 9.3 | Производное состояние | Итоги, скидки, доставка через `computed` | |
-| 9.4 | Промокод | `linkedSignal` для сброса скидки при изменении корзины | |
-| 9.5 | Когда нужна библиотека | Когда хватает сервисов на сигналах, а когда берут библиотеку; NgRx — подробно в главе 18 | |
-| **Практикум** | Лимиты склада | Нельзя положить больше, чем `inStock` | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-store | вводный шаг главы; состояние приложения и интерфейса, хранилище (состояние / чтение / действия), закрытый `state` + `asReadonly()`, `readonly CartItem[]` и `readonly`-поля `CartItem`; эксперимент «Хочу 99» (до: 99 шт. при остатке 12; после: TS2339 + `TypeError … update is not a function`), TS2339 `push`, TS2540; `deep` — `asReadonly` = тот же узел | custom: решение 8.8 без `DemoCartStore` (и провайдера), мини-корзина — компонент `MiniCart` (`cart/mini-cart/`, стили итогов и промокода готовы), `.link-button` в `styles.css`, TODO в `cart-store.ts` |
+| 02-persistence | `localStorage`: что сохранять (`{ id, quantity }`, ключ с версией), запись эффектом (цитата документации), чтение — начальное значение `signal(loadCart())`, проверка внешних данных; эксперименты: «Сохранено:» при запуске, `'{oops'` с `try`/`catch` и без (магазин не открывается), негодные позиции; `deep` — корневой эффект; SSR, вкладки | решение 01 |
+| 03-derived-state | производное состояние: `subtotal` (бывший `total`), `savings`, `delivery` (`deliveryPrice: 390` в `SHOP_CONFIG`), `total` к оплате; итоги `<dl>` в мини-корзине, шапка — `subtotal`; эксперимент: `subtotal` — одно вычисление на изменение при пяти читателях; совет «один объект или несколько сигналов» | custom: TODO в `mini-cart.html` |
+| 04-promo-code | `core/promo-codes.ts` (`Promo`, `PromoResult`, `findPromo`), `promoState = linkedSignal<number, Promo \| null>({ source: subtotal, computation(subtotal, previous) })` — ниже порога снимается и не возвращается, `promoDiscount`, `applyPromo` → `PromoResult`, `removePromo`, сброс в `clear()`; `promoError` — состояние интерфейса в `MiniCart`; эксперимент-ловушка `source: isEmpty`; `deep` — узел `linkedSignal`, опция `set` | custom: готовый `promo-codes.ts`, TODO в `cart-store.ts`, `mini-cart.ts`/`.html` |
+| 05-practice | практикум: `available(game)`, `add` не кладёт сверх склада, `setQuantity` в пределах 1..`inStock`, `loadCart` урезает и отбрасывает, «Все N шт. в корзине» в карточке, кнопка окна; избранное в `localStorage` (`hod-konem:favorites:v1`); «Итоги главы» | custom: TODO в `cart-store.ts`, `favorites-store.ts`, `game-card.html` |
+| 06-libraries | обзор (`noSolution`): части хранилища, три вида состояния (приложения / данные сервера / URL), NgRx Signal Store (фрагмент корзины проверен типами `@ngrx/signals` 22.0.1: `protectedState` по умолчанию, `patchState` снаружи — TS2345) и классический Store, когда библиотека оправдана, `ng add @ngrx/signals` | решение 05 |
 
 ### Глава 10. Роутинг
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 10.1 | Маршруты | `provideRouter`, `Routes`, `<router-outlet>` | Главная и каталог |
-| 10.2 | Ссылки | `routerLink`, `routerLinkActive`, адресная строка превью | Меню магазина |
-| 10.3 | Параметры | `:id`, `withComponentInputBinding` + `input()` | Страница игры |
-| 10.4 | Query-параметры | Фильтры в URL, `Router.navigate`, `queryParamsHandling` | Фильтры переживают «перезагрузку» |
-| 10.5 | Вложенные маршруты | `children`, второй `router-outlet` | Кабинет |
-| 10.6 | Ленивая загрузка | `loadComponent`, `loadChildren` | Админка грузится отдельно |
-| 10.7 | Гарды | `CanActivateFn`, `CanDeactivateFn`, `CanMatchFn`, `UrlTree` | Оформление только с непустой корзиной |
-| 10.8 | Резолверы и заголовки | `ResolveFn`, `title`, `TitleStrategy` | Заголовок вкладки |
-| 10.9 | Ошибки и переходы | `**`, `redirectTo`, `withViewTransitions`, `withInMemoryScrolling` | 404 и плавный переход |
-| **Практикум** | Хлебные крошки | Из `data` маршрутов | |
-| **Под капотом** | Как роутер находит маршрут | Сопоставление URL, дерево состояний, жизненный цикл навигации | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-routes | вводный шаг главы; SPA, маршрут, `Routes`, `provideRouter`, `<router-outlet>` (страница — сосед после него), порядок и полное совпадение; NG04002 и сброс адреса; «тихие» пропуски outlet/`provideRouter`; `ng new`, `<base href>`, fallback сервера; legacy `RouterModule.forRoot` | custom: решение 9.5, каталог → `Catalog` (`catalog/`), мини-корзина → страница `CartPage` (`cart/cart-page/`), готовая `Home` (`home/`), `App` — каркас, глобальные `h1`/`a`/`.back-link`/`a.button`, `header.css` с меню; заготовка `app.routes.ts`, TODO в `app.config.ts`/`app.html` |
+| 02-links | `routerLink`, `routerLinkActive` + `exact`, `ariaCurrentWhenActive`, ссылки на главной и в пустой корзине; ← → превью; `href="/app/"`; `deep` — щелчок `RouterLink` | custom: TODO в шапке, главной, корзине |
+| 03-params | `games/:id`, `withComponentInputBinding()`, `input.required({ transform: numberAttribute })`, `[routerLink]` с командами, «Игра не найдена»; окно `GameDetails` удалено; NG0950; `deep` — переиспользование компонента; legacy `paramMap` | custom: готовые `game-page.html`/`.css`, заготовка `game-page.ts`, TODO в карточке |
+| 04-query-params | фильтры каталога — входы `q`/`inStock`/`rating`/`sort` с преобразованиями (`undefined`!), `toSortKey`, `Router.navigate([], { relativeTo, queryParams, queryParamsHandling: 'merge', replaceUrl })`, `null`, `[queryParams]` («Все по рейтингу →»); эксперименты: история с `replaceUrl` и без, `TypeError … 'trim'` | custom: TODO в `catalog.ts`/`.html`, `home.html`; `url: /catalog` |
+| 05-child-routes | кабинет: `children`, второй `<router-outlet>`, относительные ссылки, `redirectTo` + `pathMatch: 'full'` (NG04014), «♥ N» → `/account/favorites` | custom: готовые `FavoritesPage`/`OrdersPage`, `account.css`, `FavoritesStore.games`, заготовка `Account`; `url: /account` |
+| 06-lazy-loading | `loadChildren` (`account.routes.ts`, `accountRoutes`), `loadComponent` (страница игры), без статических импортов; лог «Кабинет: модуль загружен»; эксперимент `withPreloading(PreloadAllModules)`; legacy `loadChildren` с модулем | custom: заготовка `account.routes.ts`, TODO в `app.routes.ts` |
+| 07-guards | `/checkout` (`Checkout`, комментарий, `hasUnsavedChanges()`), `CanActivateFn` → `UrlTree`, `CanDeactivateFn` + `confirm()`; эксперимент `canMatch` с `false` (NG04002); legacy классы-гарды / `DeprecatedGuard` | custom: готовая страница `checkout/`, заготовка `checkout-guards.ts`, TODO в маршрутах и корзине; `url: /cart` |
+| 08-titles | `title` маршрутов, `ResolveFn<string>` (`gameTitleResolver`), `ShopTitleStrategy extends TitleStrategy` (`buildTitle`, `Title`); заголовок вкладки в превью; эксперимент: маршрут без `title` — старый заголовок | custom: заготовки `game-title.ts`, `layout/shop-title-strategy.ts` |
+| 09-not-found | `'**'` + `NotFound`, `redirectTo` (`games` → `catalog`), функция переадресации (`game/:id`), `withViewTransitions()` (developer preview), `withInMemoryScrolling`; эксперименты: без прокрутки (493 px), `canMatch` + `'**'` | custom: готовый `not-found/`, TODO в маршрутах и `app.config.ts` |
+| 10-practice | практикум: `Breadcrumbs` (`layout/breadcrumbs/`) — `data: { breadcrumb }`, `resolve: { breadcrumb: gameTitleResolver }`, обход `routerState.snapshot`, пропуск уровней без `url`, `lastSuccessfulNavigation` в `computed`; «Итоги главы» | custom: заготовка `breadcrumbs.ts`/`.html`, готовый `.css`, TODO в `app.html`; `url: /account/favorites` |
+| 11-router-inside | журнал навигации `router-log.ts` (`provideAppInitializer` + `router.events`, дерево снимков): `UrlTree`, распознавание с откатом, `loadChildren` до `RoutesRecognized`, гарды и `NavigationCancel`, резолверы и `loadComponent`, активация и `RouteReuseStrategy` (`noSolution`) | custom: решение 10 + `router-log.ts`, `main.ts` подключает журнал |
 
 ### Глава 11. HTTP и данные
 

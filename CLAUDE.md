@@ -17,14 +17,14 @@
 
 | Файл | Что внутри |
 |---|---|
-| [docs/course-plan.md](docs/course-plan.md) | Программа курса: части, главы, шаги, какие API в каком шаге |
+| [docs/course-plan.md](docs/course-plan.md) | Программа курса: части, главы, шаги (у написанных глав — фактические), какие API в каком шаге |
 | [docs/project-app.md](docs/project-app.md) | Сквозной проект «Ход конём»: экраны, данные, учебный бэкенд, какая глава что добавляет |
 | [docs/modern-angular.md](docs/modern-angular.md) | **Что верно для Angular 22**: проверенные факты, значения по умолчанию, устаревшие и запрещённые паттерны |
 | [docs/architecture.md](docs/architecture.md) | Архитектура платформы: редактор, компиляция в браузере, превью, учебный бэкенд, проверки |
 | [docs/lesson-format.md](docs/lesson-format.md) | Формат урока на диске: папки, frontmatter, start/solution, проверки |
 | [docs/writing-guide.md](docs/writing-guide.md) | Как писать тексты уроков: тон, структура шага, правила для кода |
 | [docs/glossary.md](docs/glossary.md) | Единый русско-английский словарь терминов |
-| [docs/roadmap.md](docs/roadmap.md) | Этапы работы и текущий статус |
+| [docs/roadmap.md](docs/roadmap.md) | Этапы работы, **текущий статус** и следующий шаг |
 | [docs/authoring-process.md](docs/authoring-process.md) | **Как писать главу**: процесс, обязательные проверки, ловушки |
 
 ## Ключевые решения
@@ -55,7 +55,7 @@ public/assets/        — обложки игр (scripts/build-covers.mjs), CRED
 public/vendor/, public/preview.html — генерирует scripts/copy-vendor.mjs (не в git)
 scripts/              — copy-vendor, validate-content, build-covers, step-files (старт шага по цепочке)
 tools/e2e/            — проверки в headless Chrome (lib, run-dir, run-chapter, exp, checks/)
-tools/authoring/      — генераторы кода шагов глав (chNN-gen.py) и общий steps.py (запись только изменений шага)
+tools/authoring/      — steps.py (запись только изменений шага), format-content.py, генератор последней главы (образец)
 ```
 
 ## Команды
@@ -65,17 +65,17 @@ tools/authoring/      — генераторы кода шагов глав (chN
 - `npm run step <…/шаг/solution> [папка]` — выгрузить полный код шага (в `content/` шаг хранит только изменения) в `tools/e2e/out/step/`
 - `npm run build` — проверка типов платформы и продакшен-сборка
 - `npx prettier --check .` — форматирование всего кода (`prettier.config.mjs`: код уроков — как кнопка «Формат», настройки в `shared/lesson-prettier.json`; Markdown не форматируется)
-- `python3 tools/authoring/format-content.py` — переформатировать код всех шагов после изменения `shared/lesson-prettier.json`
+- `python3 tools/authoring/format-content.py [глава…]` — пересобрать код шагов из `content/`: все главы после изменения `shared/lesson-prettier.json`, одну — после правки последнего шага прошлой главы (новый `baseHash`)
 - `npm run covers` — пересоздать SVG-обложки после изменения `public/backend/data/games.json`
 - `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, адрес, текст страницы, скриншот в `tools/e2e/out/`
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»
 - `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент из текста урока со своим сценарием действий
-- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/ch02-templates.mjs`, `checks/ch03-signals.mjs`, `checks/ch04-control-flow.mjs`, `checks/ch05-components.mjs`, `checks/ch06-lifecycle.mjs`, `checks/ch07-directives-pipes.mjs`, `checks/ch08-services-di.mjs`, `checks/ch09-app-state.mjs`, `checks/ch10-routing.mjs` — проверки глав 2–10
+- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–10
 - Все проверки требуют запущенного `npm run dev` и Chrome (`CHROME_PATH`, по умолчанию путь macOS). Другой адрес — `BASE_URL=http://localhost:5181`
 
 ## Текущий статус
 
-Платформа готова (этапы 0, 0.5, 1). **Главы 1 «Первое приложение» (7 шагов), 2 «Шаблоны и привязки» (9 шагов), 3 «Сигналы» (9 шагов), 4 «Управляющие блоки» (8 шагов), 5 «Компоненты и их связь» (10 шагов), 6 «Жизненный цикл и DOM» (9 шагов), 7 «Директивы и пайпы» (8 шагов), 8 «Сервисы и внедрение зависимостей» (9 шагов), 9 «Состояние приложения» (6 шагов) и 10 «Роутинг» (11 шагов) написаны**, все утверждения проверены запуском. **Следующий шаг — глава 11 «HTTP и данные»**: что делать — в конце `docs/roadmap.md`, состояние кода магазина — в `docs/authoring-process.md`, «Фактическое состояние». Перед продолжением прочитайте `docs/authoring-process.md` целиком.
+Платформа готова, **главы 1–10 написаны**. Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
 
 ## Пользователь и тон работы
 
@@ -87,7 +87,7 @@ tools/authoring/      — генераторы кода шагов глав (chN
 
 1. Найти шаг в `docs/course-plan.md`, проверить, какие API и понятия он вводит и что уже известно ученику из предыдущих шагов.
 2. Писать по `docs/writing-guide.md`; термины — строго по `docs/glossary.md` (новый термин сначала добавить в словарь).
-3. **Шаг хранит только изменения.** Старт шага N+1 — результат шага N (`startFrom: previous`, папки `start/` нет). `solution/` — только файлы, которые шаг добавил или изменил; своя `start/` — только у `startFrom: custom` (у первого шага главы — отличия от `base`, результата шага прошлой главы, с `baseHash` во frontmatter; у главы 1 — полный снимок; дальше — заготовки с `TODO` поверх прошлого результата); удаления — `removedInStart`/`removedInSolution` во frontmatter. Генераторы описывают шаги полными снимками, а `write_steps` из `tools/authoring/steps.py` сам пишет только разницу. Подробно — `docs/lesson-format.md`.
+3. **Шаг хранит только изменения**: `solution/` и `start/` (только у `startFrom: custom`) — файлы, которые шаг добавил или изменил, у первого шага главы — поверх `base` из прошлой главы. Не копируйте папки шагов напрямую — полный код даёт `npm run step`. Правила — `docs/lesson-format.md`, генератор главы — `docs/authoring-process.md`.
 4. Решение каждого шага должно запускаться без ошибок и давать видимый результат. После правок — `npm run validate`.
-5. **Проверять факты об API по типам и исходникам установленной версии `@angular/*`, а не по памяти**: в интернете и в памяти модели много Angular 2–17 (NgModule, zone.js, `@Input`, `*ngIf`). Уже выяснилось, что в v22 OnPush — стратегия по умолчанию, зонлесс включён по умолчанию, появился декоратор `@Service()`, `withFetch` устарел — см. `docs/modern-angular.md`.
+5. **Проверять факты об API по типам и исходникам установленной версии `@angular/*`, а не по памяти**: в интернете и в памяти модели много Angular 2–17. В v22 многое по умолчанию иначе (OnPush, зонлесс, `@Service()`) — проверенные факты и запреты в `docs/modern-angular.md`, способ проверки — в `docs/authoring-process.md`.
 6. Каждое утверждение и каждый эксперимент из текста урока проверять запуском кода (`tools/e2e/run-dir.mjs`). Полный процесс — в `docs/authoring-process.md`.

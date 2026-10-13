@@ -4,7 +4,7 @@
 
 Основа — платформа курса `../pixi-js` (Vite + React + Monaco). Интерфейс, навигация, хранение прогресса, рендер уроков и e2e-инструменты перенесены с небольшими изменениями. Заново написаны **компиляция** (Angular нужен компилятор шаблонов), **превью** (DOM-приложение с роутингом), **учебный бэкенд** и вкладка **«Сеть»**.
 
-> Состояние: этап 1 готов (см. `roadmap.md`). Всё, что ниже не помечено «план», реализовано и проверено автотестами `tools/e2e/checks/preview.mjs` и `platform.mjs`.
+> Всё, что ниже не помечено «план», реализовано и проверено автотестами `tools/e2e/checks/preview.mjs` и `platform.mjs`.
 
 ## Интерфейс
 
@@ -145,23 +145,11 @@
 
 ## Проверка шагов `check.ts` — план (этап 3)
 
-Шаг может содержать `check.ts`: функция получает контекст и проверяет **результат** (DOM, URL, запросы), а не текст кода:
-
-```ts
-import type { CheckContext, CheckResult } from '@course/check';
-
-export default async function check({ document, navigate }: CheckContext): Promise<CheckResult> {
-  await navigate('/catalog');
-  if (document.querySelectorAll('app-game-card').length === 0) {
-    return { pass: false, hint: 'В каталоге нет ни одной карточки: проверьте @for в catalog.html' };
-  }
-  return { pass: true };
-}
-```
+Шаг может содержать `check.ts`: функция получает контекст и проверяет **результат** (DOM, URL, запросы), а не текст кода. Формат и правила — `lesson-format.md`.
 
 ## Тесты в превью — план (этап 4, глава 16)
 
-`TestBed` работает в JIT (его родной режим). Нужен раннер с API Vitest (`describe`, `it`, `expect`, `beforeEach`, `vi.fn`) — тесты из курса должны без изменений запускаться в проекте Angular CLI (там Vitest по умолчанию — проверено по `@schematics/angular`). Вкладка «Тесты» вместо приложения при `preview: tests`.
+`TestBed` работает в JIT (его родной режим). Нужен раннер с API Vitest — тесты из курса должны без изменений запускаться в проекте Angular CLI (там Vitest по умолчанию — проверено по `@schematics/angular`). Формат — `lesson-format.md`, «Тесты в шаге».
 
 ## Загрузка контента и валидатор
 
@@ -187,6 +175,8 @@ src/
   progress/       — localStorage
 shared/
   compile-core.js — компиляция шага (браузер и Node)
+  step-chain.js   — разбор lesson.md и сборка полного кода шагов из изменений (платформа и Node)
+  lesson-prettier.json — настройки «Формат» для кода уроков
 public/
   preview-runtime.js  — среда выполнения
   backend/            — учебный бэкенд и данные
@@ -195,19 +185,26 @@ public/
 scripts/
   copy-vendor.mjs, preview.template.html, node-stub.mjs
   validate-content.mjs
+  step-files.mjs       — полный код шагов на диске (npm run step; валидатор, e2e, генераторы)
   build-covers.mjs     — SVG-обложки по games.json (npm run covers)
 tools/e2e/
-  lib.mjs          — launch, compileDir, openPreview, collect, pageText, appUrl, navigate
+  lib.mjs          — чистое превью (compileDir, openPreview, collect, pageText, appUrl, navigate)
+                     и интерфейс платформы (openCourse, createChecks, clean)
   run-dir.mjs      — шаг в чистом превью: консоль, сеть, адрес, текст, скриншот
   run-chapter.mjs  — все шаги главы в интерфейсе с «Решением»
   exp.mjs          — эксперимент со сценарием
   checks/preview.mjs      — демо шага 1.1: роутинг, бэкенд, отмена запросов, ленивая загрузка, ошибка 500
   checks/platform.mjs     — интерфейс: ошибки TS/сборки/Angular, схлопывание, адресная строка, «Сеть»
+  checks/chNN-*.mjs       — главы: шаги кнопкой «Далее», «Решение», взаимодействие, эксперименты
+tools/authoring/
+  steps.py          — write_steps (запись только изменений), step_dir, rep/cut
+  format-content.py — пересборка глав из content/ (формат, base/baseHash)
+  ch10-gen.py       — генератор последней главы (образец)
 ```
 
 ## Подводные камни
 
-- **TypeScript 7 нельзя** (нет JS API), нужен 6.0.
+- **TypeScript 7 нельзя** (нет JS API), нужен 6.0 — см. «Версии».
 - **Monarch: `@` в регулярных выражениях.** `@имя` — ссылка на атрибут грамматики («language definition does not contain attribute 'let'» роняет всю страницу), литеральный `@` — `@@` (`/@@let/`). `@(` и `@]` безопасны.
 - **Своя грамматика `html` важнее встроенной**: встроенная регистрируется лениво через `registerTokensProviderFactory` и используется, только если провайдер не задан явно; `setMonarchTokensProvider('html', …)` при загрузке модуля её перекрывает, а конфигурация языка (скобки, комментарии) остаётся встроенной.
 - **Monaco 0.57 и TS 5.9**: типы Angular 22 проверяются без ошибок. Проверять при обновлении Angular (если типы потребуют TS 6, Monaco начнёт показывать ложные ошибки). `monaco.typescript.ScriptTarget` не знает `ES2022` — в настройках `ESNext`.
@@ -215,6 +212,5 @@ tools/e2e/
 - **Vite `optimizeDeps.include`**: все динамически импортируемые модули платформы (Shiki, Prettier) — явно (из курса PixiJS).
 - **Порядок в import map**: карта должна стоять до любого модуля — поэтому `preview.html` без сборщика.
 - **Относительные ключи в import map** разрешаются от адреса документа, а не модуля — неважно, т. к. относительные импорты переписываются на blob-URL.
-- **Циклические импорты** не поддерживаются, в том числе через динамический `import()`: ошибка «Циклический импорт: main.ts → app.ts → core/models.ts → app.ts». Ленивые маршруты (`loadComponent`) работают, пока лениво загружаемый файл не импортирует обратно цепочку, которая его загружает.
-- **Ошибки в конструкторе компонента** (например, вызов несуществующего метода) роняют создание компонента — его шаблон не отрисуется, и ошибок шаблона (NG0303) уже не будет. Учитывать при подготовке экспериментов «сломайте X».
-- **Порты**: 5173 и 5174 обычно заняты курсом PixiJS; у курса Angular — **5180** (`strictPort`).
+- **Циклические импорты** не поддерживаются, в том числе через динамический `import()`: ленивые маршруты (`loadComponent`) работают, пока лениво загружаемый файл не импортирует обратно цепочку, которая его загружает. Как обойти в коде урока — ловушки в `authoring-process.md`.
+- **Порт 5180** (`strictPort`): 5173 и 5174 заняты курсом PixiJS.

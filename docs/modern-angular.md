@@ -15,7 +15,7 @@ for f in glob.glob('node_modules/@angular/*/types/*.d.ts'):
 EOF
 ```
 
-zsh: шаблоны с `[`, `?`, `*` интерпретируются как glob. Для поиска удобнее Python (как в курсе PixiJS).
+Для поиска удобнее Python, чем `grep` в zsh (см. ловушки в `authoring-process.md`).
 
 ## Проверено (Angular 22.2.1, 2026-10-03)
 
@@ -52,7 +52,7 @@ zsh: шаблоны с `[`, `?`, `*` интерпретируются как glo
 | `provideBrowserGlobalErrorListeners()` = слушатели `error` и `unhandledrejection` на `window` → `ErrorHandler` + `preventDefault()`, снимаются при уничтожении приложения. Ошибки в обработчиках шаблона Angular передаёт в `ErrorHandler` и без него | `_pending_tasks-chunk.mjs`, эксперимент |
 | Глобальный `ng` (`getComponent`, `getContext`, `applyChanges`, `ɵgetSignalGraph`…) публикуется только при `ngDevMode` | `publishDefaultGlobalUtils` |
 | Компилятор: функция шаблона `App_Template(rf, ctx)`, `rf & 1` — создание, `rf & 2` — обновление; для элементов без директив — `ɵɵdomElementStart`/`ɵɵdomElementEnd`, вызовы цепочкой; атрибуты в `consts` (`[1, 'header']`, `1` = `AttributeMarker.Classes`); JIT и AOT (`ngc`) дают одинаковую функцию, JIT добавляет префиксы `jit___…_N`; AOT обрабатывает стили при сборке (`[_ngcontent-%COMP%]`) | эксперименты главы 1, `ngc` |
-| Ошибки JIT: NG0303 «Can't bind to 'x' since it isn't a known property of 'y' (used in the 'Catalog' component template)» и NG0304 «'x' is not a known element» — через `console.error`, приложение продолжает работать; NG0303 повторяется для каждого элемента `@for`; `@for` без `track` — «Errors during JIT compilation of template for Catalog: @for loop must have a "track" expression»; обязательный вход без значения — NG0950; исключение в выражении шаблона — `ERROR TypeError…` без места в шаблоне | эксперименты на песочнице |
+| Ошибки JIT: NG0303 «Can't bind to 'x' since it isn't a known property of 'y' (used in the 'Catalog' component template)» и NG0304 «'x' is not a known element» — через `console.error`, приложение продолжает работать; NG0303 повторяется для каждого элемента `@for`; `@for` без `track` — «Errors during JIT compilation of template for Catalog: @for loop must have a "track" expression»; обязательный вход без значения — NG0950; исключение в выражении шаблона — `ERROR TypeError…` без места в шаблоне | эксперименты на демо-магазине |
 | **Выражения шаблона в 22.2**: работают шаблонные строки, `typeof`, `void`, `in`, `**`, стрелочные функции, spread `[...arr]`, регулярные выражения, `this`. Ошибки компиляции: присваивания (`Bindings cannot contain assignments`), `++` (`Unexpected end of expression`), `new` (`Unexpected token 'Date'`), `;` (`Binding expression cannot contain chained expression`), `&` (`Unexpected token '&'`). `Math`/`window`/`console`/`JSON` → `ctx.Math` → `ERROR TypeError: Cannot read properties of undefined (reading 'round')`, приложение не отрисовывается; в AOT — `TS2339: Property 'Math' does not exist on type 'App'` | эксперименты главы 2, `ngc` |
 | Интерполяция: `undefined`/`null` → пустая строка, `false` → `false`, объект → `[object Object]` | эксперимент главы 2 |
 | **Обнаружение изменений после событий**: обёртка обработчика `wrapListenerIn_markDirtyAndPreventDefault` вызывает `markViewDirty` **до** обработчика. Поэтому изменение **обычного поля** в обработчике `(click)` (даже `(click)="plain = plain + 1"`) обновляет экран при OnPush + зонлесс. Без обработчиков в шаблоне (`{{ box.value }}` при наборе) экран не обновляется; `(input)="0"` — обновляет | `_debug_node-chunk.mjs`, эксперименты главы 2 |
@@ -139,18 +139,12 @@ zsh: шаблоны с `[`, `?`, `*` интерпретируются как glo
 
 ## Проверить при написании соответствующих глав
 
-- [x] Что генерирует `ng new` в 22.2 — см. таблицу выше. `provideZonelessChangeDetection` в шаблоне **нет** (зонлесс по умолчанию).
-- [x] `HttpClient` по умолчанию на `fetch` — см. таблицу.
-- [x] `withFetch` — устарел.
 - [ ] `strictTemplates` по умолчанию в Angular 22 (в `tsconfig.json` из `ng new` не указан) — этап 5 и глава 20.
 - [ ] Поведение `@defer` в JIT — глава 15.
 - [ ] NgRx 22.0.1 (`npm view`, 2026-10-04): все пакеты требуют `@angular/core ^22.0.0`; по типам есть `signalStore`, `withState`, `withComputed`, `withMethods`, `withHooks`, `withProps`, `withLinkedState`, `withFeature`, `signalStoreFeature`, `patchState`, `getState`, `watchState`, `signalMethod`, `rxMethod`, `withEntities`, `tapResponse`, `@ngrx/signals/events` (`eventGroup`, `withReducer`, `withEventHandlers`, `injectDispatch`), `createActionGroup`, `createFeature`, `Store.selectSignal`, `provideStoreDevtools`. Перед главой 18 проверить стабильность (особенно events), рекомендуемые NgRx паттерны и работу в JIT-превью.
 - [ ] Авторизация (глава 14): `provideAppInitializer` с асинхронной проверкой сессии и роутер (ждёт ли первая навигация); `withXsrfConfiguration` / `withNoXsrfProtection` — когда `HttpClient` добавляет заголовок (только мутирующие запросы на тот же origin?) — проверить по исходникам.
-- [x] Отладочный глобальный объект `ng` — есть в dev-режиме, см. таблицу.
 - [ ] Значения по умолчанию в `httpResource` (что в `value()` во время загрузки и при ошибке) — глава 11.
-- [x] `withRouterResources` — developer preview 22.2, в главу 10 не взят (см. таблицу).
 - [ ] `declareExperimentalWebMcpTool`, `provideExperimentalWebMcpForms` — экспериментальное, в курс не берём, но упомянуть можно.
-- [x] Хуки жизненного цикла не устарели, `ngOnChanges` работает и с сигнальными входами — см. таблицу (глава 6).
 - [ ] Стабильность `@angular/forms/signals` относительно реактивных форм: какие формы предлагает `ng generate` и документация как основные.
 
 ## Запрещено в коде уроков
