@@ -25,16 +25,14 @@ export function launch() {
 }
 
 /**
- * Все файлы папки шага (с подпапками): 'core/cart-store.ts' → текст.
+ * Полный код шага (с подпапками): 'core/cart-store.ts' → текст.
  * Путь …/<шаг>/start у шага со startFrom: previous (папки нет) даёт решение предыдущего шага
  */
-export function readDir(dir) {
-  return readStepDir(dir);
-}
+export { readStepDir as readDir };
 
 /** Компилирует папку шага (start/ или solution/) тем же кодом, что и воркер платформы */
 export function compileDir(dir) {
-  return compileMap(readDir(dir));
+  return compileMap(readStepDir(dir));
 }
 
 /** Компилирует набор файлов из памяти ({ 'main.ts': '…', 'app.ts': '…' }) — для экспериментов */

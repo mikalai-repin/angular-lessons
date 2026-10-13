@@ -1,30 +1,23 @@
-import { parse as parseYaml } from 'yaml';
-import { resolveChapter, stepResult } from '../../shared/step-chain.js';
+import { parseLesson as parseLessonText, resolveChapter, stepResult } from '../../shared/step-chain.js';
+import type { ChainMeta, FileMap } from '../../shared/step-chain.js';
 
 /** Набор файлов шага: имя файла → исходный код */
-export type FileMap = Record<string, string>;
+export type { FileMap };
 
-export interface StepMeta {
+/** Frontmatter урока; поля цепочки шагов (startFrom, base, noSolution, removedIn…) — из ChainMeta */
+export interface StepMeta extends ChainMeta {
   title: string;
   files?: string[];
   readonly?: string[];
   focus?: string;
   startFrom?: 'previous' | 'custom';
-  /** У первого шага главы: шаг прошлой главы ('07-directives-pipes/07-practice'), поверх результата которого start/ */
-  base?: string;
-  /** Хеш полного кода базы — его сверяет валидатор */
+  /** Хеш полного кода базы (base) — его сверяет валидатор */
   baseHash?: string;
   api?: string[];
-  /** Шаг без задания (демо, теория): кнопки «Решение» нет */
-  noSolution?: boolean;
   /** Начальный адрес приложения в превью, по умолчанию '/' */
   url?: string;
   /** Настройки учебного бэкенда для шага */
   backend?: BackendConfig;
-  /** Файлы результата предыдущего шага, которых нет в custom-старте (закадровая подготовка) */
-  removedInStart?: string[];
-  /** Файлы старта, которые ученик удаляет в этом шаге */
-  removedInSolution?: string[];
 }
 
 /** Настройки учебного бэкенда (public/backend/backend.js) */
@@ -86,13 +79,14 @@ function readJson<T>(path: string): T {
 function parseLesson(path: string): { meta: StepMeta; body: string } {
   const text = raw[path];
   if (text === undefined) throw new Error(`[content] не найден файл ${path}`);
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(text);
-  if (!match) throw new Error(`[content] нет frontmatter в ${path}`);
+  let lesson;
   try {
-    return { meta: parseYaml(match[1]) as StepMeta, body: match[2] };
+    lesson = parseLessonText(text);
   } catch (error) {
     throw new Error(`[content] ошибка YAML во frontmatter ${path}: ${(error as Error).message}`);
   }
+  if (!lesson) throw new Error(`[content] нет frontmatter в ${path}`);
+  return { meta: lesson.meta as unknown as StepMeta, body: lesson.body };
 }
 
 function collectFiles(prefix: string): FileMap {

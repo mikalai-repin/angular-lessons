@@ -11,6 +11,17 @@
 // - удалённые файлы перечисляются во frontmatter: removedInStart (закадровая подготовка custom-старта)
 //   и removedInSolution (их удаляет ученик).
 // Результат шага — его решение, а у шага с noSolution — его старт.
+import { parse as parseYaml } from 'yaml';
+
+/**
+ * Frontmatter и текст lesson.md. Нет frontmatter — null; ошибка YAML — исключение
+ * @param {string} text
+ * @returns {{ meta: Record<string, unknown>, body: string } | null}
+ */
+export function parseLesson(text) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(text);
+  return match ? { meta: parseYaml(match[1]) ?? {}, body: match[2] } : null;
+}
 
 /**
  * @typedef {Record<string, string>} FileMap
@@ -19,8 +30,8 @@
  *   собственные файлы папок start/ и solution/
  * @param {(ref: string) => FileMap} [resultOf] — результат шага другой главы по ссылке 'глава/шаг'
  *   (для `base` первого шага)
- * @returns {{ start: FileMap, solution: FileMap }[]} полный код старта и решения каждого шага
- *   (у шага с noSolution решение — пустой объект)
+ * @returns {{ base: FileMap, start: FileMap, solution: FileMap }[]} полный код каждого шага: base — то, поверх
+ *   чего лежит start/ (результат предыдущего шага или `base`), старт и решение (у шага с noSolution решение — {})
  */
 export function resolveChapter(steps, resultOf) {
   let previousResult = {};
@@ -29,11 +40,11 @@ export function resolveChapter(steps, resultOf) {
       if (!resultOf) throw new Error(`[step-chain] base ${meta.base}: не передан resultOf`);
       previousResult = resultOf(meta.base);
     }
-    const start =
-      meta.startFrom === 'custom' ? overlay(previousResult, ownStart, meta.removedInStart) : { ...previousResult };
+    const base = previousResult;
+    const start = meta.startFrom === 'custom' ? overlay(base, ownStart, meta.removedInStart) : { ...base };
     const solution = meta.noSolution ? {} : overlay(start, ownSolution, meta.removedInSolution);
     previousResult = meta.noSolution ? start : solution;
-    return { start, solution };
+    return { base, start, solution };
   });
 }
 

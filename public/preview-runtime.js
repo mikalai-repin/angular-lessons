@@ -233,14 +233,14 @@ function navigate(url) {
 
 // ---------- Учебный бэкенд ----------
 
+const originalFetch = window.fetch.bind(window);
 const backend = createBackend({
-  originalFetch: window.fetch.bind(window),
+  originalFetch,
   report: (entry) => send({ type: 'network', entry }),
 });
 
 // Запросы на /api/… обслуживает учебный бэкенд, остальные — настоящий fetch.
 // HttpClient в Angular 22 по умолчанию работает через fetch (FetchBackend), httpResource — через HttpClient
-const originalFetch = window.fetch.bind(window);
 window.fetch = (input, init) => {
   const request = new Request(input, init);
   const url = new URL(request.url);

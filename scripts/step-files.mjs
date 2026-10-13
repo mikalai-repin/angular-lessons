@@ -10,10 +10,9 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
-import { parse as parseYaml } from 'yaml';
-import { resolveChapter, stepResult } from '../shared/step-chain.js';
+import { parseLesson, resolveChapter, stepResult } from '../shared/step-chain.js';
 
-const isDir = (path) => existsSync(path) && statSync(path).isDirectory();
+export const isDir = (path) => existsSync(path) && statSync(path).isDirectory();
 
 /** Все файлы папки (с подпапками): 'core/models.ts' → текст. Нет папки — пустой объект */
 export function readFiles(dir) {
@@ -30,12 +29,16 @@ export function readFiles(dir) {
   return files;
 }
 
-/** Frontmatter lesson.md шага (или пустой объект) */
-export function readMeta(stepPath) {
+/** Frontmatter lesson.md шага: { meta } или, если его не прочитать, { meta: {}, metaError } — его печатает валидатор */
+function readMeta(stepPath) {
   const lessonPath = join(stepPath, 'lesson.md');
-  if (!existsSync(lessonPath)) return {};
-  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(readFileSync(lessonPath, 'utf8'));
-  return match ? (parseYaml(match[1]) ?? {}) : {};
+  if (!existsSync(lessonPath)) return { meta: {}, metaError: 'нет lesson.md' };
+  try {
+    const lesson = parseLesson(readFileSync(lessonPath, 'utf8'));
+    return lesson ? { meta: lesson.meta } : { meta: {}, metaError: 'нет frontmatter' };
+  } catch (error) {
+    return { meta: {}, metaError: `ошибка YAML во frontmatter: ${error.message.split('\n')[0]}` };
+  }
 }
 
 /** Папки шагов главы по порядку */
@@ -49,13 +52,13 @@ export function chapterSteps(chapterPath) {
 // Главы, собранные за этот запуск: глава 8 собирает главу 7 ради базы, та — главу 6 и так далее
 const chapterCache = new Map();
 
-/** Полный код всех шагов главы: [{ path, meta, own: { start, solution }, start, solution }] */
+/** Полный код всех шагов главы: [{ path, meta, metaError?, own: { start, solution }, base, start, solution }] */
 export function resolveChapterDir(chapterPath) {
   chapterPath = resolve(chapterPath);
   if (chapterCache.has(chapterPath)) return chapterCache.get(chapterPath);
   const steps = chapterSteps(chapterPath).map((path) => ({
     path,
-    meta: readMeta(path),
+    ...readMeta(path),
     own: { start: readFiles(join(path, 'start')), solution: readFiles(join(path, 'solution')) },
   }));
   const content = dirname(chapterPath);

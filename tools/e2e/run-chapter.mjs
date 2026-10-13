@@ -1,7 +1,8 @@
 // Проходит все шаги главы в настоящем интерфейсе платформы: открывает шаг, нажимает «Решение»,
 // печатает консоль превью, битые ссылки и ошибки страницы, сохраняет скриншоты.
 // node tools/e2e/run-chapter.mjs 05-assets [ширина]
-import { readdirSync, statSync } from 'node:fs';
+import { basename } from 'node:path';
+import { chapterSteps } from '../../scripts/step-files.mjs';
 import { BASE_URL, CONTENT, OUT, launch, wait } from './lib.mjs';
 
 const [chapterDir, width = '1600'] = process.argv.slice(2);
@@ -10,10 +11,7 @@ if (!chapterDir) {
   process.exit(1);
 }
 const strip = (d) => d.replace(/^\d+-/, '');
-const root = `${CONTENT}/${chapterDir}`;
-const steps = readdirSync(root)
-  .filter((d) => statSync(`${root}/${d}`).isDirectory())
-  .sort();
+const steps = chapterSteps(`${CONTENT}/${chapterDir}`).map((path) => basename(path));
 
 const browser = await launch();
 const page = await browser.newPage();

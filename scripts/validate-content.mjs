@@ -2,20 +2,16 @@
 // shared/step-chain.js) и сборка кода шага тем же модулем, что и превью (ловит ненайденные templateUrl/styleUrl
 // и синтаксические ошибки). Полный код каждого старта и решения выгружает в .content-check/ — там типы проверяет
 // `tsc -p .content-check/tsconfig.json` (второй шаг npm run validate).
-import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import ts from 'typescript';
 import { angularJitApplicationTransform } from '@angular/compiler-cli';
-import { parse as parseYaml } from 'yaml';
 import { compileFiles } from '../shared/compile-core.js';
-import { filesHash, readResult, resolveChapterDir, writeFiles } from './step-files.mjs';
+import { filesHash, isDir, readResult, resolveChapterDir, writeFiles } from './step-files.mjs';
 
 const root = join(import.meta.dirname, '..', 'content');
 const checkDir = join(import.meta.dirname, '..', '.content-check');
 const errors = [];
-const warnings = [];
-
-const isDir = (path) => existsSync(path) && statSync(path).isDirectory();
 
 const course = JSON.parse(readFileSync(join(root, 'course.json'), 'utf8'));
 let stepCount = 0;
@@ -41,33 +37,18 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
     continue;
   }
 
-  const steps = resolveChapterDir(chapterPath);
-  let previousResult = {};
-  for (const [index, step] of steps.entries()) {
+  for (const [index, step] of resolveChapterDir(chapterPath).entries()) {
     stepCount++;
     const stepDir = step.path.split('/').at(-1);
     const where = `${chapterDir}/${stepDir}`;
     if (!/^\d{2}-[a-z0-9-]+$/.test(stepDir)) errors.push(`${where}: имя папки должно быть вида NN-slug`);
 
-    const lessonPath = join(step.path, 'lesson.md');
-    let meta = {};
-    if (!existsSync(lessonPath)) {
-      errors.push(`${where}: нет lesson.md`);
-    } else {
-      const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(readFileSync(lessonPath, 'utf8'));
-      if (!match) errors.push(`${where}: нет frontmatter`);
-      else {
-        try {
-          meta = parseYaml(match[1]) ?? {};
-        } catch (error) {
-          errors.push(`${where}: ошибка YAML во frontmatter: ${error.message.split('\n')[0]}`);
-        }
-      }
-      if (!meta.title) errors.push(`${where}: во frontmatter нет title`);
-    }
+    // base — то, поверх чего лежит start/: результат предыдущего шага (у первого шага главы — шага из `base`)
+    const { meta, metaError, own, base, start, solution } = step;
+    if (metaError) errors.push(`${where}: ${metaError}`);
+    else if (!meta.title) errors.push(`${where}: во frontmatter нет title`);
 
     const startFrom = meta.startFrom ?? 'previous';
-    const { own, start, solution } = step;
     // База первого шага главы — результат шага прошлой главы (base) с хешем (baseHash)
     if (meta.base !== undefined || meta.baseHash !== undefined) {
       const baseChapter = String(meta.base ?? '').split('/')[0];
@@ -78,8 +59,7 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
       } else if (!isDir(join(root, meta.base))) {
         errors.push(`${where}: base ${meta.base} — нет такого шага`);
       } else {
-        previousResult = readResult(join(root, meta.base));
-        const actual = filesHash(previousResult);
+        const actual = filesHash(readResult(join(root, meta.base)));
         if (String(meta.baseHash) !== actual) {
           errors.push(
             `${where}: база ${meta.base} изменилась (baseHash ${meta.baseHash}, сейчас ${actual}) — ` +
@@ -94,7 +74,7 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
         errors.push(`${where}: startFrom: previous, но есть папка start/ — нужен startFrom: custom (или удалите её)`);
       if (meta.removedInStart) errors.push(`${where}: removedInStart бывает только у startFrom: custom`);
     } else {
-      checkOverlay(where, 'start', previousResult, own.start, meta.removedInStart);
+      checkOverlay(where, 'start', base, own.start, meta.removedInStart);
       if (index > 0 && !Object.keys(own.start).length && !meta.removedInStart?.length) {
         errors.push(
           `${where}: startFrom: custom, но старт ничем не отличается от результата предыдущего шага — нужен startFrom: previous`,
@@ -125,7 +105,6 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
       for (const error of buildErrors) errors.push(`${where}/${kind}: ${error}`);
       writeFiles(join(checkDir, chapterDir, stepDir, kind), files);
     }
-    previousResult = meta.noSolution ? start : solution;
   }
 }
 
@@ -135,7 +114,6 @@ writeFileSync(
   JSON.stringify({ extends: '../tsconfig.content.json', include: ['**/*.ts'] }, null, 2) + '\n',
 );
 
-for (const warning of warnings) console.warn(`⚠ ${warning}`);
 for (const error of errors) console.error(`✗ ${error}`);
-console.log(`Проверено шагов: ${stepCount}. Ошибок: ${errors.length}, предупреждений: ${warnings.length}.`);
+console.log(`Проверено шагов: ${stepCount}. Ошибок: ${errors.length}.`);
 process.exit(errors.length ? 1 : 0);

@@ -15,7 +15,7 @@
 /** Корень виртуальной файловой системы: файлы шага лежат в /, как в src/app настоящего проекта */
 const ROOT = '/';
 
-export const GLOBAL_STYLES = 'styles.css';
+const GLOBAL_STYLES = 'styles.css';
 
 const COMPILER_OPTIONS = {
   // ts.ScriptTarget.ES2022 и ts.ModuleKind.ESNext — числа берём из переданного ts
@@ -36,7 +36,7 @@ function dirOf(file) {
 }
 
 /** './game-card.html' относительно 'shared/game-card/game-card.ts' → 'shared/game-card/game-card.html' */
-export function resolvePath(fromFile, specifier) {
+function resolvePath(fromFile, specifier) {
   const parts = dirOf(fromFile).split('/').filter(Boolean);
   for (const part of specifier.split('/')) {
     if (part === '.' || part === '') continue;
@@ -70,7 +70,7 @@ function findComponentMetadata(ts, sourceFile) {
  * Подставляет содержимое templateUrl/styleUrl(s) в код компонента.
  * Возвращает новый текст и список ошибок (не найден файл и т. п.).
  */
-export function inlineResources(ts, file, code, files) {
+function inlineResources(ts, file, code, files) {
   const errors = [];
   const sourceFile = ts.createSourceFile(file, code, ts.ScriptTarget.Latest, true);
   const replacements = [];
