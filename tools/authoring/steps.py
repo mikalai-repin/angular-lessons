@@ -1,4 +1,4 @@
-# Запись кода шагов главы на диск — общая для всех генераторов chNN-gen.py.
+# Запись кода шагов главы на диск — для генератора главы chNN-gen.py и format-content.py.
 #
 # steps = {'01-slug': {'start': {...}, 'solution': {...}}, ...} — в порядке шагов. Значение 'start'/'solution' —
 # ПОЛНЫЙ снимок кода: словарь «путь файла → код» или строка — путь папки с полным кодом (например, из step_dir).
@@ -13,6 +13,9 @@
 # - solution/ — файлы, которые отличаются от старта шага;
 # - файлы, которые пропали, во frontmatter перечисляются вручную: removedInStart / removedInSolution.
 #   write_steps сверяет их с lesson.md и печатает, чего не хватает.
+#
+# Когда глава готова, источник правды — content/: генератор нужен только пока глава пишется. Изменилась прошлая
+# глава — format-content.py <глава> пересоберёт следующую поверх новой базы (новый baseHash).
 import hashlib, json, os, re, shutil, subprocess
 
 PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -28,13 +31,37 @@ def read_dir(path):
     return files
 
 
-def frontmatter_list(stepdir, key):
+def rep(text, old, new):
+    """Заменить кусок кода, который обязательно есть (иначе — ошибка: якорь устарел)."""
+    assert old in text, old
+    return text.replace(old, new, 1)
+
+
+def cut(text, start, end):
+    """Вырезать кусок от строки start (включительно) до строки end (не включая)."""
+    i = text.index(start)
+    j = text.index(end, i)
+    return text[:i] + text[j:]
+
+
+FRONTMATTER = re.compile(r'---\n(.*?)\n---', re.S)
+
+
+def read_frontmatter(stepdir):
+    """Текст frontmatter lesson.md шага; нет lesson.md — None."""
     lesson = os.path.join(stepdir, 'lesson.md')
     if not os.path.exists(lesson):
         return None
     with open(lesson) as f:
-        match = re.match(r'---\n(.*?)\n---', f.read(), re.S)
-    found = re.search(rf'^{key}: \[(.*)\]$', match.group(1) if match else '', re.M)
+        match = FRONTMATTER.match(f.read())
+    return match.group(1) if match else ''
+
+
+def frontmatter_list(stepdir, key):
+    meta = read_frontmatter(stepdir)
+    if meta is None:
+        return None
+    found = re.search(rf'^{key}: \[(.*)\]$', meta, re.M)
     return sorted(s.strip() for s in found.group(1).split(',')) if found else []
 
 
@@ -72,16 +99,24 @@ def files_hash(files):
 
 
 def set_frontmatter(stepdir, values):
-    """Записать поля во frontmatter lesson.md (после startFrom); нет lesson.md — пропустить."""
+    """Записать поля во frontmatter lesson.md: существующие — на своём месте, новые — после startFrom;
+    нет lesson.md — пропустить."""
     lesson = os.path.join(stepdir, 'lesson.md')
     if not os.path.exists(lesson):
         return
     with open(lesson) as f:
         text = f.read()
-    match = re.match(r'---\n(.*?)\n---', text, re.S)
-    lines = [l for l in match.group(1).split('\n') if not any(l.startswith(f'{k}:') for k in values)]
+    match = FRONTMATTER.match(text)
+    lines = match.group(1).split('\n')
+    new = []
+    for k, v in values.items():
+        at = next((i for i, l in enumerate(lines) if l.startswith(f'{k}:')), None)
+        if at is None:
+            new.append(f'{k}: {v}')
+        else:
+            lines[at] = f'{k}: {v}'
     at = next((i + 1 for i, l in enumerate(lines) if l.startswith('startFrom:')), len(lines))
-    lines[at:at] = [f'{k}: {v}' for k, v in values.items()]
+    lines[at:at] = new
     with open(lesson, 'w') as f:
         f.write('---\n' + '\n'.join(lines) + '\n---' + text[match.end():])
 
@@ -143,15 +178,3 @@ def step_dir(path):
     subprocess.run(['node', 'scripts/step-files.mjs', path, out], cwd=PROJECT, check=True, stdout=subprocess.DEVNULL)
     return out
 
-
-def legacy_dir(path):
-    """Как step_dir, но код переформатирован шириной 120 — так, как его форматировали генераторы глав 1–8 до перехода
-    на формат редактора (shared/lesson-prettier.json). Их якоря rep(…) написаны под этот вид кода прошлой главы;
-    результат генератора всё равно форматирует write_steps. Новые генераторы читают прошлую главу через step_dir."""
-    out = step_dir(path)
-    flags = ['--no-config', '--ignore-path', os.devnull, '--log-level', 'silent', '--print-width', '120',
-             '--single-quote', '--trailing-comma', 'all']
-    prettier = os.path.join(PROJECT, 'node_modules', '.bin', 'prettier')
-    subprocess.run([prettier, *flags, '--write', f'{out}/**/*.{{ts,css}}'], cwd=PROJECT)
-    subprocess.run([prettier, *flags, '--parser', 'angular', '--write', f'{out}/**/*.html'], cwd=PROJECT)
-    return out

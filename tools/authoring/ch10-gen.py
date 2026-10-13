@@ -7,24 +7,11 @@
 # Тексты уроков (lesson.md) пишутся отдельно, руками; генератор их не трогает.
 import os, re, sys
 
-PROJECT = '/Users/mr/Desktop/Experimental/angular-learn'
-ROOT = f'{PROJECT}/content/10-routing'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from steps import read_dir, step_dir, write_steps
+from steps import PROJECT, cut, read_dir, rep, step_dir, write_steps
 
+ROOT = f'{PROJECT}/content/10-routing'
 BASE = read_dir(step_dir(f'{PROJECT}/content/09-app-state/05-practice/solution'))
-
-
-def rep(text, old, new):
-    assert old in text, old
-    return text.replace(old, new, 1)
-
-
-def cut(text, start, end):
-    """Вырезать кусок от строки start (включительно) до строки end (не включая)."""
-    i = text.index(start)
-    j = text.index(end, i)
-    return text[:i] + text[j:]
 
 
 # ---------- глобальные стили ----------
@@ -1234,16 +1221,7 @@ export function logNavigation(injector: Injector) {
   });
 }
 """
-MAIN_LOG = """import { bootstrapApplication } from '@angular/platform-browser';
-import { App } from './app';
-import { appConfig } from './app.config';
-import { logNavigation } from './router-log';
-
-bootstrapApplication(App, appConfig)
-  .then((appRef) => logNavigation(appRef.injector))
-  .catch((err) => console.error(err));
-"""
-# Журнал подключается после запуска — первую навигацию он уже не застанет. Поэтому журнал создаётся раньше:
+# Журнал подключается в провайдере, а не после запуска: иначе первую навигацию он уже не застанет
 MAIN_LOG = """import { bootstrapApplication } from '@angular/platform-browser';
 import { App } from './app';
 import { appConfig } from './app.config';
@@ -1254,15 +1232,15 @@ bootstrapApplication(App, {
   providers: [...appConfig.providers, logNavigation()],
 }).catch((err) => console.error(err));
 """
-ROUTER_LOG = ROUTER_LOG.replace("""import { Injector } from '@angular/core';""", """import { inject, provideAppInitializer } from '@angular/core';""")
-ROUTER_LOG = ROUTER_LOG.replace("""export function logNavigation(injector: Injector) {
+ROUTER_LOG = rep(ROUTER_LOG, """import { Injector } from '@angular/core';""", """import { inject, provideAppInitializer } from '@angular/core';""")
+ROUTER_LOG = rep(ROUTER_LOG, """export function logNavigation(injector: Injector) {
   const router = injector.get(Router);
   router.events.subscribe((event: Event) => {""", """// Провайдер: функция выполнится при запуске приложения, раньше первой навигации
 export function logNavigation() {
   return provideAppInitializer(() => {
     const router = inject(Router);
     router.events.subscribe((event: Event) => {""")
-ROUTER_LOG = ROUTER_LOG.replace("""    if (event instanceof NavigationStart) {
+ROUTER_LOG = rep(ROUTER_LOG, """    if (event instanceof NavigationStart) {
       console.log('────────────');
     }
     // У событий роутера есть toString(): «NavigationStart(id: 2, url: '/catalog')»

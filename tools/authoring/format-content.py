@@ -1,31 +1,32 @@
-# Переформатирует код всех шагов курса так, как его форматирует кнопка «Формат» в редакторе
-# (настройки — shared/lesson-prettier.json), не трогая содержание.
-# Запуск: python3 tools/authoring/format-content.py — после изменения shared/lesson-prettier.json.
+# Пересобирает код шагов из content/ — форматирует его так, как кнопка «Формат» в редакторе
+# (настройки — shared/lesson-prettier.json), и заново пишет base и baseHash первого шага главы. Содержание не меняется.
+# Запуск:
+#   python3 tools/authoring/format-content.py              — все главы, после изменения shared/lesson-prettier.json;
+#   python3 tools/authoring/format-content.py 10-routing   — одна глава (или несколько), например после правки
+#     последнего шага прошлой главы: файлы, которые глава не меняет, придут из новой базы, baseHash обновится.
 # Главы идут по порядку content/course.json: полные снимки шагов берутся с диска, write_steps форматирует их
-# и записывает только изменения (у первого шага главы — заново base и baseHash, ведь база тоже переформатирована).
-# Тексты уроков (lesson.md) и код в них не меняются. После запуска: npm run validate.
+# и записывает только изменения. Тексты уроков (lesson.md) не меняются. После запуска: npm run validate.
 import json, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from steps import PROJECT, step_dir, write_steps
+from steps import PROJECT, read_frontmatter, step_dir, write_steps
 
 CONTENT = os.path.join(PROJECT, 'content')
 
-
-def frontmatter(stepdir):
-    with open(os.path.join(stepdir, 'lesson.md')) as f:
-        return re.match(r'---\n(.*?)\n---', f.read(), re.S).group(1)
-
-
 with open(os.path.join(CONTENT, 'course.json')) as f:
     chapters = json.load(f)['chapters']
+selected = sys.argv[1:] or chapters
+unknown = set(selected) - set(chapters)
+assert not unknown, f'нет таких глав: {", ".join(sorted(unknown))}'
 
 for chapter in chapters:
+    if chapter not in selected:
+        continue
     root = os.path.join(CONTENT, chapter)
     names = sorted(n for n in os.listdir(root) if os.path.isdir(os.path.join(root, n)))
     steps, base = {}, None
     for index, name in enumerate(names):
-        meta = frontmatter(os.path.join(root, name))
+        meta = read_frontmatter(os.path.join(root, name))
         if index == 0:
             found = re.search(r'^base: (\S+)$', meta, re.M)
             base = found.group(1) if found else None
