@@ -2,35 +2,11 @@
 // и проверяет приложение в превью — окно «Подробнее» (немодальное → модальное, Esc, возврат фокуса),
 // фокус в поиске после сброса, таймер скидки, вкладки и полоску под ними, «Показать ещё» и журнал проверок.
 // node tools/e2e/checks/ch06-lifecycle.mjs
-import { BASE_URL, launch, OUT, wait } from '../lib.mjs';
+import { openCourse, OUT, wait } from '../lib.mjs';
 
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+const { page, expect, frame, consoleText, title, count, showSolution, nextStep, checkConsoleClean, finish } =
+  await openCourse('/lifecycle/lifecycle');
 
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
-
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/lifecycle/lifecycle`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
-const count = (selector) => frame().$$eval(selector, (els) => els.length);
 // Настоящий щелчок по названию игры: кнопка получает фокус, как у покупателя
 const openGame = async (name) => {
   const button = await frame().evaluateHandle(
@@ -64,24 +40,6 @@ const details = () =>
       focus: document.activeElement?.closest('dialog') ? 'dialog' : document.activeElement?.className,
     };
   });
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function nextStep() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  const text = await consoleText();
-  expect(!/ERROR|NG0\d+|Error:/.test(text), `${step}: консоль без ошибок`);
-}
 
 // 1. Когда что происходит
 expect((await title()) === 'Когда что происходит', 'шаг 1 открыт');
@@ -269,7 +227,4 @@ await page.keyboard.press('Escape');
 await wait(300);
 await checkConsoleClean('шаг 9');
 
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

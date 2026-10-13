@@ -1,53 +1,12 @@
 // Проверка главы 2 в интерфейсе платформы: проходит шаги кнопкой «Далее», в каждом нажимает «Решение»
 // и проверяет приложение в превью — текст, атрибуты, поиск, клики, консоль.
 // node tools/e2e/checks/ch02-templates.mjs
-import { BASE_URL, launch, OUT, wait } from '../lib.mjs';
+import { openCourse, OUT, wait } from '../lib.mjs';
 
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+const { page, expect, frame, consoleText, title, showSolution, nextStep, checkConsoleClean, finish } =
+  await openCourse('/templates/interpolation');
 
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
-
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/templates/interpolation`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
 const appText = () => frame().evaluate(() => document.body.innerText);
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function next() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  const text = await consoleText();
-  expect(!/ERROR|NG0\d+|Error:/.test(text), `${step}: консоль без ошибок`);
-}
 
 // 1. Интерполяция
 await showSolution();
@@ -57,7 +16,7 @@ expect(text.includes('Остров сокровищ') && text.includes('1990 ₽
 await checkConsoleClean('шаг 1');
 
 // 2. Привязка свойств
-await next();
+await nextStep();
 expect((await title()) === 'Привязка свойств', 'шаг 2 открыт кнопкой «Далее»');
 await showSolution();
 const img = await frame().$eval('.cover', (e) => ({ src: e.getAttribute('src'), alt: e.alt }));
@@ -69,7 +28,7 @@ expect(!(await frame().$eval('.card button', (e) => e.disabled)), 'шаг 2: к�
 await checkConsoleClean('шаг 2');
 
 // 3. Атрибуты, классы, стили
-await next();
+await nextStep();
 await showSolution();
 const rating = await frame().$eval('.rating', (e) => ({
   label: e.getAttribute('aria-label'),
@@ -86,7 +45,7 @@ expect(
 await checkConsoleClean('шаг 3');
 
 // 4. События
-await next();
+await nextStep();
 await showSolution();
 await frame().click('.card button');
 await frame().type('.search', 'шахматы');
@@ -99,7 +58,7 @@ expect(text.includes('Ищем: шахматы'), 'шаг 4: (keydown.enter) и 
 expect((text.match(/Ищем:/g) ?? []).length === 1, 'шаг 4: обработчик срабатывает только на Enter');
 
 // 5. Ссылки на элементы: абзац обновляется только после событий с обработчиком
-await next();
+await nextStep();
 await showSolution();
 expect(!(await appText()).includes('Ищем:'), 'шаг 5: абзац «Ищем» скрыт, пока поле пустое');
 await frame().type('.search', 'шах');
@@ -114,14 +73,14 @@ await wait(300);
 expect((await appText()).includes('Ищем: «шахматы»'), 'шаг 5: клик по «В корзину» перепроверил шаблон');
 
 // 6. @let
-await next();
+await nextStep();
 await showSolution();
 text = await appText();
 expect(text.includes('2490 ₽') && text.includes('−20 %'), 'шаг 6: старая цена и скидка через @let');
 await checkConsoleClean('шаг 6');
 
 // 7. Безопасность
-await next();
+await nextStep();
 await showSolution();
 const bold = await frame()
   .$eval('.description b', (e) => e.textContent)
@@ -130,7 +89,7 @@ expect(bold === 'меняется каждую партию', 'шаг 7: [innerH
 await checkConsoleClean('шаг 7');
 
 // 8. Практикум
-await next();
+await nextStep();
 expect((await title()) === 'Практикум: карточка игры', 'шаг 8 открыт');
 await showSolution();
 text = await appText();
@@ -145,11 +104,8 @@ await checkConsoleClean('шаг 8');
 await page.screenshot({ path: `${OUT}/ch02-practice.png` });
 
 // 9. Под капотом: старт — решение практикума
-await next();
+await nextStep();
 expect((await title()) === 'Под капотом: контекст шаблона', 'шаг 9 открыт');
 expect((await appText()).includes('Игроков: 2–5'), 'шаг 9: старт — решение практикума');
 
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

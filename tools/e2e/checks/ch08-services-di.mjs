@@ -3,40 +3,15 @@
 // демо-корзина через useClass, настройки из SHOP_CONFIG, вкладки через токен TABS, ленивая аналитика,
 // избранное и журнал поиска зависимостей по Alt+щелчку.
 // node tools/e2e/checks/ch08-services-di.mjs
-import { BASE_URL, launch, wait } from '../lib.mjs';
+import { clean, openCourse, wait } from '../lib.mjs';
 
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+// Строки журнала di-log.ts упоминают NG0201 намеренно — их не считаем
+const { page, expect, frame, consoleText, title, showSolution, nextStep, checkConsoleClean, finish } = await openCourse(
+  '/services-di/why-di',
+  { ignoreConsole: (line) => line.includes('NullInjector —') },
+);
 
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
-
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/services-di/why-di`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
 // Текст без неразрывных пробелов и лишних переводов строк: «1 990 ₽» пайпы пишут через U+00A0
-const clean = (s) =>
-  s
-    .replace(/\u00a0|\u202f/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
 const text = async (selector) => clean(await frame().$eval(selector, (e) => e.textContent));
 const header = () => text('app-header');
 const card = (name) =>
@@ -55,28 +30,6 @@ const openGame = async (name) => {
   await clickInCard(name, '.title-button');
   await wait(400);
 };
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function nextStep() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  // Строки журнала di-log.ts упоминают NG0201 намеренно — их не считаем
-  const log = (await consoleText())
-    .split('\n')
-    .filter((line) => !line.includes('NullInjector —'))
-    .join('\n');
-  expect(!/ERROR|NG0\d+|Error:|Cannot find/.test(log), `${step}: консоль без ошибок`);
-}
 
 // 1. Зачем DI: глобальный экземпляр корзины
 expect((await title()) === 'Зачем внедрение зависимостей', 'шаг 1 открыт');
@@ -223,7 +176,4 @@ log = await consoleText();
 expect(log.includes('Tab получил: InjectionToken TABS ← <app-tabs>'), 'шаг 9: Tab получил TABS от <app-tabs>');
 await checkConsoleClean('шаг 9');
 
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

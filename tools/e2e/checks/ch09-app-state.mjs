@@ -2,36 +2,11 @@
 // и проверяет приложение в превью — закрытое состояние корзины, сохранение в localStorage (перезапуск ⟳),
 // итоги корзины, промокоды KNIGHT10/CHESS500 и их снятие, правила склада и сохранённое избранное.
 // node tools/e2e/checks/ch09-app-state.mjs
-import { BASE_URL, launch, wait } from '../lib.mjs';
+import { clean, openCourse, wait } from '../lib.mjs';
 
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+const { page, expect, frame, consoleText, title, showSolution, nextStep, checkConsoleClean, finish } =
+  await openCourse('/app-state/store');
 
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
-
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/app-state/store`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
-// Текст без неразрывных пробелов и лишних переводов строк: «1 990 ₽» пайпы пишут через U+00A0
-const clean = (s) => s.replace(/ | /g, ' ').replace(/\s+/g, ' ').trim();
 const text = async (selector) =>
   clean(
     (await frame()
@@ -83,23 +58,6 @@ const restart = async () => {
   await page.click('button[title="Перезагрузить приложение с текущего адреса"]');
   await wait(3000);
 };
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function nextStep() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  expect(!/ERROR|NG0\d+|Error:|Cannot find|TS\d+/.test(await consoleText()), `${step}: консоль без ошибок`);
-}
 
 // 1. Хранилище: закрытое состояние, демо-корзины нет, мини-корзина — компонент
 expect((await title()) === 'Хранилище на сигналах', 'шаг 1 открыт');
@@ -213,8 +171,4 @@ expect((await title()) === 'Когда нужна библиотека', 'шаг
 expect((await header()).includes('♥ 1'), 'шаг 6: магазин из практикума, избранное на месте');
 await checkConsoleClean('шаг 6');
 
-await page.evaluate(() => localStorage.clear());
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

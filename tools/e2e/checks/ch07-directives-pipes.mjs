@@ -2,35 +2,12 @@
 // и проверяет приложение в превью — цены и проценты по локали ru, таймер через date, пайпы price/players/duration,
 // подпись звёзд, подсказки Tooltip (наведение, уход, уничтожение хоста), InView в LoadMore и ленивые обложки.
 // node tools/e2e/checks/ch07-directives-pipes.mjs
-import { BASE_URL, launch, OUT, wait } from '../lib.mjs';
+import { openCourse, OUT, wait } from '../lib.mjs';
 
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+const { page, expect, frame, title, count, showSolution, nextStep, checkConsoleClean, finish } = await openCourse(
+  '/directives-pipes/builtin-pipes',
+);
 
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
-
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/directives-pipes/builtin-pipes`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
-const count = (selector) => frame().$$eval(selector, (els) => els.length);
 // Текст без неразрывных пробелов и лишних переводов строк: «1 990 ₽» пайпы пишут через U+00A0
 const text = (selector) =>
   frame().$eval(selector, (e) =>
@@ -69,24 +46,6 @@ const tooltips = () =>
       return { text: t.textContent, inside: r.left >= 0 && r.right <= document.documentElement.clientWidth };
     }),
   );
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function nextStep() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  const log = await consoleText();
-  expect(!/ERROR|NG0\d+|Error:|Cannot find/.test(log), `${step}: консоль без ошибок`);
-}
 
 // 1. Встроенные пайпы
 expect((await title()) === 'Встроенные пайпы', 'шаг 1 открыт');
@@ -290,7 +249,4 @@ const dirs = await frame().evaluate(() => {
 expect(dirs.join(' | ') === 'InView,LazyImage | Tooltip | InView', `шаг 8: ng.getDirectives (${dirs.join(' | ')})`);
 await checkConsoleClean('шаг 8');
 
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

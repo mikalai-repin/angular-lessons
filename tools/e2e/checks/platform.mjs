@@ -2,20 +2,9 @@
 // схлопывание повторов, адресная строка, заголовок вкладки, вкладка «Сеть», ошибка 500 из переключателя.
 // node tools/e2e/checks/platform.mjs
 import { readFileSync } from 'node:fs';
-import { BASE_URL, CONTENT, launch, OUT, readDir, wait } from '../lib.mjs';
+import { BASE_URL, CONTENT, openCourse, OUT, PROGRESS_KEY, readDir, wait } from '../lib.mjs';
 
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
-
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
+const { page, expect, runWithCode, finish } = await openCourse('/first-app/what-is-angular');
 
 // Код ученика с ошибками подкладываем в сохранённый прогресс — так же, как его сохранил бы редактор
 const files = readDir(`${CONTENT}/01-first-app/01-what-is-angular/start`);
@@ -28,12 +17,7 @@ files['catalog/catalog.ts'] = files['catalog/catalog.ts'].replace(
 files['catalog/catalog.html'] = files['catalog/catalog.html'].replace(/<app-game-card(\s)/, '<app-game-crad$1');
 files['app.ts'] = files['app.ts'].replace("styleUrl: './app.css'", "styleUrl: './app2.css'");
 
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate((code) => {
-  localStorage.setItem('angular-course:v1', JSON.stringify({ steps: { 'first-app/what-is-angular': { code } } }));
-}, files);
-await page.goto(`${BASE_URL}/first-app/what-is-angular`, { waitUntil: 'networkidle0' });
-await wait(4000);
+await runWithCode('first-app/what-is-angular', files);
 
 const lines = () =>
   page.$$eval('.console-line', (els) => els.map((e) => ({ cls: e.className, text: e.textContent ?? '' })));
@@ -141,7 +125,8 @@ for (const [route, dir, names] of formatCases) {
     await page.click('.toolbar .button:nth-child(2)');
     await wait(1500);
     const saved = await page.evaluate(
-      (route) => JSON.parse(localStorage.getItem('angular-course:v1') ?? '{}').steps?.[route]?.code,
+      (key, route) => JSON.parse(localStorage.getItem(key) ?? '{}').steps?.[route]?.code,
+      PROGRESS_KEY,
       route,
     );
     const text = saved?.[name] ?? original[name];
@@ -149,7 +134,4 @@ for (const [route, dir, names] of formatCases) {
   }
 }
 
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

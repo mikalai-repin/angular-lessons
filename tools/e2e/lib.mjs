@@ -100,3 +100,108 @@ export async function navigate(page, url, waitMs = 500) {
   await page.evaluate((url) => window.postMessage({ type: 'navigate', url }, '*'), url);
   await wait(waitMs);
 }
+
+/** Ключ сохранённого прогресса платформы (src/progress/storage.ts) */
+export const PROGRESS_KEY = 'angular-course:v1';
+
+/** Строки консоли превью, которые считаются ошибкой */
+const CONSOLE_ERRORS = /ERROR|NG0\d+|Error:|Cannot find|TS\d+/;
+
+/** Текст без неразрывных пробелов и лишних переводов строк: «1 990 ₽» пайпы пишут через U+00A0 и U+202F */
+export const clean = (s) => s.replace(/ | /g, ' ').replace(/\s+/g, ' ').trim();
+
+/** Счётчик проверок: expect печатает ✓/✗, report — итог и код выхода процесса */
+export function createChecks() {
+  const failures = [];
+  return {
+    expect(ok, message) {
+      console.log(`${ok ? '✓' : '✗'} ${message}`);
+      if (!ok) failures.push(message);
+    },
+    report() {
+      console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
+      process.exit(failures.length ? 1 : 0);
+    },
+  };
+}
+
+/**
+ * Открывает интерфейс платформы (1600 × 900) на шаге startPath ('/signals/problem') с чистым прогрессом
+ * и возвращает помощники проверки главы. Диалоги по умолчанию принимаются («Решение» спрашивает подтверждение);
+ * ignoreConsole(line) — строки консоли, которые не считаются ошибкой
+ */
+export async function openCourse(startPath, { onDialog = (d) => d.accept(), ignoreConsole = () => false } = {}) {
+  const browser = await launch();
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1600, height: 900 });
+  page.on('dialog', onDialog);
+  const pageErrors = [];
+  page.on('pageerror', (e) => pageErrors.push(e.message));
+
+  await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(`${BASE_URL}${startPath}`, { waitUntil: 'networkidle0' });
+  await wait(3000);
+
+  const { expect, report } = createChecks();
+  // После перезапуска старый iframe может ещё числиться в списке — берём последний
+  const frame = () =>
+    page
+      .frames()
+      .filter((f) => f.url().includes('/app'))
+      .at(-1);
+  const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
+
+  return {
+    browser,
+    page,
+    expect,
+    frame,
+    consoleText,
+    /** Заголовок открытого шага */
+    title: () => page.$eval('.lesson-title-row h1', (e) => e.textContent),
+    /** Число элементов в приложении */
+    count: (selector) => frame().$$eval(selector, (els) => els.length),
+
+    /** Кнопка «Решение», если она есть у шага */
+    async showSolution() {
+      const button = await page.$('.lesson-footer-middle .button');
+      if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
+        await button.click();
+        await wait(3500);
+      }
+    },
+
+    /** Кнопка «Далее» */
+    async nextStep() {
+      await page.click('.lesson-footer .button.primary');
+      await wait(3500);
+    },
+
+    async checkConsoleClean(step) {
+      const lines = (await consoleText()).split('\n').filter((line) => !ignoreConsole(line));
+      expect(!CONSOLE_ERRORS.test(lines.join('\n')), `${step}: консоль без ошибок`);
+    },
+
+    /** Эксперимент: код подкладывается в сохранённый прогресс шага, как его сохранил бы редактор */
+    async runWithCode(stepKey, files, waitMs = 4000) {
+      await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
+      await page.evaluate(
+        (storageKey, key, code) => localStorage.setItem(storageKey, JSON.stringify({ steps: { [key]: { code } } })),
+        PROGRESS_KEY,
+        stepKey,
+        files,
+      );
+      await page.goto(`${BASE_URL}/${stepKey}`, { waitUntil: 'networkidle0' });
+      await wait(waitMs);
+      return consoleText();
+    },
+
+    /** Итог: ошибки страницы, закрытие браузера, код выхода */
+    async finish() {
+      expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
+      await browser.close();
+      report();
+    },
+  };
+}

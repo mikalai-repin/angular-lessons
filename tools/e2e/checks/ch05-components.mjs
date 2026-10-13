@@ -2,36 +2,12 @@
 // и проверяет приложение в превью — карточки, входы и выходы, звёзды рейтинга (model, readonly, клавиатура),
 // стикеры через ng-content, хост-элемент, выбор количества в корзине, стили компонентов в <head>.
 // node tools/e2e/checks/ch05-components.mjs
-import { BASE_URL, launch, OUT, wait } from '../lib.mjs';
+import { openCourse, OUT, wait } from '../lib.mjs';
 
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+const { page, expect, frame, consoleText, title, count, showSolution, nextStep, checkConsoleClean, finish } =
+  await openCourse('/components/component');
 
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
-
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/components/component`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
 const header = () => frame().$eval('.cart', (e) => e.textContent.trim());
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
-const count = (selector) => frame().$$eval(selector, (els) => els.length);
 const titles = () => frame().$$eval('app-game-card .title', (els) => els.map((e) => e.textContent.trim()));
 // Карточка по названию игры: текст, кнопка, звёзды, атрибуты хоста и звёзд
 const card = (name) =>
@@ -82,24 +58,6 @@ const filterStars = () =>
   frame().$$eval('.rating-filter .star', (els) =>
     els.map((s) => s.className.replace('star', '').trim() || '-').join(','),
   );
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function nextStep() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  const text = await consoleText();
-  expect(!/ERROR|NG0\d+|Error:/.test(text), `${step}: консоль без ошибок`);
-}
 
 // 1. Свой компонент
 expect((await title()) === 'Свой компонент', 'шаг 1 открыт');
@@ -291,7 +249,4 @@ expect(
   'шаг 10: у хоста карточки _nghost и _ngcontent, стикер помечен атрибутом App',
 );
 
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

@@ -2,37 +2,13 @@
 // и проверяет приложение в превью — счётчик, переключатель, корзину, эффекты, консоль.
 // В конце подкладывает в сохранённый прогресс код экспериментов: вывод сигналов в консоль и граф сигналов.
 // node tools/e2e/checks/ch03-signals.mjs
-import { BASE_URL, launch, OUT, readDir, wait } from '../lib.mjs';
+import { CONTENT, openCourse, OUT, readDir, wait } from '../lib.mjs';
 
-const CONTENT = new URL('../../../content', import.meta.url).pathname;
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+const { page, expect, frame, consoleText, title, showSolution, nextStep, checkConsoleClean, runWithCode, finish } =
+  await openCourse('/signals/problem');
 
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
-
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/signals/problem`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
 const appText = async () => (await frame().evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
 const header = () => frame().$eval('.cart', (e) => e.textContent.trim());
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
 const click = async (selector, times = 1, ms = 200) => {
   for (let i = 0; i < times; i++) {
     await frame().click(selector);
@@ -41,24 +17,6 @@ const click = async (selector, times = 1, ms = 200) => {
 };
 const next = (times = 1) => click('button[aria-label="Следующая игра"]', times);
 const add = () => click('.card .button, .actions .button');
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function nextStep() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  const text = await consoleText();
-  expect(!/ERROR|NG0\d+|Error:/.test(text), `${step}: консоль без ошибок`);
-}
 
 // 1. Проблема: счётчик отстаёт на одно нажатие
 await showSolution();
@@ -187,18 +145,6 @@ expect((await title()) === 'Под капотом: граф сигналов', '
 expect((await appText()).includes('1 из 12'), 'шаг 9: старт — решение практикума');
 
 // Эксперименты: код подкладываем в сохранённый прогресс, как его сохранил бы редактор
-async function runWithCode(stepKey, files) {
-  await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-  await page.evaluate(
-    (key, code) => localStorage.setItem('angular-course:v1', JSON.stringify({ steps: { [key]: { code } } })),
-    stepKey,
-    files,
-  );
-  await page.goto(`${BASE_URL}/${stepKey}`, { waitUntil: 'networkidle0' });
-  await wait(4000);
-  return consoleText();
-}
-
 // Консоль платформы показывает тип и значение сигнала, не вызывая его
 let files = readDir(`${CONTENT}/03-signals/07-linked-signal/solution`);
 files['app.ts'] = files['app.ts'].replace(
@@ -234,7 +180,4 @@ for (const line of [
   expect(text.includes(line), `шаг 9: «${line}»`);
 }
 
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

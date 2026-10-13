@@ -2,38 +2,24 @@
 // и проверяет приложение в превью — блоки @if/@for/@switch, корзину, поиск, фильтры, сортировку.
 // В конце подкладывает в сохранённый прогресс код эксперимента шага «Под капотом» (наблюдатель за DOM).
 // node tools/e2e/checks/ch04-control-flow.mjs
-import { BASE_URL, launch, OUT, readDir, wait } from '../lib.mjs';
+import { CONTENT, openCourse, OUT, readDir, wait } from '../lib.mjs';
 
-const CONTENT = new URL('../../../content', import.meta.url).pathname;
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+const {
+  page,
+  expect,
+  frame,
+  consoleText,
+  title,
+  count,
+  showSolution,
+  nextStep,
+  checkConsoleClean,
+  runWithCode,
+  finish,
+} = await openCourse('/control-flow/if');
 
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
-page.on('dialog', (d) => d.accept());
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
-
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/control-flow/if`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
 const appText = async () => (await frame().evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
 const header = () => frame().$eval('.cart', (e) => e.textContent.trim());
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
-const count = (selector) => frame().$$eval(selector, (els) => els.length);
 const texts = (selector) =>
   frame().$$eval(selector, (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()));
 const click = async (selector, times = 1, ms = 200) => {
@@ -67,24 +53,6 @@ const type = async (text) => {
   if (text) await frame().type('.search', text);
   await wait(300);
 };
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function nextStep() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  const text = await consoleText();
-  expect(!/ERROR|NG0\d+|Error:/.test(text), `${step}: консоль без ошибок`);
-}
 
 // 1. @if
 await showSolution();
@@ -228,13 +196,7 @@ files['main.ts'] = files['main.ts']
     'bootstrapApplication(App, appConfig).catch',
     'bootstrapApplication(App, appConfig)\n  .then(() => watchCatalog())\n  .catch',
   );
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(
-  (code) => localStorage.setItem('angular-course:v1', JSON.stringify({ steps: { 'control-flow/track': { code } } })),
-  files,
-);
-await page.goto(`${BASE_URL}/control-flow/track`, { waitUntil: 'networkidle0' });
-await wait(4000);
+await runWithCode('control-flow/track', files);
 await frame().select('.filters select', 'cheap');
 await wait(500);
 expect(
@@ -242,7 +204,4 @@ expect(
   'шаг 8: сортировка с track game.id — 8 перемещений, без пересоздания',
 );
 
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

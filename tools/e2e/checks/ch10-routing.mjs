@@ -3,41 +3,20 @@
 // фильтры в query-параметрах (⟳ и история), вложенный и ленивый кабинет, гарды оформления заказа,
 // заголовок вкладки, 404 и переадресации, хлебные крошки и журнал навигации.
 // node tools/e2e/checks/ch10-routing.mjs
-import { BASE_URL, launch, wait } from '../lib.mjs';
+import { clean, openCourse, wait } from '../lib.mjs';
 
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
-
-const browser = await launch();
-const page = await browser.newPage();
-await page.setViewport({ width: 1600, height: 900 });
 // Диалоги: «Решение» в платформе спрашивает подтверждение, гард шага 7 — confirm() в превью
 let dialogText = '';
 let dismissDialog = false;
-page.on('dialog', async (d) => {
+const onDialog = async (d) => {
   dialogText = d.message();
   await (dismissDialog ? d.dismiss() : d.accept());
-});
-const pageErrors = [];
-page.on('pageerror', (e) => pageErrors.push(e.message));
+};
+const { page, expect, frame, consoleText, title, showSolution, nextStep, checkConsoleClean, finish } = await openCourse(
+  '/routing/routes',
+  { onDialog },
+);
 
-await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
-await page.evaluate(() => localStorage.clear());
-await page.goto(`${BASE_URL}/routing/routes`, { waitUntil: 'networkidle0' });
-await wait(3000);
-
-// После перезапуска старый iframe может ещё числиться в списке — берём последний
-const frame = () =>
-  page
-    .frames()
-    .filter((f) => f.url().includes('/app'))
-    .at(-1);
-const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent ?? '').join('\n'));
-const title = () => page.$eval('.lesson-title-row h1', (e) => e.textContent);
-const clean = (s) => s.replace(/ | /g, ' ').replace(/\s+/g, ' ').trim();
 const mainText = async () => clean(await frame().$eval('main', (e) => e.innerText));
 const address = () => page.$eval('.address-input', (e) => e.value);
 const tabTitle = () => page.$eval('.preview-tab-title', (e) => e.textContent);
@@ -65,23 +44,6 @@ const clickAsync = async (selector) => {
 const addToCart = async () => {
   await click('app-game-card .actions .button');
 };
-
-async function showSolution() {
-  const button = await page.$('.lesson-footer-middle .button');
-  if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
-    await button.click();
-    await wait(3500);
-  }
-}
-
-async function nextStep() {
-  await page.click('.lesson-footer .button.primary');
-  await wait(3500);
-}
-
-async function checkConsoleClean(step) {
-  expect(!/ERROR|NG0\d+|Error:|Cannot find|TS\d+/.test(await consoleText()), `${step}: консоль без ошибок`);
-}
 
 // 1. Маршруты
 expect((await title()) === 'Маршруты', 'шаг 1 открыт');
@@ -265,8 +227,4 @@ expect(log.includes("NavigationStart(id: 2, url: '/catalog')"), 'шаг 11: жу
 expect(log.includes("'catalog' → Catalog"), 'шаг 11: журнал — дерево маршрутов');
 await checkConsoleClean('шаг 11');
 
-await page.evaluate(() => localStorage.clear());
-expect(pageErrors.length === 0, `ошибок страницы нет ${JSON.stringify(pageErrors)}`);
-await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+await finish();

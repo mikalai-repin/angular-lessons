@@ -1,14 +1,21 @@
 // Проверка среды превью на демо-магазине шага 1.1: роутинг в iframe, учебный бэкенд, отмена запросов,
 // ленивая загрузка. Демо-магазин — единственный код курса с роутером и HTTP до глав 10–11.
 // node tools/e2e/checks/preview.mjs
-import { appUrl, collect, compileDir, CONTENT, launch, navigate, openPreview, pageText, wait } from '../lib.mjs';
+import {
+  appUrl,
+  collect,
+  compileDir,
+  CONTENT,
+  createChecks,
+  launch,
+  navigate,
+  openPreview,
+  pageText,
+  wait,
+} from '../lib.mjs';
 
 const browser = await launch();
-const failures = [];
-const expect = (ok, message) => {
-  console.log(`${ok ? '✓' : '✗'} ${message}`);
-  if (!ok) failures.push(message);
-};
+const { expect, report } = createChecks();
 
 const compiled = compileDir(`${CONTENT}/01-first-app/01-what-is-angular/start`);
 expect(compiled.errors.length === 0, `сборка без ошибок ${JSON.stringify(compiled.errors)}`);
@@ -60,5 +67,4 @@ const failing = await openPreview(browser, compiled, { backend: { latency: 0, fa
 expect((await pageText(failing.page)).includes('Не удалось загрузить каталог'), 'при ошибке 500 виден текст ошибки');
 
 await browser.close();
-console.log(failures.length ? `\nПровалено: ${failures.length}` : '\nВсё прошло');
-process.exit(failures.length ? 1 : 0);
+report();
