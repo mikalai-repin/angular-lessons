@@ -11,9 +11,122 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <!-- Сохранённые палитра и тема — до первой отрисовки, чтобы не мелькали значения по умолчанию.
+         Тема по умолчанию — тёмная (DEFAULT_THEME в src/app/theme.ts) -->
+    <script>
+      let settings = {};
+      try {
+        settings = JSON.parse(localStorage.getItem('angular-course:v1') || '{}');
+      } catch {
+        // localStorage недоступен — значения по умолчанию
+      }
+      if (settings.palette) document.documentElement.dataset.palette = settings.palette;
+      document.documentElement.dataset.theme = settings.theme === 'light' ? 'light' : 'dark';
+    </script>
+    <!-- Загрузчик до запуска JavaScript: та же разметка, что у Loader в src/app/Loader.tsx.
+         React заменит содержимое #root при первой отрисовке -->
+    <style>
+      .boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: #f8f7fb;
+        color: #675f78;
+        font:
+          15px system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        --logo: #e3165e;
+        --surface: #ffffff;
+      }
+      /* Палитры (src/styles.css, src/app/Appearance.tsx): фон, текст и цвет щита загрузчика.
+         Без data-palette (по умолчанию) — «Angular», её светлые цвета — в правиле .boot выше.
+         Оба атрибута — на <html>, поэтому без пробела: [data-theme='dark'][data-palette='…'] */
+      [data-palette='crimson'] .boot {
+        background: #f6f5f9;
+        color: #6b6578;
+        --logo: #c3002f;
+      }
+      [data-palette='azure'] .boot {
+        background: #f6f7f9;
+        color: #5e687e;
+        --logo: #087ea4;
+      }
+      [data-palette='emerald'] .boot {
+        background: #f5f8f6;
+        color: #5f6d64;
+        --logo: #0f7a55;
+      }
+      [data-theme='dark'] .boot {
+        background: #131019;
+        color: #a29bb3;
+        --logo: #ff4f8f;
+        --surface: #1c1824;
+      }
+      [data-theme='dark'][data-palette='crimson'] .boot {
+        background: #14121b;
+        color: #9c96ab;
+        --logo: #ff5c7a;
+        --surface: #1c1a25;
+      }
+      [data-theme='dark'][data-palette='azure'] .boot {
+        background: #16181d;
+        color: #99a1b3;
+        --logo: #58c4dc;
+        --surface: #23272f;
+      }
+      [data-theme='dark'][data-palette='emerald'] .boot {
+        background: #121815;
+        color: #94a59b;
+        --logo: #4fd1a1;
+        --surface: #1a221e;
+      }
+      .boot .shield {
+        fill: var(--logo);
+        animation: boot-pulse 1.8s ease-in-out infinite;
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      .boot .letter {
+        fill: var(--surface);
+        fill-rule: evenodd;
+      }
+      .boot span {
+        animation: boot-fade 1.8s ease-in-out infinite;
+      }
+      @keyframes boot-pulse {
+        50% {
+          transform: scale(0.9);
+        }
+      }
+      @keyframes boot-fade {
+        50% {
+          opacity: 0.55;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot .shield,
+        .boot span {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" role="status">
+        <svg width="64" height="64" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="shield" d="M12 1.5 2.2 5l1.5 12.9L12 22.5l8.3-4.6L21.8 5z" />
+          <path class="letter" d="M12 4.2 6.3 17h2.1l1.1-2.9h5l1.1 2.9h2.1zm1.7 8.2h-3.4L12 8.3z" />
+        </svg>
+        <span>Загружаем курс…</span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

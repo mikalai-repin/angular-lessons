@@ -104,6 +104,72 @@ expect(
 );
 await page.screenshot({ path: `${OUT}/platform-network.png` });
 
+// Строка главы с «Свернуть» прилипает к верху панели урока при прокрутке
+await page.$eval('.lesson-scroll', (e) => e.scrollTo(0, 600));
+await wait(300);
+const stuck = await page.$eval('.lesson-chapter-row', (e) => ({
+  top: Math.round(e.getBoundingClientRect().top - e.parentElement.getBoundingClientRect().top),
+  scrolled: e.parentElement.classList.contains('scrolled'),
+}));
+expect(stuck.top === 0 && stuck.scrolled, `строка главы прилипла к верху урока при прокрутке ${JSON.stringify(stuck)}`);
+await page.$eval('.lesson-scroll', (e) => e.scrollTo(0, 0));
+
+// Оформление по умолчанию (прогресс очищен openCourse): тёмная тема и палитра «Angular»
+const look = () =>
+  page.evaluate(() => {
+    const style = getComputedStyle(document.documentElement);
+    return {
+      theme: document.documentElement.dataset.theme,
+      palette: document.documentElement.dataset.palette ?? null,
+      accent: style.getPropertyValue('--accent').trim(),
+      bg: style.getPropertyValue('--bg').trim(),
+      editor: getComputedStyle(document.querySelector('.monaco-editor .monaco-editor-background')).backgroundColor,
+    };
+  });
+const defaults = await look();
+expect(
+  defaults.theme === 'dark' && defaults.accent === '#b77bff' && defaults.bg === '#131019',
+  `по умолчанию — тёмная тема и «Angular» ${JSON.stringify(defaults)}`,
+);
+
+// Палитра: выбор в шапке меняет цвета сразу и сохраняется в localStorage (применяется до запуска приложения)
+const choosePalette = async (name) => {
+  await page.click('.palette summary');
+  await page.evaluate(
+    (name) => [...document.querySelectorAll('.palette-option')].find((b) => b.textContent.includes(name)).click(),
+    name,
+  );
+  await wait(200);
+};
+await choosePalette('Малиновая');
+expect((await look()).accent === '#ff5c7a', `выбрана «Малиновая» (тёмная): ${(await look()).accent}`);
+await page.reload({ waitUntil: 'domcontentloaded' });
+const early = await page.evaluate(() => document.documentElement.dataset.palette);
+await wait(3000);
+expect(
+  early === 'crimson' && (await look()).accent === '#ff5c7a',
+  `палитра сохранилась после перезагрузки и применена до запуска (${early})`,
+);
+await page.screenshot({ path: `${OUT}/platform-palette.png` });
+await choosePalette('Angular');
+expect((await look()).accent === '#b77bff', 'обратно на «Angular»');
+
+// Тема: кнопка ☀/☾ в шапке переключает светлую и тёмную, вместе с редактором; выбор сохраняется
+await page.click('.theme-toggle');
+await wait(300);
+const lightLook = await look();
+expect(
+  lightLook.theme === 'light' && lightLook.bg === '#f8f7fb' && lightLook.editor !== defaults.editor,
+  `кнопка темы: тёмная → светлая, редактор тоже ${JSON.stringify(lightLook)}`,
+);
+await page.reload({ waitUntil: 'domcontentloaded' });
+const lightEarly = await page.evaluate(() => document.documentElement.dataset.theme);
+await wait(3000);
+expect(lightEarly === 'light', `светлая тема сохранилась и применена до запуска (${lightEarly})`);
+await page.click('.theme-toggle');
+await wait(300);
+expect((await look()).theme === 'dark', 'обратно на тёмную');
+
 // Кнопка «Формат» не меняет файлы уроков: на диске код в том же формате (shared/lesson-prettier.json, write_steps)
 const formatCases = [
   ['first-app/what-is-angular', '01-first-app/01-what-is-angular', ['catalog/catalog.ts', 'catalog/catalog.html']],

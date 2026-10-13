@@ -170,11 +170,15 @@ monaco.languages.setMonarchTokensProvider('html', angularHtmlLanguage);
 defineCourseThemes(monaco);
 
 function applyTheme() {
-  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  // Действующую тему ставит на <html> src/app/theme.ts (и скрипт в index.html до запуска)
+  const dark = document.documentElement.dataset.theme === 'dark';
   monaco.editor.setTheme(dark ? 'course-dark' : 'course-light');
 }
 applyTheme();
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ['data-theme'],
+});
 
 const stepPrefix = (stepId: string) => `file:///steps/${stepId}/`;
 
