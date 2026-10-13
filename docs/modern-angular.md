@@ -32,7 +32,7 @@ zsh: шаблоны с `[`, `?`, `*` интерпретируются как glo
 | `resource`, `rxResource` (`@angular/core/rxjs-interop`), `httpResource` (`@angular/common/http`) — публичные с 22.0 | теги `@publicApi 22.0` |
 | `linkedSignal` — публичный с 20.0 | `core` |
 | **Signal Forms** — `@angular/forms/signals`: `form`, `FormField` (директива `[formField]`), валидаторы `required`, `email`, `min`, `max`, `minLength`, `maxLength`, `pattern`, `validate`, `validateAsync`, `validateHttp`, `validateStandardSchema`, `applyEach`, `applyWhen`, `disabled`, `hidden`, `readonly`, `debounce`, `submit`, `schema`. Публичные с 22.0 | `forms/types/signals.d.ts` |
-| Прототип с `form(model, p => required(p.name))` и `[formField]` работает в JIT: `valid()` меняется при вводе | `spikes/jit-preview` |
+| Прототип с `form(model, p => required(p.name))` и `[formField]` работает в JIT: `valid()` меняется при вводе | прототип `spikes/jit-preview` (коммит `8a2a519`) |
 | `@angular/animations` — **устаревший** пакет: «Use `animate.enter` and `animate.leave` instead». Компилятор знает `animate.enter`/`animate.leave` | предупреждение npm при установке, `compiler.mjs` |
 | `NgIf`, `NgFor` (`NgForOf`) и др. — `@deprecated 20.0`, «Use the `@if` block instead. Intent to remove in a future major release» | `common/types/_common_module-chunk.d.ts` |
 | `providedIn: NgModule` и `providedIn: 'any'` — устарели | `core.d.ts` |

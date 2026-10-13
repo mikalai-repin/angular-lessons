@@ -6,7 +6,7 @@
 
 - ✅ Изучен курс `../pixi-js`: платформа, формат уроков, процесс, ловушки
 - ✅ Сверены API Angular 22.2.1 по установленным типам (`docs/modern-angular.md`)
-- ✅ Прототип `spikes/jit-preview`: TypeScript 6 + `angularJitApplicationTransform` + JIT в браузере. Работают: зонлесс, `signal`/`computed`, `input()`/`input.required()`/`output()`, `@if`/`@for`, `inject()`, `viewChild()`, Signal Forms с `[formField]`. Первый рендер ~150–200 мс; компиляция трёх файлов в браузере ~40 мс; бандл компилятора 4,2 МБ (1,2 МБ gzip)
+- ✅ Прототип `spikes/jit-preview` (удалён, см. коммит `8a2a519`): TypeScript 6 + `angularJitApplicationTransform` + JIT в браузере. Работают: зонлесс, `signal`/`computed`, `input()`/`input.required()`/`output()`, `@if`/`@for`, `inject()`, `viewChild()`, Signal Forms с `[formField]`. Первый рендер ~150–200 мс; компиляция трёх файлов в браузере ~40 мс; бандл компилятора 4,2 МБ (1,2 МБ gzip)
 - ✅ Типы Angular 22 проверяются TypeScript 5.9 (Monaco) и 6.0 без ошибок
 - ✅ Документация: `CLAUDE.md`, `docs/*`
 

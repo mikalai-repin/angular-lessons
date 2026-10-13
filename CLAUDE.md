@@ -26,12 +26,11 @@
 | [docs/glossary.md](docs/glossary.md) | Единый русско-английский словарь терминов |
 | [docs/roadmap.md](docs/roadmap.md) | Этапы работы и текущий статус |
 | [docs/authoring-process.md](docs/authoring-process.md) | **Как писать главу**: процесс, обязательные проверки, ловушки |
-| [spikes/jit-preview/](spikes/jit-preview/README.md) | Прототип, который доказал, что Angular 22 можно компилировать и запускать в браузере без сборщика |
 
 ## Ключевые решения
 
 - **Angular 22.2.1** (все пакеты `@angular/*` зафиксированы точно, см. architecture.md). Только современный Angular: standalone-компоненты, сигналы, `input()`/`output()`, `@if`/`@for`, `inject()`, зонлесс. Устаревшие паттерны (`NgModule` в коде приложения, `*ngIf`, `@Input()`, конструкторный DI, zone.js) показываем только в отдельных врезках «Вы встретите в старом коде». Полный список — в `docs/modern-angular.md`.
-- **Код ученика выполняется в браузере без сборщика**: TypeScript 6 + JIT-трансформ из `@angular/compiler-cli` в веб-воркере, затем JIT-компилятор Angular в iframe. Проверено прототипом (`spikes/jit-preview`). Отличия JIT от AOT честно объясняем в уроках (глава 1 и часть 3).
+- **Код ученика выполняется в браузере без сборщика**: TypeScript 6 + JIT-трансформ из `@angular/compiler-cli` в веб-воркере, затем JIT-компилятор Angular в iframe. Проверено прототипом (коммит `8a2a519`, папка `spikes/jit-preview`, позже удалена). Отличия JIT от AOT честно объясняем в уроках (глава 1 и часть 3).
 - **Язык уроков** — TypeScript, HTML, CSS. Тексты — на русском, идентификаторы в коде — на английском, комментарии в коде — на русском, тексты интерфейса магазина — на русском.
 - **Данные** — учебный бэкенд внутри превью (перехват `fetch` по адресам `/api/...`), с задержкой и ошибками, которыми управляет урок. Никаких внешних API.
 - **Картинки товаров** — свои SVG-обложки в `public/assets/` (без проблем с лицензиями).
@@ -57,7 +56,6 @@ public/vendor/, public/preview.html — генерирует scripts/copy-vendor
 scripts/              — copy-vendor, validate-content, build-covers, step-files (старт шага по цепочке)
 tools/e2e/            — проверки в headless Chrome (lib, run-dir, run-chapter, exp, checks/)
 tools/authoring/      — генераторы кода шагов глав (chNN-gen.py) и общий steps.py (запись только изменений шага)
-spikes/jit-preview/   — первый прототип (только для справки)
 ```
 
 ## Команды
