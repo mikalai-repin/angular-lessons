@@ -105,13 +105,27 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
       for (const error of buildErrors) errors.push(`${where}/${kind}: ${error}`);
       writeFiles(join(checkDir, chapterDir, stepDir, kind), files);
     }
+
+    // Проверка шага (check.ts): собирается и проверяется по типам вместе с кодом шагов
+    const checkPath = join(step.path, 'check.ts');
+    if (existsSync(checkPath)) {
+      if (meta.noSolution) errors.push(`${where}: check.ts у шага без решения (noSolution) — проверять нечего`);
+      const files = { 'check.ts': readFileSync(checkPath, 'utf8') };
+      const { errors: buildErrors } = compileFiles(ts, angularJitApplicationTransform, files);
+      for (const error of buildErrors) errors.push(`${where}/${error}`);
+      writeFiles(join(checkDir, chapterDir, stepDir, 'check'), files);
+    }
   }
 }
 
 // Проверка типов полного кода шагов: настройки — из tsconfig.content.json
 writeFileSync(
   join(checkDir, 'tsconfig.json'),
-  JSON.stringify({ extends: '../tsconfig.content.json', include: ['**/*.ts'] }, null, 2) + '\n',
+  JSON.stringify(
+    { extends: '../tsconfig.content.json', include: ['**/*.ts', '../shared/course-check.d.ts'] },
+    null,
+    2,
+  ) + '\n',
 );
 
 for (const error of errors) console.error(`✗ ${error}`);

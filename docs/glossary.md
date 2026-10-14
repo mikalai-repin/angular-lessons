@@ -188,6 +188,16 @@
 | request / response | запрос / ответ | |
 | interceptor | интерцептор | |
 | endpoint | адрес API | |
+| API (web API) | API сервера | набор адресов `/api/…`, по которым приложение просит и отправляет данные (глава 11) |
+| HTTP client | клиент HTTP | `HttpClient` |
+| resource status | статус ресурса | `idle`, `loading`, `reloading`, `resolved`, `error`, `local` |
+| loader | загрузчик | функция `loader` у `resource`: получает параметры и `abortSignal`, возвращает промис |
+| abort signal | сигнал отмены | `AbortSignal` из `AbortController`; не путать с сигналами Angular |
+| race condition | гонка (запросов) | ответ на старый запрос пришёл позже нового |
+| skeleton | заглушка загрузки | серые блоки на месте карточек, пока данные грузятся |
+| debounce | задержка (поиск с задержкой) | `debounced`: значение догоняет источник, когда тот перестал меняться |
+| optimistic update | оптимистичное обновление | показать результат сразу, откатить при ошибке сервера |
+| pagination | постраничная загрузка, страницы | параметры `page` и `size` |
 | authentication / authorization | вход (аутентификация) / права доступа (авторизация) | в тексте чаще «вход» и «права» |
 | session | сессия | вошёл ли пользователь; восстанавливается после перезагрузки |
 | access token / refresh token | токен доступа / refresh-токен | |

@@ -22,7 +22,7 @@ expect(compiled.errors.length === 0, `сборка без ошибок ${JSON.st
 
 // Задержка 400 мс: поиск по буквам должен отменять устаревшие запросы
 const { page, logs, network } = await openPreview(browser, compiled, { backend: { latency: 400 }, waitMs: 1500 });
-expect((await pageText(page)).includes('Найдено игр: 12'), 'каталог загружен: 12 игр');
+expect((await pageText(page)).includes('Найдено игр: 40'), 'каталог загружен: 40 игр');
 
 await page.type('.search', 'шах', { delay: 50 });
 await wait(1200);

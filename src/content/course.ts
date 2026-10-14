@@ -42,6 +42,8 @@ export interface Step {
   solution: FileMap;
   /** Порядок вкладок в редакторе */
   fileOrder: string[];
+  /** Проверка шага — исходник check.ts (docs/lesson-format.md), если она есть */
+  check?: string;
   chapter: Chapter;
 }
 
@@ -182,6 +184,7 @@ function loadCourse(): Course {
         start,
         solution,
         fileOrder: orderFiles(meta, { ...solution, ...start }),
+        check: raw[`${prefix}${stepDir}/check.ts`],
         chapter,
       };
     });

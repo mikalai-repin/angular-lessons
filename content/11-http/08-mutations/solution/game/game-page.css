@@ -1,0 +1,98 @@
+/* Страница игры */
+.head {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cover {
+  width: 160px;
+  aspect-ratio: 3 / 4;
+  border-radius: 6px;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+}
+
+.price {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.old-price {
+  margin-left: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.in-cart {
+  margin: 0;
+  font-size: 13px;
+}
+
+.description {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Отзыв: оценка, автор, дата и текст */
+.review {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--surface);
+  font-size: 14px;
+}
+
+.review b {
+  margin: 0 6px;
+}
+
+.review p {
+  margin: 4px 0 0;
+}
+
+/* Новый отзыв */
+.review-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.review-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font: inherit;
+}
+
+/* Характеристики: название слева, значение справа */
+.specs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.specs dt {
+  color: var(--muted);
+}
+
+.specs dd {
+  margin: 0;
+}

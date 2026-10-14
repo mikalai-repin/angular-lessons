@@ -7,6 +7,8 @@
 //   iframe → родитель: { type: 'console', level, text } | { type: 'error', text } | { type: 'url', url } | { type: 'title', title }
 //                      | { type: 'network', entry: { id, method, url, status, ms, … } }
 //   родитель → iframe: { type: 'navigate', url } | { type: 'history', delta } | { type: 'backend-config', config }
+//   Проверка шага: в 'run' есть check — JS-модуль проверки (check.ts шага); после старта приложения
+//   iframe → родитель: { type: 'check-result', pass, hint }
 //
 // Каждый запуск — новый iframe, поэтому здесь нет никакой очистки состояния.
 
@@ -15,7 +17,21 @@ import { createBackend } from '/backend/backend.js';
 
 const parentWindow = window.parent;
 const SOURCE = 'angular-course-preview';
-const send = (message) => parentWindow.postMessage({ source: SOURCE, ...message }, '*');
+const send = (message) => {
+  // Для проверки шага: ошибки — с начала запуска, консоль и запросы — с начала проверки (context.errors, logs, requests).
+  // Массивы живые: проверка деструктурирует контекст сразу, а читает их после своих действий
+  if (message.type === 'error' || (message.type === 'console' && message.level === 'error'))
+    errorLog.push(message.text);
+  if (message.type === 'console') checkLogs?.push(message.text);
+  if (message.type === 'network' && message.entry.status !== 'pending') {
+    const { method, url, status } = message.entry;
+    checkRequests?.push({ method, url, status });
+  }
+  parentWindow.postMessage({ source: SOURCE, ...message }, '*');
+};
+const errorLog = [];
+let checkLogs = null;
+let checkRequests = null;
 
 /** Приложение ученика живёт под /app/: так роутер не видит путь /preview.html (см. docs/architecture.md) */
 const APP_BASE = '/app';
@@ -336,6 +352,16 @@ window.addEventListener('message', async (event) => {
   if (data?.type === 'backend-config') return backend.configure(data.config);
   if (data?.type !== 'run') return;
 
+  // Проверка шага — на чистых данных магазина: сохранённая корзина ученика не должна влиять на результат
+  const restoreStorage = data.check ? isolateStorage() : () => {};
+  // Модуль проверки загружаем до запуска приложения: его export storage — данные localStorage, с которыми
+  // приложение стартует (сохранённая корзина и т. п.)
+  const checkModule = data.check ? loadCheck(data.check) : null;
+  if (checkModule)
+    await checkModule.then(
+      (module) => fillStorage(module.storage),
+      () => {},
+    );
   try {
     backend.configure(data.backend ?? {});
     // Адрес до запуска: роутер прочитает его при старте. <base href> — база для роутера (APP_BASE_HREF)
@@ -355,6 +381,150 @@ window.addEventListener('message', async (event) => {
   } catch (error) {
     send({ type: 'error', text: prettify(error?.stack || String(error)) });
   }
+  if (data.check) {
+    const result = await runCheck(checkModule);
+    restoreStorage();
+    send({ type: 'check-result', ...result });
+  }
 });
+
+/** Ключи платформы (прогресс, тема) — в том же localStorage: iframe превью на том же origin */
+const PLATFORM_KEY = /^angular-course/;
+
+/** Убирает из localStorage данные приложения ученика; возвращает функцию, которая вернёт их как было */
+function isolateStorage() {
+  const appKeys = () => Object.keys(localStorage).filter((key) => !PLATFORM_KEY.test(key));
+  try {
+    const saved = appKeys().map((key) => [key, localStorage.getItem(key)]);
+    for (const [key] of saved) localStorage.removeItem(key);
+    return () => {
+      for (const key of appKeys()) localStorage.removeItem(key);
+      for (const [key, value] of saved) localStorage.setItem(key, value);
+    };
+  } catch {
+    return () => {};
+  }
+}
+
+// ---------- Проверка шага (check.ts) ----------
+
+const CHECK_TIMEOUT = 15000;
+const BOOT_TIMEOUT = 5000;
+
+/** Неудача, объявленная проверкой через context.fail(hint) */
+class CheckFailure extends Error {}
+
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * ApplicationRef приложения ученика: корневой компонент находим через отладочный API ng (есть только в
+ * режиме разработки — превью всегда в нём). bootstrapApplication асинхронный, поэтому ждём его
+ */
+async function waitForApp() {
+  const { ApplicationRef } = await import('@angular/core');
+  const started = Date.now();
+  while (Date.now() - started < BOOT_TIMEOUT) {
+    for (const element of document.body.querySelectorAll('*')) {
+      const component = window.ng?.getComponent?.(element);
+      if (component) return window.ng.getInjector(element).get(ApplicationRef);
+    }
+    await delay(50);
+  }
+  return null;
+}
+
+async function loadCheck(code) {
+  const url = URL.createObjectURL(new Blob([`${code}\n//# sourceURL=check.ts`], { type: 'text/javascript' }));
+  try {
+    return await import(url);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function fillStorage(entries) {
+  try {
+    for (const [key, value] of Object.entries(entries ?? {})) localStorage.setItem(key, value);
+  } catch {
+    // localStorage недоступен — проверка увидит приложение без сохранённых данных
+  }
+}
+
+async function runCheck(checkModule) {
+  try {
+    const appRef = await waitForApp();
+    if (!appRef) return { pass: false, hint: 'Приложение не запустилось: посмотрите ошибки в консоли.' };
+
+    /** Angular закончил обновление экрана (зонлесс: задачи отрисовки и запросы — PendingTasks), браузер — кадр */
+    const settle = async (ms = 0) => {
+      await nextFrame();
+      await appRef.whenStable();
+      await nextFrame();
+      if (ms) await delay(ms);
+    };
+    const element = (target) => {
+      const found = typeof target === 'string' ? document.querySelector(target) : target;
+      if (!found) throw new CheckFailure(`На странице нет элемента «${target}».`);
+      return found;
+    };
+    checkLogs = [];
+    checkRequests = [];
+    const context = {
+      document,
+      url: appUrl,
+      settle,
+      navigate: async (target) => {
+        navigate(target);
+        await settle();
+      },
+      $: (selector, root = document) => root.querySelector(selector),
+      $$: (selector, root = document) => [...root.querySelectorAll(selector)],
+      text: (target) => {
+        const found = typeof target === 'string' ? document.querySelector(target) : target;
+        return (found?.innerText ?? found?.textContent ?? '').replace(/\s+/g, ' ').trim();
+      },
+      visible: (target) => {
+        const found = typeof target === 'string' ? document.querySelector(target) : target;
+        return Boolean(found?.getClientRects().length) && getComputedStyle(found).visibility !== 'hidden';
+      },
+      click: async (target) => {
+        element(target).click();
+        await settle();
+      },
+      fill: async (target, value) => {
+        const field = element(target);
+        field.value = value;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+        await settle();
+      },
+      setChecked: async (target, checked) => {
+        const box = element(target);
+        if (box.checked !== checked) box.click();
+        await settle();
+      },
+      fail: (hint) => {
+        throw new CheckFailure(hint);
+      },
+      requests: checkRequests,
+      logs: checkLogs,
+      errors: errorLog,
+    };
+
+    await settle();
+    const { default: check } = await checkModule;
+    const result = await Promise.race([
+      Promise.resolve().then(() => check(context)),
+      delay(CHECK_TIMEOUT).then(() => ({ pass: false, hint: 'Проверка не закончилась за 15 секунд.' })),
+    ]);
+    if (!result?.pass) return { pass: false, hint: result?.hint ?? 'Проверка не прошла.' };
+    return { pass: true };
+  } catch (error) {
+    if (error instanceof CheckFailure) return { pass: false, hint: error.message };
+    send({ type: 'console', level: 'warn', text: `Проверка упала: ${prettify(error?.stack || String(error))}` });
+    return { pass: false, hint: `Проверка упала с ошибкой: ${error?.message ?? error}` };
+  }
+}
 
 send({ type: 'ready' });

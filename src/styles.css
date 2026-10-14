@@ -968,6 +968,37 @@ button {
   cursor: pointer;
 }
 
+/* Результат проверки шага (check.ts) — под кнопками редактора */
+.check-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.45;
+  flex-shrink: 0;
+}
+
+.check-result.running {
+  color: var(--text-muted);
+}
+
+.check-result.pass {
+  color: var(--tip);
+  background: var(--tip-soft);
+}
+
+.check-result.fail {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+}
+
+.check-result .icon-button {
+  margin-left: auto;
+  color: inherit;
+}
+
 /* ---------- Превью ---------- */
 
 .preview {

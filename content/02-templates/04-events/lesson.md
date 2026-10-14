@@ -42,7 +42,7 @@ protected search(event: Event) {
 }
 ```
 
-Здесь две новых вещи.
+Здесь две новые вещи.
 
 **`$event`** — специальное имя, которое доступно только в обработчике события. Это объект события DOM — тот же, что получает обычный `addEventListener`. Для `click` это `MouseEvent`, для `keydown` — `KeyboardEvent`. Через `event.target` мы добираемся до поля ввода и читаем `value`. Приведение `as HTMLInputElement` нужно, потому что для TypeScript `event.target` — какой-то `EventTarget`, у которого нет `value`.
 

@@ -13,7 +13,7 @@ import {
   syncModels,
 } from '../editor/monaco';
 import { LessonPanel } from '../lesson/LessonPanel';
-import { Preview, type PreviewRun } from '../preview/Preview';
+import { Preview, type CheckResult, type PreviewRun } from '../preview/Preview';
 import { progress } from '../progress/storage';
 import { useMediaQuery } from './useMediaQuery';
 
@@ -58,35 +58,54 @@ function StepWorkspace({ step }: { step: Step }) {
   const [autorun, setAutorun] = useState(progress.getAutorun);
   const [hasBackup, setHasBackup] = useState(() => Boolean(progress.getBackup(step.id)));
   const [mobileTab, setMobileTab] = useState<PaneId>('lesson');
+  /** Проверка шага: идёт или её результат */
+  const [check, setCheck] = useState<'running' | CheckResult | null>(null);
   const panes = useCollapsiblePanes(!isNarrow, () => runCode());
 
   const timers = useRef<{ save?: number; autorun?: number }>({});
 
   const { prev, next } = neighbours(step);
 
-  const runCode = useCallback(async () => {
-    window.clearTimeout(timers.current.autorun);
-    const id = ++runCounter;
-    // Код компилирует воркер (TypeScript 6 + JIT-трансформ Angular), ошибки типов даёт TS-воркер Monaco
-    const [compiled, diagnostics] = await Promise.all([
-      compileStep(readModels(step.id, step.fileOrder)).catch((error: Error) => ({
-        files: {},
-        styles: [],
-        errors: [`Компилятор не запустился: ${error.message}`],
-      })),
-      collectDiagnostics(step.id, step.fileOrder),
-    ]);
-    // Пока компилировали, мог начаться следующий запуск — устаревший результат не показываем
-    if (id !== runCounter) return;
-    setRun({
-      files: compiled.files,
-      styles: compiled.styles,
-      buildErrors: compiled.errors,
-      diagnostics,
-      entry: 'main.js',
-      id,
-    });
-  }, [step]);
+  /** withCheck: после запуска — проверка шага (check.ts) */
+  const runCode = useCallback(
+    async (withCheck = false) => {
+      window.clearTimeout(timers.current.autorun);
+      const id = ++runCounter;
+      setCheck(withCheck ? 'running' : null);
+      // Код компилирует воркер (TypeScript 6 + JIT-трансформ Angular), ошибки типов даёт TS-воркер Monaco
+      const [compiled, diagnostics, checkCode] = await Promise.all([
+        compileStep(readModels(step.id, step.fileOrder)).catch((error: Error) => ({
+          files: {},
+          styles: [],
+          errors: [`Компилятор не запустился: ${error.message}`],
+        })),
+        collectDiagnostics(step.id, step.fileOrder),
+        withCheck && step.check
+          ? compileStep({ 'check.ts': step.check }).then((result) => result.files['check.js'])
+          : undefined,
+      ]);
+      // Пока компилировали, мог начаться следующий запуск — устаревший результат не показываем
+      if (id !== runCounter) return;
+      setRun({
+        files: compiled.files,
+        styles: compiled.styles,
+        buildErrors: compiled.errors,
+        diagnostics,
+        entry: 'main.js',
+        id,
+        check: checkCode,
+      });
+    },
+    [step],
+  );
+
+  const onCheckResult = useCallback(
+    (result: CheckResult) => {
+      setCheck(result);
+      if (result.pass) progress.setDone(step.id);
+    },
+    [step],
+  );
 
   useEffect(() => {
     syncModels(step.id, filesRef.current);
@@ -112,7 +131,7 @@ function StepWorkspace({ step }: { step: Step }) {
 
       if (autorun) {
         window.clearTimeout(timers.current.autorun);
-        timers.current.autorun = window.setTimeout(runCode, AUTORUN_DELAY);
+        timers.current.autorun = window.setTimeout(() => runCode(), AUTORUN_DELAY);
       }
     },
     [step, autorun, runCode],
@@ -176,13 +195,23 @@ function StepWorkspace({ step }: { step: Step }) {
         readonly={step.meta.readonly ?? []}
         onSelect={setActive}
         onChange={onChange}
-        onRun={runCode}
+        onRun={() => runCode()}
         actions={!isNarrow && panes.collapseButton('code', '«')}
       />
       <div className="toolbar">
-        <button className="button primary" onClick={runCode} title="Ctrl/Cmd + Enter">
+        <button className="button primary" onClick={() => runCode()} title="Ctrl/Cmd + Enter">
           ▶ Запустить
         </button>
+        {step.check && (
+          <button
+            className="button check-button"
+            onClick={() => runCode(true)}
+            disabled={check === 'running'}
+            title="Запустить приложение заново и проверить результат"
+          >
+            ✓ Проверить
+          </button>
+        )}
         <button className="button" onClick={() => formatEditor()} title="Prettier · Ctrl/Cmd + S, Shift + Alt + F">
           Формат
         </button>
@@ -194,6 +223,20 @@ function StepWorkspace({ step }: { step: Step }) {
           Автозапуск
         </label>
       </div>
+      {check && (
+        <div className={`check-result ${check === 'running' ? 'running' : check.pass ? 'pass' : 'fail'}`} role="status">
+          {check === 'running'
+            ? 'Проверяем: приложение запускается заново…'
+            : check.pass
+              ? '✓ Всё работает. Можно идти дальше.'
+              : `✗ ${check.hint}`}
+          {check !== 'running' && (
+            <button className="icon-button" title="Скрыть" onClick={() => setCheck(null)}>
+              ×
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -202,6 +245,7 @@ function StepWorkspace({ step }: { step: Step }) {
       run={run}
       initialUrl={step.meta.url ?? '/'}
       backend={step.meta.backend ?? {}}
+      onCheckResult={onCheckResult}
       actions={!isNarrow && panes.collapseButton('result', '»')}
     />
   );

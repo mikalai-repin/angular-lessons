@@ -57,6 +57,9 @@ export function createBackend({ originalFetch, report }) {
     const players = Number(query.get('players'));
     if (players) items = items.filter((g) => g.players.min <= players && players <= g.players.max);
     if (query.get('inStock') === 'true') items = items.filter((g) => g.inStock > 0);
+    const rating = Number(query.get('rating'));
+    if (rating) items = items.filter((g) => g.rating >= rating);
+    if (query.get('onSale') === 'true') items = items.filter((g) => g.oldPrice !== undefined);
     const sort = query.get('sort');
     const comparators = {
       price: (a, b) => a.price - b.price,
@@ -101,13 +104,15 @@ export function createBackend({ originalFetch, report }) {
       'POST',
       '/api/games/:id/reviews',
       (request, { id }, _q, body) => {
-        const [user, denied] = requireUser(request);
-        if (denied) return denied;
+        // Без входа отзыв подписан «Гость» (вход — глава 14)
+        const user = currentUser(request);
+        if (!db.games.some((g) => String(g.id) === id)) return error(404, 'Игра не найдена');
         if (!(body?.rating >= 1 && body.rating <= 5)) return error(400, 'Оценка — от 1 до 5');
+        if (!String(body.text ?? '').trim()) return error(400, 'Напишите текст отзыва');
         const review = {
           id: Math.max(0, ...db.reviews.map((r) => r.id)) + 1,
           gameId: Number(id),
-          author: user.name,
+          author: user?.name ?? 'Гость',
           rating: body.rating,
           text: String(body.text ?? ''),
           date: new Date().toISOString().slice(0, 10),

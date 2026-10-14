@@ -172,18 +172,18 @@
 
 ### Глава 11. HTTP и данные
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 11.1 | Учебный бэкенд | Что такое API, вкладка «Сеть», задержка и ошибки | |
-| 11.2 | `HttpClient` | `provideHttpClient`, `get<T>()`, Observable как «обещание с отменой» (минимум) | Каталог с сервера |
-| 11.3 | `httpResource` | `value`, `isLoading`, `error`, `hasValue`, `reload` | Скелетон загрузки |
-| 11.4 | Реактивные параметры | Ресурс от сигналов (`id`, фильтры) | Игра по `:id` |
-| 11.5 | `resource` | Свой загрузчик на `fetch`/Promise, `abortSignal` | |
-| 11.6 | Ошибки | 404, 500, повтор, сообщение пользователю | «Игра не найдена» |
-| 11.7 | Поиск с задержкой | `debounced` (экспериментальный) | Поиск по мере ввода |
-| 11.8 | Изменение данных | `post`, `put`, `delete`; оптимистичное обновление | Отзыв появляется сразу |
-| **Практикум** | Бесконечный каталог | Кнопка «Показать ещё», страницы | |
-| **Под капотом** | Жизненный цикл ресурса | Статусы, отмена устаревших запросов, гонки | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-server | вводный шаг главы; API сервера, JSON, `GamesPage` (`items`/`total`/`page`/`size`), учебный бэкенд (задержка, «Ошибка 500»), хиты главной через `fetch` + сигнал; эксперименты: 3000 мс без индикатора, обычное поле не обновляет экран (при 0 мс — может), 500 у `fetch` — «успех» и пустая подборка | custom: решение 10.10 + `.skeleton`/`.error-message` в `styles.css`; бэкенд — 40 игр |
+| 02-http-client | `provideHttpClient()` (сам `HttpClient` — `providedIn: 'root'`, функция — для настроек), `get<T>(url, { params })`, Observable минимум (описание, `subscribe`, `unsubscribe`), `HttpErrorResponse`; эксперименты: без `provideHttpClient` работает, без `subscribe` нет запроса, `ERROR HttpErrorResponse {…}`, уход со страницы — запрос не отменён (`DestroyRef` + `unsubscribe` — отменён); `deep` — `FetchBackend`, `withXhr`; legacy `HttpClientModule`, `withFetch` | previous |
+| 03-http-resource | `httpResource` (функция запроса), `value`/`hasValue`/`isLoading`/`error`/`reload`, три состояния в шаблоне (порядок: значение → `isLoading` → ошибка — `error()` помнит прошлую ошибку при повторе), заглушки; «Со скидкой» — `onSale=true`; эксперименты: 500 и «Повторить», отмена при уходе; `deep` — `httpResource` поверх `HttpClient`, `.text`/`.blob`; чтение против изменения | previous |
+| 04-params | каталог с сервера: сигналы в функции запроса (`q`, `inStock`, `rating`, `sort` → `SORT_PARAMS`), `size: 100`, `visibleGames` через `hasValue()`, «Найдено игр»; эксперименты: «кот» — 4 запроса, 2 отменены, мигание (значение сбрасывается при новых параметрах), `@if (games.value())` при 500 — `ResourceValueError`, пусто; корзина теряет новые игры после ⟳ | previous; `url: /catalog` |
+| 05-errors | страница игры — `httpResource` по `id`, 404 (`HttpErrorResponse.status`) против 500, порядок веток; резолвер — `async` + `firstValueFrom`, `inject` до `await` (NG0203); резолвер только в `resolve.breadcrumb`, `ShopTitleStrategy` берёт заголовок из крошки; эксперименты: 500, медленный сервер (резолвер, потом страница — два запроса) | previous; `url: /games/4` |
+| 06-resource | `resource({ params, loader })`, `undefined` → `idle`, `abortSignal` (`AbortController`), загрузчик на `fetch` с пропуском 404; `FavoritesStore.ids` (`asReadonly`), без `games`; эксперименты: перезагрузка всего списка, отмена при уходе, пропавшая игра 999; `deep` — когда `resource`, когда `httpResource` | custom: корзина хранит снимок игры (`hod-konem:cart:v2`), без `GAMES`; `url: /account/favorites` |
+| 07-debounced | `debounced(() => q(), 300)` (экспериментальная), `found` — `linkedSignal` «последний ответ», приглушённая сетка, `status() === 'error'`; эксперименты: медленный набор, ошибка поверх результатов, `computed` вместо `linkedSignal` | custom: `core/games-data.ts` удалён (`removedInStart`); `url: /catalog` |
+| 08-mutations | отзывы: `httpResource` с `defaultValue: []`, `post<T>`, оптимистичное обновление (`update`, черновики с отрицательным `id`), откат при ошибке, статус `local`; эксперименты: 500 — откат, уход — `POST` доходит, без `error` — черновик навсегда | previous; `url: /games/4` |
+| 09-practice | практикум: каталог страницами — `filters` (`computed`), `page` (`linkedSignal` со сбросом), `shownGames` (`linkedSignal`, копит страницы), «Показать ещё» не во время загрузки; `check.ts`; «Итоги главы» | previous; `url: /catalog` |
+| 10-resource-inside | журнал статусов `resource-log.ts`; шесть статусов и `value()` в каждом; устройство `ResourceImpl`: `extRequest` и `state` (`linkedSignal`), `loadEffect` (`effect`, `AbortController`, отбрасывание устаревших ответов), `ResourceValueError`, `DestroyRef`, `set` → `local`; `HttpResourceImpl`; `PendingTasks` (SSR, тесты) (`noSolution`) | custom: решение 9 + `resource-log.ts`, вызовы в `Catalog` и `GamePage` |
 
 ### Глава 12. RxJS в Angular
 
@@ -196,7 +196,7 @@
 | 12.3 | Переключение | `switchMap`, `debounceTime`, `distinctUntilChanged` — поиск с отменой | |
 | 12.4 | Мост к сигналам | `toSignal`, `toObservable`, `rxResource` | |
 | 12.5 | Уборка | `takeUntilDestroyed`, пайп `async` | |
-| 12.6 | Интерцепторы | `withInterceptors`, `HttpInterceptorFn` — лог, замер времени, повтор при 500 (токен — в главе 14) | Лог запросов в консоли |
+| 12.6 | Интерцепторы | `withInterceptors`, `HttpInterceptorFn` — лог, замер времени, повтор при 500, кэш GET-запросов (страница игры: резолвер и страница запрашивают одну игру — шаг 11.5) (токен — в главе 14) | Лог запросов в консоли |
 | **Практикум** | Автосохранение черновика | Поток изменений → `debounceTime` → сохранение | |
 | **Под капотом** | Сигналы против RxJS | Состояние против событий во времени; когда что брать | |
 

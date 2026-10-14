@@ -30,16 +30,25 @@ export interface PreviewRun {
   diagnostics: Diagnostic[];
   /** Ошибки сборки: не найден файл шаблона, синтаксис */
   buildErrors: string[];
+  /** Проверка шага (скомпилированный check.ts): приложение запускается с начального адреса шага, затем проверка */
+  check?: string;
+}
+
+export interface CheckResult {
+  pass: boolean;
+  hint?: string;
 }
 
 interface PreviewMessage {
   source: 'angular-course-preview';
-  type: 'ready' | 'console' | 'error' | 'url' | 'network' | 'title';
+  type: 'ready' | 'console' | 'error' | 'url' | 'network' | 'title' | 'check-result';
   level?: ConsoleEntry['level'];
   text?: string;
   url?: string;
   title?: string;
   entry?: NetworkEntry;
+  pass?: boolean;
+  hint?: string;
 }
 
 interface Props {
@@ -51,6 +60,8 @@ interface Props {
   backend: BackendConfig;
   /** Кнопки в конце адресной строки (свернуть панель) */
   actions?: ReactNode;
+  /** Результат проверки шага (run.check) */
+  onCheckResult?: (result: CheckResult) => void;
 }
 
 const DEFAULT_BACKEND: Required<BackendConfig> = { latency: 300, failRate: 0 };
@@ -79,7 +90,7 @@ function statusClass(status: NetworkEntry['status']) {
   return status >= 400 ? 'failed' : 'ok';
 }
 
-export function Preview({ run, initialUrl, backend, actions }: Props) {
+export function Preview({ run, initialUrl, backend, actions, onCheckResult }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [entries, setEntries] = useState<ConsoleEntry[]>([]);
   const [network, setNetwork] = useState<NetworkEntry[]>([]);
@@ -92,14 +103,15 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
   /** Заголовок вкладки приложения — document.title внутри iframe */
   const [title, setTitle] = useState('');
   /** Текущий iframe: ключ (новый ключ — новый iframe) и адрес, с которого приложение стартует */
-  const [frame, setFrame] = useState<{ key: string; startUrl: string } | null>(null);
+  const [frame, setFrame] = useState<{ key: string; startUrl: string; check: boolean } | null>(null);
   const urlRef = useRef(initialUrl);
   const restarts = useRef(0);
 
   const configRef = useRef(backendConfig);
   configRef.current = backendConfig;
 
-  function start(startUrl: string) {
+  /** check: запуск ради проверки шага (перезапуск кнопкой ⟳ или из адресной строки проверку не повторяет) */
+  function start(startUrl: string, check = false) {
     if (!run) return;
     restarts.current++;
     urlRef.current = startUrl;
@@ -117,12 +129,13 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
         count: 1,
       })),
     ]);
-    setFrame({ key: `${run.id}-${restarts.current}`, startUrl });
+    setFrame({ key: `${run.id}-${restarts.current}`, startUrl, check });
   }
 
-  // Новый запуск кода — новый iframe. Адрес сохраняется: после правки кода ученик остаётся на той же странице
+  // Новый запуск кода — новый iframe. Адрес сохраняется: после правки кода ученик остаётся на той же странице.
+  // Проверка шага всегда начинается с начального адреса шага
   useEffect(() => {
-    start(urlRef.current);
+    start(run?.check ? initialUrl : urlRef.current, Boolean(run?.check));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run]);
 
@@ -141,6 +154,7 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
             entry: run.entry,
             url: frame.startUrl,
             backend: configRef.current,
+            check: frame.check ? run.check : undefined,
           },
           '*',
         );
@@ -148,6 +162,8 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
         urlRef.current = data.url;
         setUrl(data.url);
         setTypedUrl(data.url);
+      } else if (data.type === 'check-result') {
+        onCheckResult?.({ pass: Boolean(data.pass), hint: data.hint });
       } else if (data.type === 'title' && data.title !== undefined) {
         setTitle(data.title);
       } else if (data.type === 'network' && data.entry) {
@@ -173,7 +189,7 @@ export function Preview({ run, initialUrl, backend, actions }: Props) {
     }
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [run, frame]);
+  }, [run, frame, onCheckResult]);
 
   function post(message: object) {
     iframeRef.current?.contentWindow?.postMessage(message, '*');

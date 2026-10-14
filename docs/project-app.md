@@ -55,16 +55,17 @@ cart/
   cart-page/                 страница корзины: позиции, итоги, промокод, «Оформить заказ» (глава 10; до неё — мини-корзина)
 not-found/                   «Нет такой страницы» (глава 10)
 core/
-  cart-store.ts              CartStore: закрытое состояние, итоги (computed), промокод (linkedSignal), склад, localStorage
-  favorites-store.ts         FavoritesStore: избранное (глава 8), сохранение в localStorage (глава 9)
+  cart-store.ts              CartStore: закрытое состояние, итоги (computed), промокод (linkedSignal), склад, localStorage (с главы 11 — снимок игры, ключ v2)
+  favorites-store.ts         FavoritesStore: id избранного (глава 8), localStorage (глава 9); игры грузит страница (resource, глава 11)
   promo-codes.ts             промокоды KNIGHT10 / CHESS500 (до главы 13 — список в коде)
   shop-config.ts             SHOP_CONFIG: настройки магазина (InjectionToken)
   analytics.ts               учебная аналитика, загружается лениво (injectAsync)
   auth.ts                    AuthStore, текущий пользователь, токен
   auth.guard.ts              гард входа и роли
   auth.interceptor.ts        добавляет токен к запросам
-  games-api.ts               запросы к /api/games
-  models.ts                  типы Game, CartItem, Order, User
+  games-api.ts               запросы к /api/games (план; в главе 11 запросы — ресурсы в компонентах)
+  models.ts                  типы Game, GamesPage, Review, CartItem, Order, User
+  (games-data.ts             локальный каталог глав 2–10; удалён в главе 11)
 shared/
   game-card/                 карточка игры (ts + html + css)
   price-pipe.ts              пайп цены «1 290 ₽» (имена файлов — как у `ng generate pipe` 22)
@@ -76,8 +77,8 @@ shared/
   tooltip.ts                 директива атрибута (подсказка при наведении)
   in-view.ts                 директива «появился на экране» (IntersectionObserver)
   lazy-image.ts              ленивая обложка: img[appLazy] + хост-директива InView
-catalog/                     каталог, фильтры, поиск (фильтры — query-параметры, глава 10)
-game/                        страница игры (game-page, game-title — резолвер заголовка), отзывы
+catalog/                     каталог, фильтры, поиск (фильтры — query-параметры, глава 10; с сервера страницами, глава 11)
+game/                        страница игры (game-page, game-title — резолвер названия для крошки и заголовка), отзывы (глава 11)
 checkout/                    оформление заказа (глава 10 — сводка, комментарий и гарды; форма — глава 13)
 account/                     кабинет: account.routes.ts (ленивый), favorites-page, orders-page (глава 10); вход — глава 14
 admin/                       админка (ленивый раздел)
@@ -85,7 +86,7 @@ admin/                       админка (ленивый раздел)
 
 ## Данные и учебный бэкенд
 
-Бэкенд работает внутри превью (см. `architecture.md`, «Учебный бэкенд»): обработчики — `public/backend/backend.js`, данные — `public/backend/data/*.json`. После изменения `games.json` — пересоздать обложки `npm run covers` (сколько игр сейчас и до скольких расширить — `roadmap.md`). У каждой игры есть поле `color` — цвет обложки для скрипта.
+Бэкенд работает внутри превью (см. `architecture.md`, «Учебный бэкенд»): обработчики — `public/backend/backend.js`, данные — `public/backend/data/*.json`. После изменения `games.json` — пересоздать обложки `npm run covers`. В каталоге 40 игр (с главы 11): первые 12 совпадают с локальным `GAMES` глав 2–10 (и описание игры 1 с `<b>`), 13–40 добавлены в главе 11; рейтинги от 3,4 до 4,9. У каждой игры есть поле `color` — цвет обложки для скрипта (в `Game` курса его нет, в ответе оно лишнее и безвредное). Отзывов — 13 (`reviews.json`).
 
 ```ts
 interface Game {
@@ -114,11 +115,11 @@ interface Game {
 
 | Метод и путь | Что делает | Глава |
 |---|---|---|
-| `GET /api/games?q=&category=&players=&inStock=&sort=&page=&size=` | Страница каталога: `{ items, total, page, size }`; `sort`: `price`, `-price`, `rating`, `title`; `size` по умолчанию 12; `q` ищет по названию и тегам | 11 |
+| `GET /api/games?q=&category=&players=&inStock=&rating=&onSale=&sort=&page=&size=` | Страница каталога: `{ items, total, page, size }`; `sort`: `price`, `-price`, `rating`, `title`; `rating` — рейтинг от; `onSale=true` — только со скидкой (`oldPrice`); `size` по умолчанию 12; `q` ищет по названию и тегам; пустой параметр — как отсутствующий | 11 |
 | `GET /api/games/:id` | Игра (по `id` или `slug`) или 404 | 11 |
 | `GET /api/categories` | Категории | 11 |
 | `GET /api/games/:id/reviews` | Отзывы | 11, 15 |
-| `POST /api/games/:id/reviews` | Новый отзыв (нужен токен) | 13, 14 |
+| `POST /api/games/:id/reviews` | Новый отзыв `{ rating, text }` → 201 с `id`, `author`, `date`. Без токена автор — «Гость» (глава 11), с токеном — имя пользователя; 404 — нет игры, 400 — оценка не 1–5 или пустой текст | 11, 14 |
 | `POST /api/login` | `{ email, password }` → `{ token, user }` или 401 | 13, 14 |
 | `GET /api/me` | Текущий пользователь по токену или 401 | 14 |
 | `POST /api/refresh`, `POST /api/logout` | **План (до главы 14):** обновление короткоживущего access-токена по refresh-токену, отзыв токена; срок жизни токена задаёт урок (`backend: { tokenTtl }`), чтобы показать 401 и обновление | 14 |
@@ -143,7 +144,7 @@ interface Game {
 | 8 | Шапка — компонент `Header` (`layout/header/`); корзина — сервис `CartStore` (`@Service()`), её берут `App`, `Header`, `GameCard`, `GameDetails` (у карточки и окна ушли `inCart`/`add`); `injectNow()` для `Countdown`; демо-корзина `DemoCartStore` через `useClass`; настройки `SHOP_CONFIG` и `DEFAULT_CURRENCY_CODE`; `Tab` находит `Tabs` через токен `TABS` (`useExisting`); ленивая аналитика (`injectAsync` + `onIdle`); «Избранное» (`FavoritesStore`, сердечко в карточке, «♥ N» в шапке) |
 | 9 | Демо-корзина убрана; мини-корзина — компонент `MiniCart` (`cart/mini-cart/`); `CartStore` — хранилище: закрытый `state` + `asReadonly()`, `readonly CartItem[]`, сохранение в `localStorage` (`effect`, только id и количество, проверка при загрузке), итоги (`subtotal`, `savings`, `delivery` по `deliveryPrice: 390`, `total`), промокоды `KNIGHT10`/`CHESS500` (`linkedSignal` от `subtotal`: ниже порога — снимается), правила склада (`available`, `add`/`setQuantity`/`loadCart`); избранное тоже сохраняется |
 | 10 | Роутер: главная (`Home`), каталог (`Catalog`, фильтры в query-параметрах), страница игры `/games/:id` вместо окна, корзина `/cart`, кабинет `/account` (вложенные «Избранное»/«Заказы», ленивый `loadChildren`), оформление `/checkout` (гарды: непустая корзина, недописанный комментарий), заголовки вкладки (`ShopTitleStrategy`, резолвер названия игры), 404 и переадресации, плавная смена страниц и прокрутка, хлебные крошки |
-| 11 | Каталог и игра с сервера; загрузка, ошибки, поиск, фильтры в URL |
+| 11 | Данные с сервера: главная (`httpResource` — хиты и «Со скидкой»), каталог (фильтры из адреса — параметры запроса, поиск с задержкой `debounced`, прежние результаты при загрузке, страницы `page`/`size`), страница игры (`httpResource` по `id`, 404/500, отзывы с оптимистичным добавлением), избранное (`resource` со своим загрузчиком), корзина хранит снимок игры (`hod-konem:cart:v2`); резолвер заголовка — `firstValueFrom`; `core/games-data.ts` удалён |
 | 12 | RxJS-поиск с отменой запросов; интерцептор; `toSignal` |
 | 13 | Оформление заказа, вход, отзыв — Signal Forms с валидацией |
 | 14 | Авторизация: `AuthStore`, вход и выход, сессия после перезагрузки, токен в интерцепторе, реакция на 401, гард входа с `returnUrl`, роли в шапке, «Мои заказы» |
