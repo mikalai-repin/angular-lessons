@@ -46,7 +46,7 @@ docs/                 — документация проекта (этот ко
 content/              — уроки курса (см. lesson-format.md)
 src/                  — код платформы (Vite + React + TS), основа — платформа ../pixi-js
   compiler/           — веб-воркер компиляции кода ученика
-  editor/ preview/ lesson/ app/ content/ progress/
+  editor/ preview/ lesson/ app/ content/ progress/ quiz/
 shared/step-chain.js  — сборка полного кода шага из изменений (платформа, валидатор, e2e, генераторы)
 shared/compile-core.js — компиляция шага (templateUrl → template, TS 6 + JIT-трансформ); общая для браузера, e2e и валидатора
 public/preview-runtime.js — среда выполнения кода ученика в iframe (без сборщика)
@@ -70,12 +70,12 @@ tools/authoring/      — steps.py (запись только изменений
 - `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, адрес, текст страницы, скриншот в `tools/e2e/out/`
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»
 - `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент из текста урока со своим сценарием действий
-- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–12; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит)
+- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–12; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`)
 - Все проверки требуют запущенного `npm run dev` и Chrome (`CHROME_PATH`, по умолчанию путь macOS). Другой адрес — `BASE_URL=http://localhost:5181`
 
 ## Текущий статус
 
-Платформа готова, **главы 1–12 написаны**. Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
+Платформа готова, **главы 1–12 написаны**, у глав 1–2 есть квизы (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
 
 ## Пользователь и тон работы
 

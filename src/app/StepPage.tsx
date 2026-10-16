@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Group, Panel, Separator, usePanelRef, type PanelImperativeHandle } from 'react-resizable-panels';
 import { Navigate, useParams } from 'react-router';
-import { findStep, neighbours, type FileMap, type Step } from '../content/course';
+import { findStep, neighbours, nextPath, type FileMap, type Step } from '../content/course';
 import { CodeEditor } from '../editor/CodeEditor';
 import { compileStep } from '../compiler';
 import {
@@ -64,7 +64,7 @@ function StepWorkspace({ step }: { step: Step }) {
 
   const timers = useRef<{ save?: number; autorun?: number }>({});
 
-  const { prev, next } = neighbours(step);
+  const { prev } = neighbours(step);
 
   /** withCheck: после запуска — проверка шага (check.ts) */
   const runCode = useCallback(
@@ -176,7 +176,7 @@ function StepWorkspace({ step }: { step: Step }) {
     <LessonPanel
       step={step}
       prev={prev}
-      next={next}
+      nextPath={nextPath(step)}
       hasSolution={Object.keys(step.solution).length > 0}
       hasBackup={hasBackup}
       onShowSolution={onShowSolution}

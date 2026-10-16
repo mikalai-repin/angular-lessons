@@ -183,7 +183,8 @@ src/
   compiler/       — веб-воркер компиляции и клиент
   preview/        — Preview.tsx: iframe, адресная строка, консоль, «Сеть»
   content/        — загрузка content/
-  progress/       — localStorage
+  progress/       — localStorage (шаги, лучшие результаты квизов)
+  quiz/           — страница квиза главы /<глава>/quiz (перенесена из ../react-learn)
 shared/
   compile-core.js — компиляция шага (браузер и Node)
   step-chain.js   — разбор lesson.md и сборка полного кода шагов из изменений (платформа и Node)

@@ -5,6 +5,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import ts from 'typescript';
+import { parse as parseYaml } from 'yaml';
 import { angularJitApplicationTransform } from '@angular/compiler-cli';
 import { compileFiles } from '../shared/compile-core.js';
 import { filesHash, isDir, readResult, resolveChapterDir, writeFiles } from './step-files.mjs';
@@ -12,6 +13,8 @@ import { filesHash, isDir, readResult, resolveChapterDir, writeFiles } from './s
 const root = join(import.meta.dirname, '..', 'content');
 const checkDir = join(import.meta.dirname, '..', '.content-check');
 const errors = [];
+const QUIZ_MIN = 10;
+const QUIZ_MAX = 15;
 
 const course = JSON.parse(readFileSync(join(root, 'course.json'), 'utf8'));
 let stepCount = 0;
@@ -37,7 +40,8 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
     continue;
   }
 
-  for (const [index, step] of resolveChapterDir(chapterPath).entries()) {
+  const steps = resolveChapterDir(chapterPath);
+  for (const [index, step] of steps.entries()) {
     stepCount++;
     const stepDir = step.path.split('/').at(-1);
     const where = `${chapterDir}/${stepDir}`;
@@ -115,6 +119,39 @@ for (const [chapterIndex, chapterDir] of course.chapters.entries()) {
       for (const error of buildErrors) errors.push(`${where}/${error}`);
       writeFiles(join(checkDir, chapterDir, stepDir, 'check'), files);
     }
+  }
+
+  checkQuiz(chapterDir, chapterPath, new Set(steps.map((step) => step.path.split('/').at(-1))));
+}
+
+// Квиз главы (quiz.yaml, необязательный): 10–15 вопросов, у каждого 3–5 разных вариантов (первый — правильный), пояснение и шаг главы
+function checkQuiz(chapterDir, chapterPath, stepDirs) {
+  const where = `${chapterDir}/quiz.yaml`;
+  const path = join(chapterPath, 'quiz.yaml');
+  if (!existsSync(path)) return;
+  let quiz;
+  try {
+    quiz = parseYaml(readFileSync(path, 'utf8'));
+  } catch (error) {
+    errors.push(`${where}: ошибка YAML: ${error.message.split('\n')[0]}`);
+    return;
+  }
+  const questions = Array.isArray(quiz?.questions) ? quiz.questions : [];
+  if (questions.length < QUIZ_MIN || questions.length > QUIZ_MAX)
+    errors.push(`${where}: вопросов ${questions.length}, нужно от ${QUIZ_MIN} до ${QUIZ_MAX}`);
+  const texts = new Set();
+  for (const [index, q] of questions.entries()) {
+    const at = `${where}, вопрос ${index + 1}`;
+    const isText = (value) => typeof value === 'string' && value.trim() !== '';
+    if (!isText(q?.question)) errors.push(`${at}: нет question`);
+    else if (texts.has(q.question.trim())) errors.push(`${at}: такой вопрос уже есть`);
+    else texts.add(q.question.trim());
+    if (!isText(q?.explanation)) errors.push(`${at}: нет explanation`);
+    if (!stepDirs.has(q?.step)) errors.push(`${at}: step ${q?.step} — нет такого шага в главе`);
+    const options = Array.isArray(q?.options) ? q.options : [];
+    if (options.length < 3 || options.length > 5) errors.push(`${at}: вариантов ${options.length}, нужно от 3 до 5`);
+    if (!options.every(isText)) errors.push(`${at}: каждый вариант — непустая строка`);
+    else if (new Set(options.map((o) => o.trim())).size !== options.length) errors.push(`${at}: варианты повторяются`);
   }
 }
 
