@@ -211,7 +211,7 @@ tools/e2e/
 tools/authoring/
   steps.py          — write_steps (запись только изменений), step_dir, rep/cut
   format-content.py — пересборка глав из content/ (формат, base/baseHash)
-  ch11-gen.py       — генератор последней главы (образец)
+  ch12-gen.py       — генератор последней главы (образец)
 ```
 
 ## Подводные камни

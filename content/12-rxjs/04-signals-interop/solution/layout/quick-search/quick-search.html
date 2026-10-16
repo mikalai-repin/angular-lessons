@@ -1,0 +1,24 @@
+<input
+  #box
+  class="quick-search-input"
+  type="search"
+  placeholder="Быстрый поиск"
+  aria-label="Быстрый поиск"
+  [value]="text()"
+  (input)="search(box.value)"
+  (keydown.escape)="open.set(false)"
+/>
+@if (open() && suggestions().length > 0) {
+  <ul class="suggestions">
+    @for (game of suggestions(); track game.id) {
+      <li>
+        <a
+          [routerLink]="['/games', game.id]"
+          (click)="choose()"
+        >
+          {{ game.title }}
+        </a>
+      </li>
+    }
+  </ul>
+}
