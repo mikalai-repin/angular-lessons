@@ -237,17 +237,28 @@
 
 | English | Русский | Комментарий |
 |---|---|---|
+| Signal Forms | Signal Forms (формы на сигналах) | `@angular/forms/signals`; имя не переводим |
 | form | форма | |
 | field | поле | |
 | form model | модель формы | сигнал с данными |
-| field tree | дерево полей | `FieldTree` |
-| validation | валидация, проверка | |
-| validator | валидатор | |
+| field tree | дерево полей | `FieldTree`: `loginForm.email` |
+| field state | состояние поля | `FieldState`: `loginForm.email()` — `value`, `errors`, `touched`… |
+| validation | валидация, проверка | в тексте — «проверка», «правило проверки» |
+| validator | валидатор, правило проверки | `required`, `email`, `validate` |
+| rule (form logic) | правило | всё, что схема задаёт полю: проверки, `hidden`, `disabled` |
+| schema path | путь схемы | аргумент функции схемы: `login.email` до создания формы |
+| cross-field validation | перекрёстная проверка | правило поля читает соседнее поле (`valueOf`) |
 | async validation | асинхронная проверка | |
+| pending | ожидание проверки | `pending()`: асинхронная проверка ещё идёт |
 | touched / dirty | «тронуто» / изменено | состояния поля |
+| hidden / disabled / readonly field | скрытое / отключённое / только для чтения поле | такие поля не проверяются |
+| disabled reason | причина отключения | `disabledReasons()` |
+| custom form control | своё поле формы | компонент с `FormValueControl`, связанный через `[formField]` |
 | submit | отправка | |
+| submission error | ошибка отправки | ошибка, которую вернула функция `action` |
 | schema | схема | |
 | reactive forms | реактивные формы | `FormGroup` |
+| form control | контрол | объект реактивной формы: `FormControl` |
 | template-driven forms | шаблонные формы | `ngModel` |
 
 ## Тесты и инструменты

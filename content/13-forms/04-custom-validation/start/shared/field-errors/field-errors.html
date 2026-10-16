@@ -1,0 +1,8 @@
+@let state = field()();
+@if (state.touched() && state.invalid()) {
+  <ul class="field-errors" [id]="errorsId(state.name())">
+    @for (error of state.errors(); track error.kind) {
+      <li>{{ error.message }}</li>
+    }
+  </ul>
+}

@@ -1,0 +1,56 @@
+<h1>Вход (реактивные формы)</h1>
+@if (userName()) {
+  <p>Здравствуйте, {{ userName() }}! Вы вошли.</p>
+} @else {
+  <!-- formGroup связывает <form> с объектом формы, formControlName — поле с контролом по имени -->
+  <form
+    class="login-form"
+    [formGroup]="loginForm"
+    (ngSubmit)="logIn()"
+  >
+    <label class="field">
+      E-mail
+      <input
+        type="email"
+        autocomplete="email"
+        formControlName="email"
+      />
+      @let email = loginForm.controls.email;
+      @if (email.touched && email.errors; as errors) {
+        <ul class="field-errors">
+          @if (errors['required']) {
+            <li>Введите e-mail</li>
+          }
+          @if (errors['email']) {
+            <li>Похоже, в адресе опечатка</li>
+          }
+        </ul>
+      }
+    </label>
+    <label class="field">
+      Пароль
+      <input
+        type="password"
+        autocomplete="current-password"
+        formControlName="password"
+      />
+      @let password = loginForm.controls.password;
+      @if (password.touched && password.errors; as errors) {
+        <ul class="field-errors">
+          @if (errors['required']) {
+            <li>Введите пароль</li>
+          }
+          @if (errors['minlength']) {
+            <li>Пароль — не короче 4 символов</li>
+          }
+        </ul>
+      }
+    </label>
+    @if (serverError()) {
+      <p class="error-message">{{ serverError() }}</p>
+    }
+    <button class="button" [disabled]="submitting()">
+      {{ submitting() ? 'Входим…' : 'Войти' }}
+    </button>
+  </form>
+}

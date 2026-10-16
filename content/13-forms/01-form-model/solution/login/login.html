@@ -1,0 +1,24 @@
+<h1>Вход</h1>
+<div class="login-form">
+  <label class="field">
+    E-mail
+    <input
+      type="email"
+      autocomplete="email"
+      [formField]="loginForm.email"
+    />
+  </label>
+  <label class="field">
+    Пароль
+    <input
+      type="password"
+      autocomplete="current-password"
+      [formField]="loginForm.password"
+    />
+  </label>
+  <button class="link-button" (click)="fillDemo()">
+    Заполнить тестовыми данными
+  </button>
+</div>
+<!-- Отладка: модель целиком -->
+<pre class="debug">{{ model() | json }}</pre>

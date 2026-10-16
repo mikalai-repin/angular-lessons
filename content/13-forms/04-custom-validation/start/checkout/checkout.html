@@ -1,0 +1,53 @@
+<a class="back-link" routerLink="/cart">← Корзина</a>
+<h1>Оформление заказа</h1>
+<p>
+  Товаров: {{ cart.count() }} шт. на
+  {{ cart.subtotal() | price }}, к оплате
+  <b>{{ cart.total() | price }}</b
+  >.
+</p>
+<fieldset class="group">
+  <legend>Контакты</legend>
+  <label class="field">
+    Имя
+    <input
+      autocomplete="name"
+      [formField]="checkoutForm.contacts.name"
+    />
+    <app-field-errors [field]="checkoutForm.contacts.name" />
+  </label>
+  <label class="field">
+    Телефон
+    <input
+      type="tel"
+      autocomplete="tel"
+      placeholder="+7 900 123-45-67"
+      [formField]="checkoutForm.contacts.phone"
+    />
+    <app-field-errors [field]="checkoutForm.contacts.phone" />
+  </label>
+  <label class="field">
+    E-mail
+    <input
+      type="email"
+      autocomplete="email"
+      [formField]="checkoutForm.contacts.email"
+    />
+    <app-field-errors [field]="checkoutForm.contacts.email" />
+  </label>
+</fieldset>
+<label class="field">
+  Комментарий к заказу
+  <textarea
+    rows="3"
+    [formField]="checkoutForm.comment"
+  ></textarea>
+</label>
+<p class="draft-status muted">
+  @if (!saved()) {
+    Сохраняем…
+  } @else if (checkoutForm.comment().value()) {
+    Черновик сохранён
+  }
+</p>
+<p class="muted">Способ доставки появится здесь позже.</p>

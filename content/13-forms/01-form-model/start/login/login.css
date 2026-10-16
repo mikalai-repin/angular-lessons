@@ -1,0 +1,11 @@
+/* Страница входа: узкая форма */
+.login-form {
+  max-width: 320px;
+}
+
+.debug {
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+}

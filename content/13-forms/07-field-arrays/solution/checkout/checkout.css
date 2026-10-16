@@ -1,0 +1,36 @@
+/* Состояние черновика под полем: строка не прыгает, даже когда пустая */
+.draft-status {
+  min-height: 1.2em;
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+/* Группа полей: «Контакты», «Доставка» */
+.group {
+  max-width: 480px;
+  margin: 0 0 12px;
+  padding: 8px 12px 0;
+  border: 1px solid #d2d2d7;
+  border-radius: var(--radius);
+}
+
+/* Варианты выбора: переключатели и флажки, по одному в строке */
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+/* Открытка: поля и «Убрать» — отдельным блоком */
+.postcard {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--surface);
+}
+
+.group legend {
+  padding: 0 4px;
+  font-weight: 600;
+}

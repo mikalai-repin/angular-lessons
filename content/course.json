@@ -13,6 +13,7 @@
     "09-app-state",
     "10-routing",
     "11-http",
-    "12-rxjs"
+    "12-rxjs",
+    "13-forms"
   ]
 }

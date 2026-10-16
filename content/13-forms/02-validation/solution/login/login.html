@@ -1,0 +1,59 @@
+<h1>Вход</h1>
+<div class="login-form">
+  <label class="field">
+    E-mail
+    <input
+      type="email"
+      autocomplete="email"
+      [formField]="loginForm.email"
+      [attr.aria-invalid]="showErrors(loginForm.email) || null"
+      [attr.aria-describedby]="
+        showErrors(loginForm.email) ? 'email-errors' : null
+      "
+    />
+    @if (showErrors(loginForm.email)) {
+      <ul id="email-errors" class="field-errors">
+        @for (
+          error of loginForm.email().errors();
+          track error.kind
+        ) {
+          <li>{{ error.message }}</li>
+        }
+      </ul>
+    }
+  </label>
+  <label class="field">
+    Пароль
+    <input
+      type="password"
+      autocomplete="current-password"
+      [formField]="loginForm.password"
+      [attr.aria-invalid]="
+        showErrors(loginForm.password) || null
+      "
+      [attr.aria-describedby]="
+        showErrors(loginForm.password)
+          ? 'password-errors'
+          : null
+      "
+    />
+    @if (showErrors(loginForm.password)) {
+      <ul id="password-errors" class="field-errors">
+        @for (
+          error of loginForm.password().errors();
+          track error.kind
+        ) {
+          <li>{{ error.message }}</li>
+        }
+      </ul>
+    }
+  </label>
+  <button class="link-button" (click)="fillDemo()">
+    Заполнить тестовыми данными
+  </button>
+</div>
+<!-- Отладка: состояние формы целиком -->
+<p class="debug">
+  Форма
+  {{ loginForm().valid() ? 'заполнена верно' : 'с ошибками' }}
+</p>

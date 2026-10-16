@@ -1,6 +1,6 @@
 # Программа курса
 
-> **Состояние:** у написанных глав (1–10) в таблицах — **фактический** состав шагов: папка шага, что он вводит, с чего начинается (`custom` — своя заготовка поверх результата прошлого шага, `noSolution` — шаг без задания). У остальных — план: он уточняется при написании главы, а после неё таблица заменяется фактической.
+> **Состояние:** у написанных глав (1–13) в таблицах — **фактический** состав шагов: папка шага, что он вводит, с чего начинается (`custom` — своя заготовка поверх результата прошлого шага, `noSolution` — шаг без задания). У остальных — план: он уточняется при написании главы, а после неё таблица заменяется фактической.
 
 Курс состоит из **трёх частей**:
 
@@ -204,19 +204,22 @@
 
 ### Глава 13. Формы
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 13.1 | Модель формы | `form(signal)`, `[formField]` | Форма входа |
-| 13.2 | Валидация | `required`, `email`, `minLength`, `pattern`; `errors()`, `touched()` | Сообщения об ошибках |
-| 13.3 | Отправка | `submit`, блокировка кнопки, ошибки сервера | Вход работает |
-| 13.4 | Своя проверка | `validate`, перекрёстная проверка полей | Повтор пароля |
-| 13.5 | Асинхронная проверка | `validateAsync`, `validateHttp` | Промокод проверяется сервером |
-| 13.6 | Условные поля | `disabled`, `hidden`, `applyWhen` | Адрес только при доставке курьером |
-| 13.7 | Списки полей | `applyEach`, добавление и удаление | Несколько получателей подарка |
-| 13.8 | Схемы | `schema`, переиспользование правил, `validateStandardSchema` | |
-| 13.9 | Реактивные формы | `FormGroup`, `FormControl`, `Validators` — как читать старый код | Та же форма входа |
-| **Практикум** | Оформление заказа | Контакты, доставка, оплата, гард «несохранённые изменения» | |
-| **Под капотом** | Дерево полей | Как `form()` строит дерево состояний из одного сигнала | |
+Цель: Signal Forms от модели до своего поля формы; реактивные формы — чтобы читать существующий код.
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-form-model | вводный шаг главы; три вида форм (шаблонные, реактивные, Signal Forms — `@publicApi 22.0`); модель — сигнал, единственный источник правды; `form(model)` → `FieldTree`, поле — функция, `field()` — `FieldState`, `value` — записываемый сигнал; `FormField` / `[formField]` (поле без скобок, обе стороны); `form` — в контексте внедрения; эксперименты: без импорта NG0303 (AOT NG8002), `email()` и опечатка — `TypeError: this.field(...) is not a function` (AOT TS2322, TS2551), `form` в обработчике — NG0203; `deep` — `name="ng.form0.email"`, запись — новый объект модели; `legacy` — `ngModel` | custom: решение 12.9 + страница `login/` (заготовка) и маршрут `/login`, стили форм (`.field`, `.field-errors`, рамка через `:has`) в `styles.css`; `url: /login` |
+| 02-validation | функция схемы (один раз, пути схемы), `required`, `email`, `minLength` (таблица правил и `kind`), `message`; `errors`/`valid`/`invalid`/`touched`/`dirty`; ошибки по `touched()`; `aria-invalid`, `aria-describedby` (привязки атрибутов), рамка по `[aria-invalid]`; эксперименты: без `message`, `a@b` — допустим, атрибуты `required`/`minlength`, `dirty` против `touched` (код не делает поле изменённым) | previous |
+| 03-submit | `<form>` + `FormRoot` (`novalidate`, `preventDefault`), `submission.action` — третий аргумент `form`, порядок отправки (тронуть всё, не отправлять с ошибками, `submitting()`), ошибки отправки (у формы, `fieldTree` — у поля, исчезают при правке), `POST /api/login` (401); эксперименты: медленный сервер, без `FormRoot` — превью перезапускается, ошибка у поля пароля (и почему не надо); `tip` — `submit()`; `deep` — устройство `submit`, `ignoreValidators` | previous |
+| 04-custom-validation | `validate` (контекст: `value`, `valueOf`, `state`, `fieldTree`; как `computed`), `isPhone`, перекрёстная проверка «телефон или e-mail» у поля e-mail; вложенные поля (`contacts.name`); эксперименты: правило на группе — ошибка в `contacts().errors()`, `valueOf(поле)` — TS2345; `tip` — `validateTree` | custom: оформление — форма (`CheckoutData`: `contacts` + `comment`, черновик через `toObservable(checkoutForm.comment().value)`), `shared/field-errors/` (`FieldErrors`), `shared/field-aria.ts` (директива `FieldAria`: селектор `[formField]`, `FORM_FIELD`), группы `<fieldset>`; `url: /checkout` |
+| 05-async-validation | промокоды с сервера: `validateHttp` (`request` с меткой `CACHE`, `onSuccess` с порогом `minTotal`, `onError` 404, `debounce`), только после синхронных правил, `pending()`, `valid()`/`invalid()` при ожидании, `reset(значение)`; «Применить» — промокод из кэша; эксперименты: порог пересчитывается сам, без паузы — 8 запросов (7 отменены), медленный сервер и Enter; `tip` — `validateAsync` | custom: `core/promo-codes.ts` удалён (`removedInStart`), `Promo` — в `models.ts`, `CartStore.applyPromo(promo)`, форма промокода в корзине (заготовки `// TODO`); `url: /cart` |
+| 06-conditional-fields | `hidden` (не проверяется, из DOM убирает `@if`), `applyWhen` (правила курьера: адрес, телефон), `disabled` с причиной и `disabledReasons()`; переключатели и флажок с `[formField]`; эксперименты: NG01916, `required` у скрытого поля; `tip` — `when` у правил; `deep` — «неинтерактивное» поле | custom: `delivery` (`method`, `address`, `callBefore`) в модели и шаблоне, `toPay` (самовывоз без доставки) |
+| 07-field-arrays | поле-массив (`length`, индекс, `@for` с `track` по полю), `applyEach`, добавление и удаление через модель, открытки (до 3, текст до 120 — атрибут `maxlength`); эксперименты: длинный текст, `track $index` — блоки переиспользуются; `tip` — элемент узнаётся по объекту | previous |
+| 08-schemas | `schema<T>`, `apply`, схема в `form` и `applyEach`; `shared/form-rules.ts` (`emailRules` — вход и заказ), `checkout/checkout-schema.ts` (`contactsSchema`, `postcardSchema`, `checkoutSchema`, типы); правила между частями — в общей схеме; эксперименты: NG01908, схема выполняется на каждую форму; `deep` — `validateStandardSchema`, Zod | previous |
+| 09-custom-control | `FormValueControl` (`model()` `value`, необязательные входы, выход `touch`), `Rating` — поле формы; форма отзыва (`min`, `required`, оптимистичная отправка как `action`, `firstValueFrom`, `reset`); эксперименты: без `touch`, правило `readonly` → вход `Rating`, AOT TS2322, «Ошибка 500» — откат; `tip` — `transformedValue` | previous; `url: /games/4` |
+| 10-practice | практикум: заказ — `POST /api/orders` (`items`, контакты, доставка, открытки, промокод, сумма), «Оформляем…», «Заказ №… оформлен», очистка корзины и черновика, 409 — сообщение сервера, гард `unsavedCheckoutGuard` (`dirty()` и номер заказа); `check.ts`; «Итоги главы» | previous; `url: /checkout` |
+| 11-reactive-forms | реактивные формы для чтения: `FormGroup`, `FormControl` (`nonNullable`), `Validators`, `ReactiveFormsModule`, `[formGroup]`, `formControlName`, `(ngSubmit)`, свойства вместо сигналов, ошибки-объекты, `valueChanges`; таблица сравнения; эксперименты: поток, классы `ng-*`, `setValue` из `setTimeout` в зонлесс; мосты `compatForm`, `SignalFormControl`; `legacy` — `FormBuilder` (`noSolution`) | custom: решение 10 + `login/reactive-login.*`, маршрут `/login-reactive` |
+| 12-forms-inside | опыт `forms-inside.ts`: пути схемы (`Proxy`), дерево узлов (`FieldNode`, `Proxy` над функцией), значение — `computed` над родителем с копированием до корня, дочерние узлы — `linkedSignal`, правила — `computed` (ленивые), метка-символ на объектах массива, что делает `[formField]` (`noSolution`) | custom: решение 10 + `forms-inside.ts`, вызов в `main.ts`; демо реактивной формы удалено (`removedInStart`) |
 
 ### Глава 14. Авторизация
 

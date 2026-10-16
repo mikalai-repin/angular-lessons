@@ -1,0 +1,10 @@
+/* Страница входа: узкая форма */
+.login-form {
+  max-width: 320px;
+}
+
+/* Учебная кнопка — отдельной строкой под «Войти» */
+.login-form .link-button {
+  display: block;
+  margin-top: 12px;
+}
