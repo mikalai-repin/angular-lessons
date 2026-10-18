@@ -8,6 +8,8 @@ declare module '@course/check' {
     /** Путь с параметрами: '/api/games?q=кот' */
     url: string;
     status: number | 'canceled';
+    /** Заголовки запроса, имена — в нижнем регистре: { authorization: 'Bearer …' } */
+    headers: Readonly<Record<string, string>>;
   }
 
   export interface CheckContext {

@@ -1,0 +1,188 @@
+@if (orderId(); as id) {
+  <h1>Заказ №{{ id }} оформлен</h1>
+  <p>Спасибо! Мы свяжемся с вами, когда заказ будет готов.</p>
+  <!-- Заказ с токеном сервер записал на покупателя: он есть в «Моих заказах» -->
+  @if (auth.isLoggedIn()) {
+    <p><a routerLink="/account/orders">Мои заказы</a></p>
+  }
+  <a routerLink="/catalog">Вернуться в каталог</a>
+} @else {
+  <a class="back-link" routerLink="/cart">← Корзина</a>
+  <h1>Оформление заказа</h1>
+  <form [formRoot]="checkoutForm">
+    <p>
+      Товаров: {{ cart.count() }} шт. на
+      {{ cart.subtotal() | price }}, к оплате
+      <b>{{ toPay() | price }}</b
+      >.
+    </p>
+    <fieldset class="group">
+      <legend>Контакты</legend>
+      <label class="field">
+        Имя
+        <input
+          autocomplete="name"
+          [formField]="checkoutForm.contacts.name"
+        />
+        <app-field-errors
+          [field]="checkoutForm.contacts.name"
+        />
+      </label>
+      <label class="field">
+        Телефон
+        <input
+          type="tel"
+          autocomplete="tel"
+          placeholder="+7 900 123-45-67"
+          [formField]="checkoutForm.contacts.phone"
+        />
+        <app-field-errors
+          [field]="checkoutForm.contacts.phone"
+        />
+      </label>
+      <label class="field">
+        E-mail
+        <input
+          type="email"
+          autocomplete="email"
+          [formField]="checkoutForm.contacts.email"
+        />
+        <app-field-errors
+          [field]="checkoutForm.contacts.email"
+        />
+      </label>
+    </fieldset>
+    <fieldset class="group">
+      <legend>Доставка</legend>
+      <div class="choice">
+        <label>
+          <input
+            type="radio"
+            value="pickup"
+            [formField]="checkoutForm.delivery.method"
+          />
+          Самовывоз из магазина — бесплатно
+        </label>
+        <label>
+          <input
+            type="radio"
+            value="courier"
+            [formField]="checkoutForm.delivery.method"
+          />
+          Курьером
+        </label>
+      </div>
+      <!-- Скрытое поле убираем из DOM сами: hidden только сообщает, что поле скрыто -->
+      @if (!checkoutForm.delivery.address().hidden()) {
+        <label class="field">
+          Адрес
+          <input
+            autocomplete="street-address"
+            [formField]="checkoutForm.delivery.address"
+          />
+          <app-field-errors
+            [field]="checkoutForm.delivery.address"
+          />
+        </label>
+      }
+      @if (!checkoutForm.delivery.callBefore().hidden()) {
+        <div class="choice">
+          <label>
+            <input
+              type="checkbox"
+              [formField]="checkoutForm.delivery.callBefore"
+            />
+            Позвонить за час до приезда
+          </label>
+          @for (
+            reason of checkoutForm.delivery
+              .callBefore()
+              .disabledReasons();
+            track reason.message
+          ) {
+            <span class="muted">{{ reason.message }}</span>
+          }
+        </div>
+      }
+    </fieldset>
+    <fieldset class="group">
+      <legend>Открытки к подарку</legend>
+      <!-- Поле-массив перебирается, как массив: каждый элемент — поле-открытка -->
+      @for (
+        postcard of checkoutForm.postcards;
+        track postcard;
+        let i = $index
+      ) {
+        <div class="postcard">
+          <label class="field">
+            Кому
+            <input [formField]="postcard.to" />
+            <app-field-errors [field]="postcard.to" />
+          </label>
+          <label class="field">
+            Текст
+            <textarea
+              rows="2"
+              [formField]="postcard.text"
+            ></textarea>
+            <span class="muted">
+              {{ postcard.text().value().length }} /
+              {{ postcardTextMax }}
+            </span>
+            <app-field-errors [field]="postcard.text" />
+          </label>
+          <button
+            type="button"
+            class="link-button"
+            (click)="removePostcard(i)"
+          >
+            Убрать открытку
+          </button>
+        </div>
+      } @empty {
+        <p class="muted">
+          Подпишем открытку к подарку — бесплатно.
+        </p>
+      }
+      @if (checkoutForm.postcards.length < maxPostcards) {
+        <p>
+          <button
+            type="button"
+            class="link-button"
+            (click)="addPostcard()"
+          >
+            + Добавить открытку
+          </button>
+        </p>
+      }
+    </fieldset>
+    <label class="field">
+      Комментарий к заказу
+      <textarea
+        rows="3"
+        [formField]="checkoutForm.comment"
+      ></textarea>
+    </label>
+    <p class="draft-status muted">
+      @if (!saved()) {
+        Сохраняем…
+      } @else if (checkoutForm.comment().value()) {
+        Черновик сохранён
+      }
+    </p>
+    <!-- Ошибки всей формы: их вернула отправка -->
+    @for (error of checkoutForm().errors(); track error.kind) {
+      <p class="error-message">{{ error.message }}</p>
+    }
+    <button
+      class="button"
+      [disabled]="checkoutForm().submitting()"
+    >
+      {{
+        checkoutForm().submitting()
+          ? 'Оформляем…'
+          : 'Оформить заказ'
+      }}
+    </button>
+  </form>
+}

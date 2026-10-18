@@ -24,8 +24,8 @@ const send = (message) => {
     errorLog.push(message.text);
   if (message.type === 'console') checkLogs?.push(message.text);
   if (message.type === 'network' && message.entry.status !== 'pending') {
-    const { method, url, status } = message.entry;
-    checkRequests?.push({ method, url, status });
+    const { method, url, status, requestHeaders } = message.entry;
+    checkRequests?.push({ method, url, status, headers: requestHeaders ?? {} });
   }
   parentWindow.postMessage({ source: SOURCE, ...message }, '*');
 };

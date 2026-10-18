@@ -27,6 +27,8 @@ export interface BackendConfig {
   latency?: number;
   /** Доля запросов, которые отвечают 500 (0..1) */
   failRate?: number;
+  /** Срок жизни access-токена, который выдаёт вход, с (по умолчанию 3600) */
+  tokenTtl?: number;
 }
 
 export interface Step {

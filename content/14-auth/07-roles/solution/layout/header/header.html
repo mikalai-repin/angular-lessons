@@ -1,0 +1,67 @@
+<header class="header">
+  <a class="logo" routerLink="/">♞ Ход конём</a>
+  <nav class="nav">
+    <a
+      routerLink="/"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ariaCurrentWhenActive="page"
+      >Главная</a
+    >
+    <a
+      routerLink="/catalog"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+      >Каталог</a
+    >
+    <!-- Ссылка — только удобство: защищают админку гард и сервер -->
+    @if (auth.isAdmin()) {
+      <a
+        routerLink="/admin"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        >Админка</a
+      >
+    }
+    <app-quick-search />
+    @if (auth.isLoggedIn()) {
+      <button class="logout" (click)="auth.logOut()">
+        Выйти
+      </button>
+    }
+  </nav>
+  <a
+    class="favorites"
+    routerLink="/account/favorites"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    title="Избранное"
+    >♥ {{ favorites.count() }}</a
+  >
+  <a
+    class="cart"
+    routerLink="/cart"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    >В корзине: {{ cart.count() }} ·
+    {{ cart.subtotal() | price }}</a
+  >
+  <!-- Вошёл — имя со ссылкой в кабинет, не вошёл — «Войти» -->
+  @if (auth.user(); as user) {
+    <a
+      class="account"
+      routerLink="/account"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+      >{{ user.name }}</a
+    >
+  } @else {
+    <a
+      class="account"
+      routerLink="/login"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+      >Войти</a
+    >
+  }
+</header>

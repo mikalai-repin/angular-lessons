@@ -14,6 +14,7 @@
     "10-routing",
     "11-http",
     "12-rxjs",
-    "13-forms"
+    "13-forms",
+    "14-auth"
   ]
 }

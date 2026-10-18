@@ -1,0 +1,25 @@
+@if (orders.hasValue()) {
+  @for (order of orders.value(); track order.id) {
+    <article class="order">
+      <h2>
+        Заказ №{{ order.id }} ·
+        {{ order.createdAt | date: 'longDate' }}
+      </h2>
+      <p class="muted">
+        Игр: {{ count(order) }} · {{ order.total | price }}
+      </p>
+    </article>
+  } @empty {
+    <p class="muted">
+      Вы ещё ничего не заказывали.
+      <a routerLink="/catalog">Перейти в каталог</a>
+    </p>
+  }
+} @else if (orders.isLoading()) {
+  <p class="muted">Загружаем заказы…</p>
+} @else if (orders.error()) {
+  <p class="error-message">Не удалось загрузить заказы.</p>
+  <button class="link-button" (click)="orders.reload()">
+    Повторить
+  </button>
+}

@@ -1,0 +1,21 @@
+<h1>Админка</h1>
+@if (summary.hasValue()) {
+  @let s = summary.value();
+  <ul>
+    <li>
+      Игр в каталоге: {{ s.games }}, нет в наличии:
+      {{ s.outOfStock }}
+    </li>
+    <li>Заказов: {{ s.orders }}</li>
+    <li>Пользователей: {{ s.users }}</li>
+  </ul>
+  <p class="muted">
+    Разделы «Игры» и «Заказы» появятся в главе 17.
+  </p>
+} @else if (summary.isLoading()) {
+  <p class="muted">Загружаем сводку…</p>
+} @else if (summary.error(); as error) {
+  <p class="error-message">
+    Сервер отказал: {{ errorText(error) }}
+  </p>
+}

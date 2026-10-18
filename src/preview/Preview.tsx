@@ -17,6 +17,8 @@ export interface NetworkEntry {
   url: string;
   status: number | 'pending' | 'canceled';
   ms?: number;
+  /** Заголовки запроса: Authorization, Content-Type, X-XSRF-TOKEN… */
+  requestHeaders?: Record<string, string>;
   requestBody?: unknown;
   responseBody?: unknown;
 }
@@ -64,7 +66,7 @@ interface Props {
   onCheckResult?: (result: CheckResult) => void;
 }
 
-const DEFAULT_BACKEND: Required<BackendConfig> = { latency: 300, failRate: 0 };
+const DEFAULT_BACKEND: Required<BackendConfig> = { latency: 300, failRate: 0, tokenTtl: 3600 };
 const LATENCIES = [0, 300, 1000, 3000];
 
 let nextEntryId = 1;
@@ -354,6 +356,16 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult }: Pr
                 </table>
                 {selected && (
                   <div className="network-details">
+                    {selected.requestHeaders && Object.keys(selected.requestHeaders).length > 0 && (
+                      <>
+                        <div className="network-details-title">Заголовки запроса</div>
+                        <pre>
+                          {Object.entries(selected.requestHeaders)
+                            .map(([name, value]) => `${name}: ${value}`)
+                            .join('\n')}
+                        </pre>
+                      </>
+                    )}
                     {selected.requestBody !== undefined && (
                       <>
                         <div className="network-details-title">Тело запроса</div>

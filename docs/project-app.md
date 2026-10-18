@@ -64,9 +64,10 @@ core/
   logging-interceptor.ts     лог запросов HttpClient: метод, адрес, статус, время (глава 12)
   retry-interceptor.ts       повтор GET при ответе 5xx (глава 12)
   cache-interceptor.ts       кэш GET с меткой CACHE (HttpContextToken), ResponseCache на 10 с (глава 12)
-  auth.ts                    AuthStore, текущий пользователь, токен
-  auth.guard.ts              гард входа и роли
-  auth.interceptor.ts        добавляет токен к запросам
+  auth-store.ts              AuthStore: токен и пользователь (сигналы), logIn/logOut, restore (GET /api/me при запуске),
+                             refresh (одно обновление на всех), метка SKIP_AUTH (глава 14)
+  auth-interceptor.ts        Authorization: Bearer для /api/…, 401 → обновление токена и повтор, иначе выход (глава 14)
+  auth-guards.ts             authGuard (canActivate, returnUrl) и adminGuard (canMatch по роли) (глава 14)
   games-api.ts               запросы к /api/games (план; в главе 11 запросы — ресурсы в компонентах)
   models.ts                  типы Game, GamesPage, Review, CartItem, Order, User
   (games-data.ts             локальный каталог глав 2–10; удалён в главе 11)
@@ -86,9 +87,9 @@ shared/
 catalog/                     каталог, фильтры, поиск (фильтры — query-параметры, глава 10; с сервера страницами, глава 11)
 game/                        страница игры (game-page, game-title — резолвер названия для крошки и заголовка), отзывы (глава 11)
 checkout/                    оформление заказа (глава 10 — сводка, комментарий и гарды; глава 12 — черновик комментария; глава 13 — форма: checkout-schema.ts, отправка заказа, гард несохранённой формы)
-login/                       страница входа: форма Signal Forms, POST /api/login (глава 13); сессия — глава 14
-account/                     кабинет: account.routes.ts (ленивый), favorites-page, orders-page (глава 10); вход — глава 14
-admin/                       админка (ленивый раздел)
+login/                       страница входа: форма Signal Forms (глава 13), вход через AuthStore и возврат по returnUrl (глава 14)
+account/                     кабинет: account.routes.ts (ленивый), favorites-page, orders-page (глава 10); «Мои заказы» с сервера, гард входа (глава 14)
+admin/                       админка: admin.routes.ts (ленивый, canMatch по роли), admin-home — сводка GET /api/admin/summary (глава 14); разделы — глава 17
 ```
 
 ## Данные и учебный бэкенд
@@ -127,15 +128,17 @@ interface Game {
 | `GET /api/categories` | Категории | 11 |
 | `GET /api/games/:id/reviews` | Отзывы | 11, 15 |
 | `POST /api/games/:id/reviews` | Новый отзыв `{ rating, text }` → 201 с `id`, `author`, `date`. Без токена автор — «Гость» (глава 11), с токеном — имя пользователя; 404 — нет игры, 400 — оценка не 1–5 или пустой текст | 11, 14 |
-| `POST /api/login` | `{ email, password }` → `{ token, user }` или 401 «Неверный e-mail или пароль» | 13, 14 |
+| `POST /api/login` | `{ email, password }` → `{ token, refreshToken, user }` (JWT HS256: `sub`, `role`, `typ`, `iat`, `exp`) или 401 «Неверный e-mail или пароль» | 13, 14 |
 | `GET /api/me` | Текущий пользователь по токену или 401 | 14 |
-| `POST /api/refresh`, `POST /api/logout` | **План (до главы 14):** обновление короткоживущего access-токена по refresh-токену, отзыв токена; срок жизни токена задаёт урок (`backend: { tokenTtl }`), чтобы показать 401 и обновление | 14 |
+| `POST /api/refresh` | `{ refreshToken }` → новая пара `{ token, refreshToken }`; старый refresh-токен отзывается (ротация), повтор — 401 «Сессия истекла. Войдите снова» | 14 |
+| `POST /api/logout` | `{ refreshToken }` → 204 (всегда); refresh-токен отзывается | 14 |
+| `GET /api/admin/summary` | Сводка для админки `{ games, outOfStock, orders, users }`; без токена — 401, не admin — 403 | 14 |
 | `GET /api/promo/:code` | Промокод (`{ code, percent }` или `{ code, amount, minTotal }`, регистр не важен) или 404 — асинхронная проверка | 13 |
 | `POST /api/orders`, `GET /api/orders` | Заказ: `{ items: [{ gameId, quantity }], … }` → 201 с `id` (уменьшает склад) или 409 «„…“: на складе только N», 400 — пустой заказ; без токена `userId: null`. Список — только с токеном (свои заказы) | 13, 14 |
 | `PUT /api/games/:id`, `POST /api/games`, `DELETE /api/games/:id` | Админка (роль admin) | 17 |
 | `GET /api/email-available?email=` | Свободен ли e-mail (в главе 13 не понадобился; регистрация — по необходимости) | — |
 
-Учётные записи: `user@example.com / user` и `admin@example.com / admin`, токены `token-user` и `token-admin` (заголовок `Authorization: Bearer …`). Промокоды: `KNIGHT10` (−10 %), `CHESS500` (−500 ₽ от 3000 ₽). `POST /api/orders` уменьшает остаток на складе и отвечает 409, если игр не хватает. Это учебный бэкенд, и в тексте урока об этом сказано.
+Учётные записи: `user@example.com / user` и `admin@example.com / admin`. Вход выдаёт JWT (HS256, ключ учебный и открытый — `JWT_SECRET` в `backend.js`): токен доступа живёт `tokenTtl` секунд (по умолчанию 3600, шаг задаёт `backend: { tokenTtl }`), refresh-токен — 7 дней. Сервер не хранит выданные токены (проверяет подпись и срок) — вход переживает перезапуск превью; хранит только отозванные refresh-токены (до перезапуска). Недействительный или истёкший токен в заголовке `Authorization` — 401 на любом адресе, кроме входа, обновления и выхода. Вечные учебные токены `token-user` и `token-admin` по-прежнему принимаются — ими удобно начинать проверки «уже вошедшим» (`check.ts` 14.9). Промокоды: `KNIGHT10` (−10 %), `CHESS500` (−500 ₽ от 3000 ₽). `POST /api/orders` уменьшает остаток на складе и отвечает 409, если игр не хватает. Это учебный бэкенд, и в тексте урока об этом сказано.
 
 ## Что приложение получает по главам
 
@@ -154,7 +157,7 @@ interface Game {
 | 11 | Данные с сервера: главная (`httpResource` — хиты и «Со скидкой»), каталог (фильтры из адреса — параметры запроса, поиск с задержкой `debounced`, прежние результаты при загрузке, страницы `page`/`size`), страница игры (`httpResource` по `id`, 404/500, отзывы с оптимистичным добавлением), избранное (`resource` со своим загрузчиком), корзина хранит снимок игры (`hod-konem:cart:v2`); резолвер заголовка — `firstValueFrom`; `core/games-data.ts` удалён |
 | 12 | Журнал просмотров страниц (`router.events` + `filter`/`map`), быстрый поиск в шапке (`QuickSearch`: `debounceTime`, `distinctUntilChanged`, `switchMap`, `catchError`; затем `toSignal`/`toObservable`), «Избранное» на `rxResource` + `forkJoin` (404 пропускается), `injectNow` на `toSignal(interval)`, интерцепторы: лог, повтор GET при 5xx, кэш GET по метке `CACHE` (игра — один запрос вместо двух), черновик комментария к заказу в `localStorage` с автосохранением (гард выхода убран) |
 | 13 | Signal Forms: страница входа `/login` (`POST /api/login`, ошибка 401 у формы; сессия — глава 14), оформление заказа — форма (контакты с перекрёстной проверкой «телефон или e-mail», доставка: самовывоз/курьер с условными полями, открытки к подарку — список полей), отправка заказа `POST /api/orders` (409 — у формы, «Заказ №… оформлен», корзина и черновик очищаются, гард несохранённой формы), промокод проверяет сервер (`validateHttp`, `core/promo-codes.ts` удалён), отзыв — форма, звёзды `Rating` — своё поле формы (`FormValueControl`, выход `touch`); общие `FieldErrors`, `form-rules.ts`, `checkout-schema.ts` |
-| 14 | Авторизация: `AuthStore`, вход и выход, сессия после перезагрузки, токен в интерцепторе, реакция на 401, гард входа с `returnUrl`, роли в шапке, «Мои заказы» |
+| 14 | Авторизация: `AuthStore` (`core/auth-store.ts`), «Войти»/имя/«Выйти» в шапке, вход через хранилище и возврат по `returnUrl`, сессия после перезагрузки (`localStorage` + `provideAppInitializer` + `GET /api/me`), интерцептор `Authorization` (`core/auth-interceptor.ts`: только `/api/…`, 401 → обновление токена `POST /api/refresh` одним запросом на всех и повтор, иначе выход), отзыв от имени покупателя, гард входа на «Моих заказах» и `adminGuard` (`canMatch`) у ленивой админки (`admin/`, сводка с сервера), ссылка «Админка» только администратору, «Мои заказы» с сервера, «Выйти» уводит со страниц только для вошедших (повторная навигация) |
 | 15 | Анимация корзины, `@defer` для отзывов, оптимизация картинок |
 | 16 | Тесты на корзину, карточку, каталог |
 | 17 | Админка: ленивый раздел, гард роли, таблица, форма редактирования |

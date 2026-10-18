@@ -223,19 +223,20 @@
 
 ### Глава 14. Авторизация
 
-Цель: собрать вход, сессию, токены, гарды и роли в один сквозной сценарий — так, как это устроено в рабочих проектах.
+Цель: собрать вход, сессию, токены, гарды и роли в один сквозной сценарий — так, как это устроено в рабочих проектах. Учебный бэкенд выдаёт настоящие JWT (HS256) с ротацией refresh-токенов; срок токена задаёт шаг (`backend: { tokenTtl }`).
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 14.1 | Как устроен вход | Схема «логин → токен → запросы с токеном → 401»; что умеет учебный бэкенд; `AuthStore` на сигналах: `user`, `token`, `isLoggedIn` и роль через `computed` | В шапке «Войти» |
-| 14.2 | Вход и выход | Форма входа из главы 13 → `POST /api/login` → `AuthStore`; `logout()`; ошибка 401 при неверном пароле | Имя пользователя в шапке |
-| 14.3 | Сессия после перезагрузки | Где хранить токен; `provideAppInitializer` + `GET /api/me`; первый маршрут ждёт проверки сессии | Вход переживает перезагрузку |
-| 14.4 | Токен в запросах | `HttpInterceptorFn` + `inject(AuthStore)`, заголовок `Authorization`, только для своих адресов `/api/…` | Отзыв от имени пользователя |
-| 14.5 | Ответ 401 | Интерцептор с `catchError`: выход и переход на `/login`; протухший токен | Разлогин при недействительном токене |
-| 14.6 | Гард входа и возврат | `CanActivateFn` / `CanMatchFn`, `UrlTree` с `returnUrl`, возврат после входа, защита от открытого редиректа (только свои адреса) | «Мои заказы» → вход → обратно |
-| 14.7 | Роли в интерфейсе | Роль из `AuthStore`, `@if` в шапке; почему скрытая кнопка — не защита (проверяет сервер) | «Админка» видна только admin |
-| **Практикум** | Личный кабинет | `/account/orders` только после входа, выход с любой страницы, возврат на исходную | |
-| **Как в настоящем проекте** | Безопасность сессии | `localStorage` против httpOnly-cookie (XSS и CSRF); XSRF в `HttpClient`: `withXsrfConfiguration`, `withNoXsrfProtection`, cookie `XSRF-TOKEN` → заголовок; refresh-токен: пара access/refresh, повтор запроса после обновления, одно обновление на несколько параллельных 401; OAuth/OIDC и готовые библиотеки (обзор) | |
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-how-login-works | вводный шаг; схема «вход → токен → запросы с токеном → 401»; вход (аутентификация) и права (авторизация), решает сервер; что умеет учебный бэкенд; `AuthStore` (`@Service()`): закрытые `tokenState`/`userState` + `asReadonly()`, `isLoggedIn`/`isAdmin` — `computed`; почему два сигнала (токен до подтверждения пользователя); «Войти» / имя в шапке (`@if (…; as user)`); эксперименты: начальный пользователь, `user.set` — TS2339 | custom: решение 13.10 + тип `User` в `models.ts`, заготовка `core/auth-store.ts` |
+| 02-login-logout | `logIn(credentials)` (`firstValueFrom`, ошибку не ловит), `logOut()`, типы `Credentials`/`LoginResponse`; `Login` вызывает хранилище и уходит на `/`; «Выйти» во втором ряду шапки; эксперименты: данные токена (`atob`), проглоченная ошибка — форма «успешна»; `deep` — JWT: заголовок, данные, подпись HS256, сервер не хранит токены, `logOut` не отменяет токен | previous; `url: /login` |
+| 03-session | где хранить токен (таблица: память, `sessionStorage`, `localStorage`, cookie); только токен, не пользователь; `restore()`: `GET /api/me` с заголовком `Authorization: Bearer` вручную, `401` — забыть токен, `5xx` — оставить; `provideAppInitializer` (контекст внедрения, ждёт промис, первая навигация после); эксперименты: задержка 3000 — пустое превью, без `return` — «Войти» мигает, без `try`/`catch` + «Ошибка 500» — приложение не запускается, «Ошибка 500» — три запроса `/api/me` и токен остаётся; `legacy` — `APP_INITIALIZER` (`@deprecated` 19) | previous |
+| 04-token-interceptor | `authInterceptor`: `inject(AuthStore).token()`, только `/api/…`, `req.clone({ setHeaders })` (запрос неизменяем), порядок в `withInterceptors` (после лога), кэш не для ответов «на покупателя»; `restore` без ручного заголовка; черновик отзыва подписан именем; эксперименты: `restore` в конструкторе — NG0200, проглоченный `catch`, токен чужим адресам; `deep` — как сервер узнаёт покупателя, `401` на любой адрес | custom: заготовка `core/auth-interceptor.ts` (не подключена) |
+| 05-unauthorized | `catchError` в интерцепторе: `401` + `isLoggedIn()` → `logOut()` и `/login`, `throwError` дальше; почему условия (неверный пароль без токена, `restore` при запуске); `inject` — до `return`; эксперименты: без `isLoggedIn()` — перезапуск с истёкшим токеном уводит на вход, `inject` в `catchError` — NG0203 (`→ undefined` в логе) | previous; `backend: { tokenTtl: 30 }` |
+| 06-auth-guard | `authGuard: CanActivateFn` → `UrlTree` с `returnUrl: state.url` (`createUrlTree`, кодирование); гард на `orders` в `account.routes.ts`; `Login.returnUrl = input<string>()`, `safeReturnUrl` (`/…`, не `//…`), открытый редирект; интерцептор передаёт `router.url`; эксперименты: роутер не уходит с сайта (`https://evil.example/x` → `/https:`, 404), инициализатор без `return` — гард раньше проверки входа; `deep` — `canActivate` против `canMatch` | custom: заготовка `core/auth-guards.ts`; `url: /account/orders` |
+| 07-roles | где проверяют права (шаблон, гард, сервер — таблица); `adminGuard: CanMatchFn` (`false` → `'**'`, ленивый модуль не грузится); ленивый `/admin`, ссылка «Админка» по `isAdmin()`; эксперименты: `isAdmin = computed(() => true)` — страница открылась, сервер `403`, роль из токена, выход в админке; `tip` — фабрика гардов `hasRole` | custom: `admin/` (`admin.routes.ts`, `AdminHome` со сводкой `GET /api/admin/summary`), заготовка `adminGuard` |
+| 08-refresh-token | зачем два токена (токен доступа не отозвать); `POST /api/refresh` (ротация), `POST /api/logout`; `saveTokens`, `logOut` с отзывом (без ожидания, пустой `error`), `refresh()` — общий поток (`??=`, `shareReplay(1)`, `finalize`), метка `SKIP_AUTH` (`HttpContextToken`, в `auth-store.ts` — без кругового импорта); интерцептор: `401` → `refresh()` → `switchMap` на тот же запрос, `catchError` до `switchMap`; эксперименты: `=` вместо `??=` — два обновления, второе `401`, без метки — взаимоблокировка (8 заглушек навсегда); `deep` — refresh-токен в httpOnly-cookie, обновление заранее | previous; `backend: { tokenTtl: 20 }` |
+| 09-practice | практикум: «Мои заказы» (`httpResource<Order[]>`, дата, штук, сумма, пусто/загрузка/ошибка), ссылка «Мои заказы» после заказа, «Выйти» — повторная навигация (`onSameUrlNavigation: 'reload'` + `runGuardsAndResolvers: 'always'`; `canMatch` перепроверяется и так), «Войти» с `returnUrl` текущей страницы (`computed` от `lastSuccessfulNavigation`, `null` — без параметра); `check.ts` (8 мутаций); «Итоги главы» | custom: тип `Order` в `models.ts`; `url: /account/orders` |
+| 10-session-security | XSS и CSRF; токен в `localStorage` против httpOnly-cookie (`HttpOnly`, `Secure`, `SameSite`), `withCredentials`/`credentials`; XSRF-токен (двойная отправка), XSRF-интерцептор `HttpClient` (по умолчанию, не `GET`/`HEAD`, только свой сайт, первым в цепочке), `withXsrfConfiguration`, `withNoXsrfProtection` (вместе — ошибка конфигурации); опыты: cookie `XSRF-TOKEN` → заголовок у `POST`, без защиты, что видит скрипт; таблица выбора; OAuth 2.0 / OpenID Connect обзорно (`noSolution`) | previous |
 
 ### Глава 15. Анимации, `@defer` и производительность
 
@@ -268,7 +269,7 @@
 | # | Шаг | Понятия | Результат |
 |---|---|---|---|
 | 17.1 | Ленивый раздел | `loadChildren`, свои провайдеры раздела | |
-| 17.2 | Гард роли | `CanMatchFn`, роль из `AuthStore` | Только admin |
+| 17.2 | Гард роли | `adminGuard` (`CanMatchFn`) уже есть с главы 14 — разделы админки под ним; что ещё проверяет сервер | Только admin |
 | 17.3 | Таблица товаров | Сортировка, фильтр, страницы | |
 | 17.4 | Редактирование | Signal Forms + `httpResource` + `PUT` | |
 | 17.5 | Подтверждение удаления | Диалог: компонент через `createComponent` или CDK Dialog (обзор) | |

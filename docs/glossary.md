@@ -215,9 +215,18 @@
 | pagination | постраничная загрузка, страницы | параметры `page` и `size` |
 | authentication / authorization | вход (аутентификация) / права доступа (авторизация) | в тексте чаще «вход» и «права» |
 | session | сессия | вошёл ли пользователь; восстанавливается после перезагрузки |
-| access token / refresh token | токен доступа / refresh-токен | |
+| access token / refresh token | токен доступа / refresh-токен | в главе 14 «токен» без уточнения — токен доступа (не путать с токеном DI) |
+| bearer token | токен в заголовке `Authorization: Bearer …` | «предъявитель»: кто предъявил токен, тот и вошёл |
+| JWT (JSON Web Token) | JWT | токен из трёх частей `заголовок.данные.подпись`; данные читает любой, подделать без ключа нельзя |
+| claim | поле токена | `sub`, `role`, `exp` в данных JWT |
+| token expiration | срок действия токена | `exp`; у учебного бэкенда — `backend: { tokenTtl }` |
+| token rotation | ротация refresh-токена | обновление выдаёт новую пару, старый refresh-токен отзывается |
+| app initializer | инициализатор приложения | `provideAppInitializer`: запуск ждёт его промис |
 | role | роль | `user`, `admin` |
 | open redirect | открытый редирект | уязвимость при возврате по `returnUrl` |
+| XSS (cross-site scripting) | XSS, внедрение скрипта | чужой скрипт на странице читает всё, что видит код приложения |
+| CSRF / XSRF (cross-site request forgery) | CSRF, подделка запроса | чужой сайт отправляет запрос с cookie пользователя; защита в `HttpClient` — XSRF-токен |
+| httpOnly cookie | httpOnly-cookie | cookie, которую не видит JavaScript страницы |
 
 ## NgRx (глава 18)
 
