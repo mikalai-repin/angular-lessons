@@ -7,6 +7,7 @@ import { compileStep } from '../compiler';
 import {
   collectDiagnostics,
   disposeModels,
+  disposeOtherModels,
   formatEditor,
   readModels,
   refreshDiagnostics,
@@ -48,7 +49,8 @@ function StepWorkspace({ step }: { step: Step }) {
   const isNarrow = useMediaQuery('(max-width: 900px)');
   const [files] = useState(() => {
     const initial = initialFiles(step);
-    // Модели Monaco нужны до первого рендера редактора
+    // Модели Monaco нужны до первого рендера редактора. Модели прошлого шага — убрать сразу, не дожидаясь его очистки
+    disposeOtherModels(step.id);
     syncModels(step.id, initial);
     return initial;
   });

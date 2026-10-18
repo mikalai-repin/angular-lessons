@@ -1,0 +1,32 @@
+/* Отзывы об игре. Отзыв: оценка, автор, дата и текст */
+.review {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--surface);
+  font-size: 14px;
+}
+
+.review b {
+  margin: 0 6px;
+}
+
+.review p {
+  margin: 4px 0 0;
+}
+
+/* Новый отзыв */
+.review-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.review-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font: inherit;
+}

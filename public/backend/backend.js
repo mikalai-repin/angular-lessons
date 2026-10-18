@@ -442,8 +442,31 @@ export function createBackend({ originalFetch, report }) {
     });
   }
 
+  /**
+   * Имитация загрузки чанка блока @defer (зовёт preview-runtime.js). В JIT-превью кода блока нет отдельно — он
+   * уже загружен, а в сборке AOT его зависимости приходят отдельным файлом. Чтобы @loading, @error и prefetch было
+   * видно, «загрузка» идёт с той же задержкой и ошибкой, что и запросы к /api/…, и видна во вкладке «Сеть».
+   */
+  async function chunk(name) {
+    const entry = { id: nextRequestId++, method: 'GET', url: name, status: 'pending' };
+    const started = performance.now();
+    report(entry);
+    await wait(config.latency);
+    const failed = Math.random() < config.failRate;
+    report({
+      ...entry,
+      status: failed ? 500 : 200,
+      ms: Math.round(performance.now() - started),
+      responseBody: failed
+        ? { message: 'Сервер недоступен (ошибка включена во вкладке «Сеть»)' }
+        : 'Код блока @defer (в превью — имитация: код уже загружен вместе с приложением)',
+    });
+    if (failed) throw new Error(`Не удалось загрузить ${name}: ошибка 500`);
+  }
+
   return {
     handle,
+    chunk,
     configure(next) {
       config = { ...DEFAULT_CONFIG, ...next };
     },

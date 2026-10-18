@@ -240,16 +240,19 @@
 
 ### Глава 15. Анимации, `@defer` и производительность
 
-| # | Шаг | API / понятия | Результат |
-|---|---|---|---|
-| 15.1 | Анимация появления | `animate.enter`, `animate.leave`, CSS-переходы | Позиции корзины въезжают |
-| 15.2 | Отложенная отрисовка | `@defer`, `@placeholder`, `@loading`, `@error` | Отзывы |
-| 15.3 | Триггеры | `on viewport`, `on idle`, `on interaction`, `on hover`, `on timer`, `when` | |
-| 15.4 | Предзагрузка | `prefetch on …` | |
-| 15.5 | Картинки | `NgOptimizedImage`, `ngSrc`, `priority`, размеры | |
-| 15.6 | Большие списки | `track`, чистые пайпы, `computed`, когда нужна виртуализация (CDK) | |
-| **Практикум** | Летящая обложка | Анимация «в корзину» | |
-| **Под капотом** | `@defer` в JIT и в AOT | Чанки, почему в превью всё грузится сразу | |
+Цель: анимации, которые объясняют, что произошло, и страница, которая не тратит время на невидимое. В превью JIT чанков нет — среда превью изображает загрузку чанка блока `@defer` (`GET /chunk-defer-N.js` с задержкой и ошибкой учебного бэкенда), см. `architecture.md`.
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-enter-leave | вводный шаг; почему исчезновение не анимируется само (`@for` удаляет сразу); `animate.enter`/`animate.leave` с классом (Angular ждёт самую длинную анимацию или переход; класс без стилей — удаление в следующем кадре); строки корзины въезжают и уезжают; уходящая строка отцеплена от шаблона (старый номер); «Очистить» ждёт анимаций внутри `@if`; эксперименты: класс без стилей, `transition` и `@starting-style`, `prefers-reduced-motion` (Angular сам не проверяет); `legacy` — `@angular/animations` (`@deprecated 20.2`) | custom: решение 14.9 + готовые стили `.row-enter`/`.row-leave` в `cart-page.css`; `url: /cart` |
+| 02-animation-functions | `(animate.leave)="collapse($event)"`, `AnimationCallbackEvent` (`target`, `animationComplete`), Web Animations API (`element.animate`, `onfinish`), высота из `getComputedStyle`, `matchMedia` для «меньше движения», `overflow: hidden`; эксперименты: без `animationComplete` — строка возвращается и исчезает через `MAX_ANIMATION_TIMEOUT` (4000 мс), `offsetHeight` (34 → 42), `[animate.leave]="выражение"`; `tip` — `(animate.enter)`; `deep` — `ɵɵanimateEnter`, `getAnimations`, таймеры, `Promise.allSettled` у родителя | previous |
+| 03-defer | отзывы — компонент `GameReviews`; `@defer` (триггер по умолчанию `on idle`), чанк в AOT, `@placeholder`, `@loading (after; minimum)`, `@error`; спутники грузятся сразу; имитация чанка в превью; порядок запросов игра → чанк → отзывы; эксперименты: второй раз чанк не грузится (состояние у шаблона), что стоит откладывать; `warning` — упоминание вне блока оставляет импорт | custom: отзывы вынесены в `game/game-reviews/` (`GameReviews`, вход `gameId`); `url: /games/4` |
+| 04-triggers | таблица триггеров, `;` — любой, блок не возвращается к заглушке (и `when`), цель — заглушка (один корневой элемент) или `#ref`, `on viewport({ rootMargin })`; отзывы `on viewport` в скрытой вкладке, `@error`; эксперименты: «Ошибка 500» — `@error` на всех играх до перезапуска, без заглушки (JIT-ошибка, AOT NG8019), два элемента (AOT NG8020), `on interaction`/`on hover`, `#ref` без элемента (AOT NG8010); `deep` — инструкции триггеров | previous |
+| 05-prefetch | `prefetch on idle` — код заранее, создание по триггеру; данные не предзагружаются; 4 с → 2 с при задержке 2000; эксперименты: не дождались предзагрузки (один запрос чанка), `prefetch when cart.items().length > 0`; что предзагружать; `tip` — `hydrate` (глава 20) | previous |
+| 06-images | `NgOptimizedImage` (`ngSrc`, обязательные `width`/`height`, `loading`/`fetchpriority`/`decoding`, `priority`), `height: auto`; LCP в сетке одинаковых карточек — доли пикселя (500 px — первая, 508 — третья): `priority` первым `priorityCovers` (6) карточкам; `priority` читается один раз — две ветки `@if` в карточке (иначе NG02953); `LazyImage` удалена; ленивая загрузка браузера заранее (главная — 11 из 11 против 3); эксперименты: NG02954, NG02952, NG02955, без `@if`, только `$first`; загрузчики CDN, `preload` при SSR | custom: `priorityCovers: 6` в `SHOP_CONFIG`; `removedInSolution: [shared/lazy-image.ts]`; `url: /catalog` |
+| 07-big-lists | цена списка: создание, обновление (`OnPush` + сигналы), пересоздание; `track` при смене сортировки (`id` — 4 из 6, `$index` — 0 с чужими играми, `game` — 6 и NG0956); опыт «тысяча карточек» (`afterNextRender`, 70–90 мс, ~21 000 узлов); показывать меньше, `@defer (on viewport)` у строк (4–11 мс, по 6 карточек на 800 px), виртуальная прокрутка CDK (`cdk-virtual-scroll-viewport`, `itemSize`, `*cdkVirtualFor` — проверено AOT с `@angular/cdk` 22.2.1); `computed`, чистые пайпы, профилировщик (`noSolution`) | previous; `url: /` |
+| 08-practice | практикум «Летящая обложка»: `FlyToCart` (сигнал полётов, `launch`/`land`, `prefers-reduced-motion`), `FlyingCovers` в шапке (`[target]="cartLink"`, `@for`, `[style.left.px]`…, `(animate.enter)` + `animate()` `transform` с `fill: 'forwards'`, «поймать» обложку), `GameCard` (`#cover` в обеих ветках, `viewChild.required`, `addToCart()`); `check.ts` (7 мутаций); «Итоги главы» | custom: заготовки `core/fly-to-cart.ts`, `layout/flying-covers/` (стили готовы); `url: /catalog` |
+| 09-defer-inside | вывод `ngc`: `…_DepsFn` с `import()`, статический импорт и `dependencies` без `GameReviews`, шаблоны блоков, `ɵɵdefer` + инструкции триггеров; когда чанка нет (таблица); состояние загрузки у `TView` (`NOT_STARTED`…`FAILED`) и показ у экземпляра; реестр директив блока, `PendingTasks`; JIT: `deferBlockDependencies` = `undefined` → `null` → микрозадача; имитация через `ɵDEFER_BLOCK_DEPENDENCY_INTERCEPTOR` и отличия от сборки; `tip` — `deferBlockBehavior` в тестах (`noSolution`) | previous; `url: /games/4` |
 
 ### Глава 16. Тестирование
 
@@ -372,7 +375,7 @@
 | Внутреннее устройство | Ivy, `LView`, планировщик, zone.js, примитивы сигналов, инжекторы | 19 |
 | Инструменты | CLI, `ng build`, `strictTemplates`, SSR, гидратация, DevTools | 20 |
 
-Не входит в курс (упоминаем ссылкой): Angular Material и CDK (кроме обзора в 15.6 и 17.5), i18n (`@angular/localize`), Service Worker / PWA, Angular Elements, микрофронтенды, `upgrade` с AngularJS.
+Не входит в курс (упоминаем ссылкой): Angular Material и CDK (кроме обзора виртуальной прокрутки в 15.7 и 17.5), i18n (`@angular/localize`), Service Worker / PWA, Angular Elements, микрофронтенды, `upgrade` с AngularJS.
 
 ## Объём
 

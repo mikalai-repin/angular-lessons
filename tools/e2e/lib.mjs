@@ -180,6 +180,9 @@ export async function openCourse(startPath, { onDialog = (d) => d.accept(), igno
 
     async checkConsoleClean(step) {
       const lines = (await consoleText()).split('\n').filter((line) => !ignoreConsole(line));
+      // Строки с ошибками — в вывод проверки: так сразу видно, что именно не так
+      const errors = lines.filter((line) => CONSOLE_ERRORS.test(line));
+      if (errors.length) console.log(errors.join('\n'));
       expect(!CONSOLE_ERRORS.test(lines.join('\n')), `${step}: консоль без ошибок`);
     },
 

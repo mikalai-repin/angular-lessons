@@ -180,7 +180,8 @@ new MutationObserver(applyTheme).observe(document.documentElement, {
   attributeFilter: ['data-theme'],
 });
 
-const stepPrefix = (stepId: string) => `file:///steps/${stepId}/`;
+const STEPS_PREFIX = 'file:///steps/';
+const stepPrefix = (stepId: string) => `${STEPS_PREFIX}${stepId}/`;
 
 export function modelUri(stepId: string, file: string) {
   return monaco.Uri.parse(stepPrefix(stepId) + file);
@@ -209,6 +210,19 @@ export function syncModels(stepId: string, files: FileMap) {
     } else {
       monaco.editor.createModel(code, languageOf(file), uri);
     }
+  }
+}
+
+/**
+ * Удаляет модели всех шагов, кроме stepId. Новый шаг создаёт модели раньше, чем старый уберёт свои
+ * (disposeModels — в очистке эффекта): без этого две сотни файлов двух шагов превышают порог Monaco
+ * в 200 подписчиков LanguageService._onDidChange — ошибка «potential listener LEAK detected»
+ */
+export function disposeOtherModels(stepId: string) {
+  const prefix = stepPrefix(stepId);
+  for (const model of monaco.editor.getModels()) {
+    const uri = model.uri.toString(true);
+    if (uri.startsWith(STEPS_PREFIX) && !uri.startsWith(prefix)) model.dispose();
   }
 }
 

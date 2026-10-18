@@ -1,0 +1,24 @@
+@if (favorites.count() === 0) {
+  <p class="muted">
+    В избранном пока пусто. Отмечайте игры сердечком в
+    <a routerLink="/catalog">каталоге</a>.
+  </p>
+} @else if (games.isLoading()) {
+  <p class="muted">Загружаем…</p>
+} @else if (games.error()) {
+  <p class="error-message">
+    Не удалось загрузить избранное.
+    <button class="link-button" (click)="games.reload()">
+      Повторить
+    </button>
+  </p>
+} @else if (games.value(); as games) {
+  <div class="grid">
+    @for (game of games; track game.id) {
+      <app-game-card
+        [game]="game"
+        [priority]="$index < priorityCovers"
+      />
+    }
+  </div>
+}

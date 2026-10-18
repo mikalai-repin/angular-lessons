@@ -1,0 +1,12 @@
+@for (flight of flyToCart.flights(); track flight.id) {
+  <img
+    class="flying-cover"
+    alt=""
+    [src]="flight.cover"
+    [style.left.px]="flight.from.left"
+    [style.top.px]="flight.from.top"
+    [style.width.px]="flight.from.width"
+    [style.height.px]="flight.from.height"
+    (animate.enter)="takeOff($event, flight)"
+  />
+}

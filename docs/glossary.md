@@ -61,7 +61,7 @@
 | directive | директива | |
 | directive composition | композиция директив | `hostDirectives` |
 | attribute directive | директива атрибута | |
-| structural directive | структурная директива | только в `::: legacy` |
+| structural directive | структурная директива | только в `::: legacy` и у `*cdkVirtualFor` (15.7) |
 | host directive | хост-директива | `hostDirectives` |
 | host binding | привязка хоста | `host: { '[class.x]': '…' }` |
 | host listener | обработчик события хоста | `host: { '(keydown.enter)': '…' }` |
@@ -269,6 +269,26 @@
 | reactive forms | реактивные формы | `FormGroup` |
 | form control | контрол | объект реактивной формы: `FormControl` |
 | template-driven forms | шаблонные формы | `ngModel` |
+
+## Анимации и производительность (глава 15)
+
+| English | Русский | Комментарий |
+|---|---|---|
+| enter / leave animation | анимация появления / исчезновения | `animate.enter`, `animate.leave` |
+| animation function | функция анимации | `(animate.leave)="collapse($event)"`, событие `AnimationCallbackEvent` |
+| Web Animations API | Web Animations API | `element.animate(keyframes, options)` — анимация из кода |
+| reduced motion | «меньше движения» | системная настройка, медиазапрос `prefers-reduced-motion` |
+| placeholder | заглушка (блок `@placeholder`) | что видно до срабатывания триггера `@defer` |
+| loading block | блок загрузки (`@loading`) | что видно, пока грузятся зависимости блока |
+| — | спутники `@defer` | `@placeholder`, `@loading`, `@error` вместе |
+| image loader | загрузчик (картинок) | `IMAGE_LOADER`, `provideImgixLoader`: адрес картинки нужной ширины |
+| error block | блок ошибки (`@error`) | зависимости блока не загрузились |
+| prefetch | предзагрузка | `prefetch on idle`: загрузить код блока заранее, показать — по триггеру |
+| chunk | чанк | отдельный файл JS сборки, который браузер загружает по требованию |
+| dependency function | функция загрузки зависимостей | `…_DepsFn` в скомпилированном шаблоне |
+| LCP (Largest Contentful Paint) | LCP — самый крупный элемент первого экрана | `priority` у `NgOptimizedImage` |
+| layout shift | сдвиг вёрстки | страница прыгает, когда загрузилась картинка без размеров |
+| virtual scrolling | виртуальная прокрутка | в DOM — только видимые строки (`cdk-virtual-scroll-viewport`) |
 
 ## Тесты и инструменты
 

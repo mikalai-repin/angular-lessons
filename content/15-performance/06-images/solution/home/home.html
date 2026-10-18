@@ -1,0 +1,60 @@
+<section class="hero">
+  <h1>Настольные игры для всей семьи</h1>
+  <p>
+    Стратегии, кооперативы, игры для компании и для детей.
+    Доставка бесплатно от {{ freeDeliveryFrom | price }}.
+  </p>
+  <a class="button" routerLink="/catalog">Весь каталог</a>
+</section>
+
+<div class="section-head">
+  <h2 class="section-title">Хиты</h2>
+  <a routerLink="/catalog" [queryParams]="{ sort: 'rating' }"
+    >Все по рейтингу →</a
+  >
+</div>
+@if (hits.hasValue()) {
+  <div class="grid">
+    @for (game of hits.value().items; track game.id) {
+      <app-game-card
+        [game]="game"
+        [priority]="$index < priorityCovers"
+      />
+    }
+  </div>
+} @else if (hits.isLoading()) {
+  <div class="grid">
+    @for (n of skeletons; track n) {
+      <div class="skeleton"></div>
+    }
+  </div>
+} @else {
+  <p class="error-message">
+    Не удалось загрузить хиты.
+    <button class="link-button" (click)="hits.reload()">
+      Повторить
+    </button>
+  </p>
+}
+
+<h2 class="section-title">Со скидкой</h2>
+@if (sale.hasValue()) {
+  <div class="grid">
+    @for (game of sale.value().items; track game.id) {
+      <app-game-card [game]="game" />
+    }
+  </div>
+} @else if (sale.isLoading()) {
+  <div class="grid">
+    @for (n of skeletons; track n) {
+      <div class="skeleton"></div>
+    }
+  </div>
+} @else {
+  <p class="error-message">
+    Не удалось загрузить игры со скидкой.
+    <button class="link-button" (click)="sale.reload()">
+      Повторить
+    </button>
+  </p>
+}

@@ -15,6 +15,7 @@
     "11-http",
     "12-rxjs",
     "13-forms",
-    "14-auth"
+    "14-auth",
+    "15-performance"
   ]
 }

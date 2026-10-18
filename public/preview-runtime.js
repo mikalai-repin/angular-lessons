@@ -334,6 +334,27 @@ function linkModules(files, entry) {
   return build(entry, []);
 }
 
+/**
+ * @defer в JIT: компилятор не выносит зависимости блока в отдельный файл (их функция загрузки — null), блок
+ * «загружается» за микрозадачу, и @loading, @error, prefetch не видны. Сборка AOT грузит их чанком по сети.
+ * Платформа создаётся заранее с перехватчиком загрузки (DEFER_BLOCK_DEPENDENCY_INTERCEPTOR — отладочный токен
+ * Angular, работает в режиме разработки): каждый блок «качает» чанк через учебный бэкенд — с задержкой и ошибкой
+ * из вкладки «Сеть». bootstrapApplication ученика переиспользует эту платформу. Номер чанка — порядок первой загрузки.
+ */
+async function createPlatformWithDeferChunks() {
+  const core = await import('@angular/core');
+  const { platformBrowser } = await import('@angular/platform-browser');
+  let nextChunk = 1;
+  const interceptor = {
+    intercept: (dependenciesFn) => () => {
+      const loaded = backend.chunk(`/chunk-defer-${nextChunk++}.js`);
+      // В JIT зависимостей нет (null): блок отрисуется с тем, что уже есть в imports компонента
+      return [loaded.then(() => ({})), ...(dependenciesFn?.() ?? [])];
+    },
+  };
+  platformBrowser([{ provide: core.ɵDEFER_BLOCK_DEPENDENCY_INTERCEPTOR, useValue: interceptor }]);
+}
+
 function applyStyles(styles) {
   for (const css of styles ?? []) {
     const style = document.createElement('style');
@@ -377,6 +398,7 @@ window.addEventListener('message', async (event) => {
     const entryUrl = linkModules(data.files, data.entry);
     // JIT-компилятор шаблонов должен быть загружен до кода приложения
     await import('@angular/compiler');
+    await createPlatformWithDeferChunks();
     await import(entryUrl);
   } catch (error) {
     send({ type: 'error', text: prettify(error?.stack || String(error)) });

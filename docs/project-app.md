@@ -51,6 +51,7 @@ layout/
 layout/breadcrumbs/          хлебные крошки из data маршрутов (глава 10)
 layout/shop-title-strategy.ts заголовок вкладки «… — Ход конём» (глава 10)
 layout/quick-search/         быстрый поиск в шапке: подсказки потоком RxJS (глава 12)
+layout/flying-covers/        обложки, летящие в корзину: (animate.enter) + element.animate (глава 15)
 home/                        главная: приветствие, «Хиты», «Со скидкой» (глава 10)
 cart/
   cart-page/                 страница корзины: позиции, итоги, промокод, «Оформить заказ» (глава 10; до неё — мини-корзина)
@@ -59,7 +60,8 @@ core/
   cart-store.ts              CartStore: закрытое состояние, итоги (computed), промокод (linkedSignal), склад, localStorage (с главы 11 — снимок игры, ключ v2)
   favorites-store.ts         FavoritesStore: id избранного (глава 8), localStorage (глава 9); игры грузит страница (resource, глава 11)
   (promo-codes.ts            промокоды списком в коде, главы 9–12; с главы 13 их проверяет сервер)
-  shop-config.ts             SHOP_CONFIG: настройки магазина (InjectionToken)
+  shop-config.ts             SHOP_CONFIG: настройки магазина (InjectionToken); priorityCovers — глава 15
+  fly-to-cart.ts             FlyToCart: обложки в полёте (сигнал), launch/land, prefers-reduced-motion (глава 15)
   analytics.ts               учебная аналитика, загружается лениво (injectAsync); просмотры страниц — из App (глава 12)
   logging-interceptor.ts     лог запросов HttpClient: метод, адрес, статус, время (глава 12)
   retry-interceptor.ts       повтор GET при ответе 5xx (глава 12)
@@ -83,9 +85,9 @@ shared/
   quantity/                  выбор количества «− N +» (model.required, min/max)
   tooltip.ts                 директива атрибута (подсказка при наведении)
   in-view.ts                 директива «появился на экране» (IntersectionObserver)
-  lazy-image.ts              ленивая обложка: img[appLazy] + хост-директива InView
+  (lazy-image.ts             ленивая обложка img[appLazy], главы 7–14; с главы 15 — NgOptimizedImage)
 catalog/                     каталог, фильтры, поиск (фильтры — query-параметры, глава 10; с сервера страницами, глава 11)
-game/                        страница игры (game-page, game-title — резолвер названия для крошки и заголовка), отзывы (глава 11)
+game/                        страница игры (game-page, game-title — резолвер названия для крошки и заголовка), отзывы (глава 11; с главы 15 — game-reviews/, в @defer)
 checkout/                    оформление заказа (глава 10 — сводка, комментарий и гарды; глава 12 — черновик комментария; глава 13 — форма: checkout-schema.ts, отправка заказа, гард несохранённой формы)
 login/                       страница входа: форма Signal Forms (глава 13), вход через AuthStore и возврат по returnUrl (глава 14)
 account/                     кабинет: account.routes.ts (ленивый), favorites-page, orders-page (глава 10); «Мои заказы» с сервера, гард входа (глава 14)
@@ -158,7 +160,7 @@ interface Game {
 | 12 | Журнал просмотров страниц (`router.events` + `filter`/`map`), быстрый поиск в шапке (`QuickSearch`: `debounceTime`, `distinctUntilChanged`, `switchMap`, `catchError`; затем `toSignal`/`toObservable`), «Избранное» на `rxResource` + `forkJoin` (404 пропускается), `injectNow` на `toSignal(interval)`, интерцепторы: лог, повтор GET при 5xx, кэш GET по метке `CACHE` (игра — один запрос вместо двух), черновик комментария к заказу в `localStorage` с автосохранением (гард выхода убран) |
 | 13 | Signal Forms: страница входа `/login` (`POST /api/login`, ошибка 401 у формы; сессия — глава 14), оформление заказа — форма (контакты с перекрёстной проверкой «телефон или e-mail», доставка: самовывоз/курьер с условными полями, открытки к подарку — список полей), отправка заказа `POST /api/orders` (409 — у формы, «Заказ №… оформлен», корзина и черновик очищаются, гард несохранённой формы), промокод проверяет сервер (`validateHttp`, `core/promo-codes.ts` удалён), отзыв — форма, звёзды `Rating` — своё поле формы (`FormValueControl`, выход `touch`); общие `FieldErrors`, `form-rules.ts`, `checkout-schema.ts` |
 | 14 | Авторизация: `AuthStore` (`core/auth-store.ts`), «Войти»/имя/«Выйти» в шапке, вход через хранилище и возврат по `returnUrl`, сессия после перезагрузки (`localStorage` + `provideAppInitializer` + `GET /api/me`), интерцептор `Authorization` (`core/auth-interceptor.ts`: только `/api/…`, 401 → обновление токена `POST /api/refresh` одним запросом на всех и повтор, иначе выход), отзыв от имени покупателя, гард входа на «Моих заказах» и `adminGuard` (`canMatch`) у ленивой админки (`admin/`, сводка с сервера), ссылка «Админка» только администратору, «Мои заказы» с сервера, «Выйти» уводит со страниц только для вошедших (повторная навигация) |
-| 15 | Анимация корзины, `@defer` для отзывов, оптимизация картинок |
+| 15 | Строки корзины въезжают (`animate.enter`, класс) и уезжают, схлопываясь по высоте (`(animate.leave)` + Web Animations); отзывы — компонент `GameReviews` (`game/game-reviews/`) в `@defer (on viewport; prefetch on idle)` с заглушкой, `@loading` и `@error`; обложки — `NgOptimizedImage` (`ngSrc`, размеры, `priority` у обложки игры и первых `priorityCovers` карточек списков — новое поле `SHOP_CONFIG`), `LazyImage` удалена; «В корзину» в карточке — обложка летит в корзину (`core/fly-to-cart.ts`, `layout/flying-covers/` в шапке) |
 | 16 | Тесты на корзину, карточку, каталог |
 | 17 | Админка: ленивый раздел, гард роли, таблица, форма редактирования |
 | 18 | NgRx: корзина и фильтры каталога на Signal Store, та же корзина на классическом Store |

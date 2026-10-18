@@ -1,0 +1,43 @@
+@if (reviews.status() === 'error') {
+  <p class="error-message">
+    Не удалось загрузить отзывы.
+    <button class="link-button" (click)="reviews.reload()">
+      Повторить
+    </button>
+  </p>
+} @else if (reviews.isLoading()) {
+  <p class="muted">Загружаем отзывы…</p>
+} @else {
+  @for (review of reviews.value(); track review.id) {
+    <article class="review">
+      <app-rating [value]="review.rating" readonly />
+      <b>{{ review.author }}</b>
+      <span class="muted">
+        @if (review.id < 0) {
+          отправляем…
+        } @else {
+          {{ review.date | date }}
+        }
+      </span>
+      <p>{{ review.text }}</p>
+    </article>
+  } @empty {
+    <p class="muted">Отзывов пока нет. Будьте первым!</p>
+  }
+}
+<form class="review-form" [formRoot]="reviewForm">
+  <!-- Rating — свой компонент, но для формы такое же поле, как textarea -->
+  <app-rating [formField]="reviewForm.rating" />
+  <app-field-errors [field]="reviewForm.rating" />
+  <textarea
+    rows="3"
+    placeholder="Ваш отзыв"
+    aria-label="Текст отзыва"
+    [formField]="reviewForm.text"
+  ></textarea>
+  <app-field-errors [field]="reviewForm.text" />
+  @for (error of reviewForm().errors(); track error.kind) {
+    <p class="error-message">{{ error.message }}</p>
+  }
+  <button class="button">Отправить</button>
+</form>

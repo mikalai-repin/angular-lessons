@@ -1,0 +1,8 @@
+/* Обложка в полёте: поверх страницы, щелчки проходят сквозь неё */
+.flying-cover {
+  position: fixed;
+  z-index: 100;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
+  pointer-events: none;
+}

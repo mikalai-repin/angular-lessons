@@ -123,7 +123,9 @@
 2. Глобальные стили (`styles.css` шага) — `<style>` в `<head>`.
 3. Если в результате сборки нет `main.js` — ничего не запускаем (ошибка уже в консоли).
 4. Относительные импорты, **включая динамические** (`loadComponent: () => import('./cart/cart')`), переписываются на blob-URL через `es-module-lexer` (код из курса PixiJS). Модуль называется именем исходника (`//# sourceURL=cart/cart.ts`), позиции в стеке переводятся по source map.
-5. `await import('@angular/compiler')`, затем точка входа.
+5. `await import('@angular/compiler')`; платформа Angular создаётся заранее с перехватчиком загрузки `@defer` (ниже); затем точка входа.
+
+**Чанки `@defer` (глава 15).** JIT не выносит зависимости блока в отдельный файл: компилятор разбирает шаблон с `deferBlockDependencies` = `undefined`, функция загрузки блока — `null`, и блок «загружается» за микрозадачу — `@loading`, `@error` и `prefetch` не видны. Среда превью до запуска кода ученика вызывает `platformBrowser([{ provide: ɵDEFER_BLOCK_DEPENDENCY_INTERCEPTOR, useValue }])` (`createPlatformWithDeferChunks`): отладочный токен Angular, его спрашивают перед загрузкой зависимостей блока в режиме разработки. Перехватчик возвращает функцию, которая просит у учебного бэкенда `backend.chunk('/chunk-defer-N.js')` — запись во вкладке «Сеть» с задержкой и ошибкой из настроек бэкенда (номер — порядок загрузки за запуск) — и отдаёт `{}` (определений нет, блок рисуется тем, что в `imports`). `bootstrapApplication` ученика переиспользует эту платформу (`createOrReusePlatformInjector`). Отличие от AOT: «грузится» каждый блок, даже без выносимых зависимостей (в сборке у такого блока функция — `null`). Как устроено в AOT — шаг 15.9.
 
 Консоль: `console.*`, `error`, `unhandledrejection` → родителю. Значения: сигналы — `signal(3)` / `computed(…)` (значение читается из узла, без вызова — вызов создал бы зависимость), элементы DOM — `<input#id>`, объекты классов — `Catalog {…}`. Пути `http://…/vendor/angular/` в стеке сокращаются до `@angular/`.
 
@@ -131,7 +133,7 @@
 
 ## Учебный бэкенд: `public/backend/`
 
-- `backend.js` — `createBackend({ originalFetch, report })` → `{ handle(request), configure(config) }`. Маршруты — `docs/project-app.md`, «Маршруты API».
+- `backend.js` — `createBackend({ originalFetch, report })` → `{ handle(request), chunk(name), configure(config) }`; `chunk` — имитация чанка `@defer` (см. «Превью»). Маршруты — `docs/project-app.md`, «Маршруты API».
 - `data/*.json` — `games`, `categories`, `reviews`, `users`, `promo`. Загружаются при первом запросе **настоящим** `fetch` и живут в памяти iframe: каждый запуск — чистые данные.
 - `preview-runtime.js` подменяет `window.fetch`: запросы того же origin с путём `/api/…` уходят в `backend.handle`, остальное — в настоящий `fetch`. `HttpClient` в Angular 22 по умолчанию работает через `FetchBackend` (проверено, `withFetch` устарел), `httpResource` — через `HttpClient`, поэтому перехвата `fetch` достаточно. `XMLHttpRequest` (`withXhr()`) **не перехватывается** — если понадобится, добавить.
 - Настройки: `latency` (по умолчанию **300 мс**), `failRate` (0..1), `tokenTtl` — срок токена доступа в секундах (по умолчанию 3600; переключателя нет, только frontmatter). Источники: frontmatter `backend:` → переключатели вкладки «Сеть».
@@ -144,7 +146,7 @@
 
 - Типы: `.d.ts` пакетов `@angular/{core,common,compiler,platform-browser,forms,router}/types/*` и `rxjs/dist/types/**` кладутся по настоящим путям `file:///node_modules/…`. TS-воркер Monaco ищет модули по схеме node10 и **не понимает `exports`**, поэтому для каждого подпути из `exports` создаётся заглушка `<подпуть>/index.d.ts` с `export * from '<типы>'`. Отдельно — `@standard-schema/spec` (на него ссылаются Signal Forms).
 - Настройки компилятора — как в `tsconfig.json` из `ng new` (`strict`, `experimentalDecorators`, `noImplicitOverride`, …).
-- Модели: `file:///steps/<stepId>/<путь>`; путь файла по модели — `fileOfModel`. Синхронизация моделей с TS-воркером и `refreshDiagnostics` — решения из курса PixiJS (гонка «Cannot find module» при переходе между шагами).
+- Модели: `file:///steps/<stepId>/<путь>`; путь файла по модели — `fileOfModel`. Новый шаг сначала удаляет модели других шагов (`disposeOtherModels`), потом создаёт свои: очистка эффекта старого шага срабатывает позже, а каждая модель подписывается на `LanguageService._onDidChange` с порогом утечки 200 — два шага по ~100 файлов давали ошибку страницы «potential listener LEAK detected» (глава 15, 101 файл). Синхронизация моделей с TS-воркером и `refreshDiagnostics` — решения из курса PixiJS (гонка «Cannot find module» при переходе между шагами).
 - Воркеры: `ts.worker`, `html.worker`, `css.worker`, `editor.worker`.
 
 ## Проверка шагов `check.ts`
@@ -213,7 +215,7 @@ tools/e2e/
 tools/authoring/
   steps.py          — write_steps (запись только изменений), step_dir, rep/cut
   format-content.py — пересборка глав из content/ (формат, base/baseHash)
-  ch14-gen.py       — генератор последней главы (образец)
+  ch15-gen.py       — генератор последней главы (образец; `dump <папка>` — полные снимки шагов для опытов)
 ```
 
 ## Подводные камни

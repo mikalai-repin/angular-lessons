@@ -1,0 +1,83 @@
+import {
+  Component,
+  ElementRef,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  viewChild,
+} from '@angular/core';
+import { DecimalPipe, NgOptimizedImage } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { CartStore } from '../../core/cart-store';
+import { FavoritesStore } from '../../core/favorites-store';
+import { FlyToCart } from '../../core/fly-to-cart';
+import { Game } from '../../core/models';
+import { SHOP_CONFIG } from '../../core/shop-config';
+import { DurationPipe } from '../duration-pipe';
+import { PlayersPipe } from '../players-pipe';
+import { PricePipe } from '../price-pipe';
+import { Rating } from '../rating/rating';
+import { Tooltip } from '../tooltip';
+
+// Карточка игры в каталоге
+@Component({
+  selector: 'app-game-card',
+  imports: [
+    DecimalPipe,
+    DurationPipe,
+    NgOptimizedImage,
+    PlayersPipe,
+    PricePipe,
+    Rating,
+    RouterLink,
+    Tooltip,
+  ],
+  templateUrl: './game-card.html',
+  styleUrl: './game-card.css',
+  host: {
+    role: 'article',
+    '[class.sold-out]': 'game().inStock === 0',
+  },
+})
+export class GameCard {
+  // Игра, которую показывает карточка. Без неё карточка не имеет смысла — вход обязательный
+  readonly game = input.required<Game>();
+  // Обложку грузить в первую очередь: карточка — первое, что видно на странице
+  readonly priority = input(false, {
+    transform: booleanAttribute,
+  });
+
+  // Корзина — общая для всего магазина: карточка сама кладёт в неё игру
+  protected readonly cart = inject(CartStore);
+  // Сколько штук этой игры уже в корзине и сколько ещё можно добавить
+  protected readonly inCart = computed(() =>
+    this.cart.quantityOf(this.game()),
+  );
+  protected readonly available = computed(() =>
+    this.cart.available(this.game()),
+  );
+
+  // Избранное — тоже общее: сердечко в карточке и счётчик в шапке
+  protected readonly favorites = inject(FavoritesStore);
+  protected readonly isFavorite = computed(() =>
+    this.favorites.has(this.game()),
+  );
+
+  // При каком остатке на складе писать «Осталось N шт.»
+  protected readonly fewLeft = inject(SHOP_CONFIG).fewLeft;
+
+  // Картинка обложки: из неё вылетит копия в корзину
+  private readonly cover =
+    viewChild.required<ElementRef<HTMLImageElement>>('cover');
+  private readonly flyToCart = inject(FlyToCart);
+
+  // «В корзину»: игра — в корзину, обложка — в полёт
+  protected addToCart() {
+    this.cart.add(this.game());
+    this.flyToCart.launch(
+      this.game().cover,
+      this.cover().nativeElement,
+    );
+  }
+}
