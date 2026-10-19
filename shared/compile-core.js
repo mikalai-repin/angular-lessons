@@ -124,14 +124,16 @@ function inlineResources(ts, file, code, files) {
  * @param {typeof import('typescript')} ts
  * @param {(program: unknown) => unknown} angularJitApplicationTransform
  * @param {Record<string, string>} files — путь относительно корня шага → содержимое (.ts, .html, .css, …)
+ * @param {{ tests?: boolean }} [options] — tests: компилировать и файлы тестов *.spec.ts (превью в режиме «Тесты»);
+ *   иначе их нет в сборке, и ошибка в тесте не мешает запустить приложение
  * @returns {{ files: Record<string, string>, styles: string[], errors: string[] }}
  *   files — скомпилированные модули ('app.js', 'core/cart.js'), styles — глобальные стили, errors — ошибки сборки
  */
-export function compileFiles(ts, angularJitApplicationTransform, files) {
+export function compileFiles(ts, angularJitApplicationTransform, files, { tests = false } = {}) {
   const errors = [];
   const sources = {};
   for (const [file, code] of Object.entries(files)) {
-    if (!file.endsWith('.ts') || file.endsWith('.d.ts') || file.endsWith('.spec.ts')) continue;
+    if (!file.endsWith('.ts') || file.endsWith('.d.ts') || (!tests && file.endsWith('.spec.ts'))) continue;
     const inlined = inlineResources(ts, file, code, files);
     errors.push(...inlined.errors);
     sources[ROOT + file] = inlined.code;

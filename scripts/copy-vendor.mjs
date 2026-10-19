@@ -2,6 +2,7 @@
 //   public/vendor/angular/<пакет>/  — ESM-файлы пакетов Angular (fesm2022) как есть;
 //   public/vendor/rxjs.mjs          — RxJS одним файлом (в пакете сотни модулей);
 //   public/vendor/ts-angular.mjs    — TypeScript + JIT-трансформ из @angular/compiler-cli для воркера компиляции;
+//   public/vendor/vitest.mjs        — API Vitest для тестов в превью (vendor-src/vitest.mjs + @vitest/expect, chai, @vitest/spy);
 //   public/vendor/es-module-lexer.js;
 //   public/preview.html             — из scripts/preview.template.html с import map, построенной по полю
 //                                     `exports` пакетов: при обновлении Angular новые подпути попадут в карту сами.
@@ -60,6 +61,21 @@ buildSync({
 });
 importMap['rxjs'] = '/vendor/rxjs.mjs';
 importMap['rxjs/operators'] = '/vendor/rxjs.mjs';
+
+// Тесты в превью (глава 16): API Vitest — раннер vendor-src/vitest.mjs с настоящими @vitest/expect, chai и @vitest/spy.
+// В import map — как 'vitest': тесты ученика работают и с глобальными describe/expect, и с импортом из 'vitest'
+buildSync({
+  entryPoints: [resolve(root, 'vendor-src/vitest.mjs')],
+  bundle: true,
+  format: 'esm',
+  platform: 'browser',
+  minify: true,
+  // fake-timers зовёт require('util') только в Node (_global.process) — в браузере заглушка не используется
+  alias: { util: resolve(root, 'scripts/node-stub.mjs') },
+  outfile: resolve(out, 'vitest.mjs'),
+  logLevel: 'warning',
+});
+importMap['vitest'] = '/vendor/vitest.mjs';
 
 copyFileSync(resolve(root, 'node_modules/es-module-lexer/dist/lexer.js'), resolve(out, 'es-module-lexer.js'));
 

@@ -52,7 +52,7 @@
 - ✅ Учебный бэкенд для главы 14: настоящие JWT (HS256, `crypto.subtle`) без хранения на сервере, срок токена `backend: { tokenTtl }`, `POST /api/refresh` (ротация), `POST /api/logout`, `GET /api/admin/summary`, 401 на недействительный токен на любом `/api/…`; во вкладке «Сеть» — заголовки запроса, в `check.ts` — `requests[].headers`
 - ✅ Глава 14. Авторизация (10 шагов: `AuthStore`, вход и выход, сессия через `provideAppInitializer`, интерцептор токена, 401, гард с `returnUrl`, роли и ленивая админка с `canMatch`, refresh-токен — одно обновление на всех, практикум «Личный кабинет», безопасность сессии: XSS, CSRF, XSRF; квиз — 15 вопросов)
 - ✅ Глава 15. Анимации, `@defer` и производительность (9 шагов: `animate.enter`/`animate.leave` классом и функцией, отзывы в `@defer` — триггеры, `@error`, `prefetch`, `NgOptimizedImage` с `priority`, большие списки, практикум «Летящая обложка», `@defer` в JIT и AOT; квиз — 15 вопросов). Превью изображает чанки `@defer` (`GET /chunk-defer-N.js` через `ɵDEFER_BLOCK_DEPENDENCY_INTERCEPTOR`); новый шаг удаляет модели Monaco прошлого шага до создания своих (порог утечки 200 слушателей)
-- ⬜ Тест-раннер в превью (вкладка «Тесты», API как у Vitest)
+- ✅ Тест-раннер в превью: `preview: tests` и переключатель «Приложение / Тесты», отчёт (файлы, `describe`, ошибки с diff и местом, «Ошибки вне тестов»), ⟳; API Vitest 5 — свой раннер + настоящие `@vitest/expect`/`chai`/`@vitest/spy`, фейковые таймеры `@sinonjs/fake-timers`; окружение как у `ng test` (сетап `@angular/build:unit-test`); `check.ts` получает `tests`; типы `shared/vitest.d.ts`; сверка с настоящим `ng test` (`tools/e2e/ng-test.mjs`, Chromium и jsdom) — совпадают числа тестов, тексты ошибок, порядок хуков, ошибки вне тестов
 - ⬜ Глава 16. Тестирование
 - ⬜ Глава 17. Админка
 - ⬜ Пакеты NgRx 22 в превью (import map в `scripts/copy-vendor.mjs`, типы для Monaco) — до главы 18
@@ -172,11 +172,21 @@
 - Виртуальная прокрутка CDK показана кодом, проверенным AOT; в превью CDK нет (вместе с Material — глава 17 или позже).
 - Нет теста-раннера в превью — следующий этап (глава 16).
 
+### Технический долг тест-раннера
+
+- Нет `vi.mock`/`vi.doMock` (подмена модулей), снапшотов (`toMatchSnapshot`), `expect.poll`, `each` с шаблонной строкой, покрытия. `vi.mock` бросает понятную ошибку; в главе 16 подменять зависимости через DI (`providers`), как и советует Angular.
+- Превью — Chromium, `ng test` по умолчанию — jsdom: в jsdom нет `matchMedia`, `IntersectionObserver`, раскладки. В главе 16 сказать прямо; в главе 20 показать `--browsers=chromiumHeadless`.
+- Ошибка шаблона в спеке: в превью `NG0304` в одном тесте, в `ng test` — `NG8001` при сборке (AOT), тесты не запускаются.
+- Места ошибок в отчёте — текстом (`❯ файл.ts:16:33`), без перехода в редактор (в консоли платформы переходов тоже нет).
+- `it.fails` в итоге — среди прошедших (Vitest выделяет «expected fail»); упавший набор (`beforeAll`) считается в «✗».
+- Проверка `checks/test-runner.mjs` требует шаг с `preview: tests` в `content/` — запускать после появления главы 16 (`node tools/e2e/checks/test-runner.mjs /testing/…`). Набор спеков для неё и для сверки — `tools/e2e/fixtures/test-runner/`.
+
 ## Следующий шаг
 
-**Тест-раннер в превью и глава 16 «Тестирование»** по `docs/course-plan.md` и `docs/authoring-process.md`:
+**Глава 16 «Тестирование»** по `docs/course-plan.md` и `docs/authoring-process.md`:
 
-1. Прочитать `CLAUDE.md`, `docs/authoring-process.md` целиком (в т. ч. «Код магазина на конец последней главы» и ловушки), `docs/writing-guide.md`, `docs/architecture.md` («Тесты в превью — план»), `docs/lesson-format.md` («Тесты в шаге»).
-2. Сначала платформа: вкладка «Тесты», `preview: tests`, API как у Vitest (`describe`/`it`/`expect`/`vi.fn`), `TestBed` в превью (JIT), `deferBlockBehavior` для блока отзывов.
-3. Старт главы 16 — решение `08-practice` главы 15 (шаг 9 — без кода).
-4. Генератор — по образцу `tools/authoring/ch15-gen.py`; квиз — после текстов (раздел 6а `authoring-process.md`).
+1. Прочитать `CLAUDE.md`, `docs/authoring-process.md` целиком (в т. ч. «Код магазина на конец последней главы» и ловушки), `docs/writing-guide.md`, `docs/architecture.md` («Тесты в превью» — отличия от `ng test`), `docs/modern-angular.md` (строки про `ng new`, сборщик тестов и ошибки вне тестов `CartStore`).
+2. Старт главы 16 — решение `08-practice` главы 15 (шаг 9 — без кода). Шаги с тестами — `preview: tests`.
+3. Решить до текстов: ошибки вне тестов у `CartStore` (`injectAsync` + `onIdle` после уничтожения `TestBed`) и `matchMedia` в jsdom — что правит магазин, что объясняет урок.
+4. Каждый тест урока сверять с настоящим `ng test`: `node tools/e2e/ng-test.mjs <шаг/solution> [--browser]` (Node 24 через nvm, проект в `tools/e2e/out/cli/hk`). Проверка интерфейса — `node tools/e2e/checks/test-runner.mjs /testing/<шаг>`.
+5. Генератор — по образцу `tools/authoring/ch15-gen.py`; квиз — после текстов.

@@ -21,11 +21,11 @@ function getWorker() {
   return worker;
 }
 
-/** Компилирует файлы шага (.ts, .html, .css) в модули для превью */
-export function compileStep(files: FileMap): Promise<CompiledStep> {
+/** Компилирует файлы шага (.ts, .html, .css) в модули для превью; tests — вместе с файлами тестов *.spec.ts */
+export function compileStep(files: FileMap, { tests = false } = {}): Promise<CompiledStep> {
   const id = nextId++;
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
-    getWorker().postMessage({ id, files });
+    getWorker().postMessage({ id, files, tests });
   });
 }

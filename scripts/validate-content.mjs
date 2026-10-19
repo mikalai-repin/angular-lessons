@@ -159,7 +159,10 @@ function checkQuiz(chapterDir, chapterPath, stepDirs) {
 writeFileSync(
   join(checkDir, 'tsconfig.json'),
   JSON.stringify(
-    { extends: '../tsconfig.content.json', include: ['**/*.ts', '../shared/course-check.d.ts'] },
+    {
+      extends: '../tsconfig.content.json',
+      include: ['**/*.ts', '../shared/course-check.d.ts', '../shared/vitest.d.ts'],
+    },
     null,
     2,
   ) + '\n',

@@ -76,7 +76,7 @@ base: 07-directives-pipes/07-practice # только у первого шага 
 baseHash: '7d600b7605a6'             # хеш полного кода base; пишет write_steps, сверяет валидатор
 url: /catalog?category=family        # начальный адрес приложения в превью (по умолчанию /)
 backend: { latency: 800, failRate: 0 }   # учебный бэкенд: задержка (по умолчанию 300 мс), доля ответов 500, tokenTtl — срок токена доступа, с (по умолчанию 3600)
-preview: app                         # app (по умолчанию) | tests — что показывает превью (план, этап 4)
+preview: tests                       # app (по умолчанию) | tests — превью запускает *.spec.ts вместо main.ts (глава 16)
 ---
 ```
 
@@ -207,7 +207,18 @@ questions:
 
 ## Тесты в шаге (глава 16)
 
-Файлы `*.spec.ts` в шаге запускаются во вкладке «Тесты», если `preview: tests`. Синтаксис — совместимый с Vitest (`describe`, `it`, `expect`, `beforeEach`, `vi.fn`), чтобы тесты переносились в проект Angular CLI без изменений (глава 20).
+Файлы `*.spec.ts` — тесты. У шага с `preview: tests` превью при входе и по «Проверить» запускает их вместо `main.ts` и показывает отчёт; над превью — переключатель «Приложение / Тесты» (он есть у любого шага с `*.spec.ts`). Синтаксис — Vitest 5 без импортов (`describe`, `it`, `expect`, `beforeEach`, `vi.fn` — глобальные, как в проекте Angular CLI); `import { … } from 'vitest'` тоже работает. Окружение — как у `ng test`: `TestBed` готов, очистка после каждого теста. Тесты курса переносятся в проект Angular CLI без изменений (проверка — `tools/e2e/ng-test.mjs`), отличия превью от `ng test` — `architecture.md`, «Тесты в превью».
+
+`check.ts` такого шага получает результаты тестов ученика:
+
+```ts
+const check: Check = ({ tests, unhandled, fail }) => {
+  const cart = tests.filter((t) => t.file === 'core/cart-store.spec.ts');
+  if (cart.length < 3) fail('Напишите хотя бы три теста для CartStore.');
+  if (cart.some((t) => t.state === 'fail')) fail('Тесты CartStore должны проходить.');
+  return { pass: true };
+};
+```
 
 ## Ресурсы
 

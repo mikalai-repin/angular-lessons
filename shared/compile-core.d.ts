@@ -12,4 +12,6 @@ export declare function compileFiles(
   ts: unknown,
   angularJitApplicationTransform: unknown,
   files: Record<string, string>,
+  /** tests — компилировать и файлы тестов *.spec.ts (превью в режиме «Тесты») */
+  options?: { tests?: boolean },
 ): CompiledStep;

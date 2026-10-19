@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { BackendConfig, FileMap } from '../content/course';
 import { Loader } from '../app/Loader';
 import type { Diagnostic } from '../editor/monaco';
+import { TestReport, TestSummary, applyTestEvent, emptyTestRun, type TestEvent } from './TestReport';
 
 export interface ConsoleEntry {
   id: number;
@@ -23,7 +24,11 @@ export interface NetworkEntry {
   responseBody?: unknown;
 }
 
+/** Что показывает превью: приложение (main.ts) или тесты (*.spec.ts) */
+export type PreviewMode = 'app' | 'tests';
+
 export interface PreviewRun {
+  mode: PreviewMode;
   files: FileMap;
   styles: string[];
   entry: string;
@@ -43,7 +48,7 @@ export interface CheckResult {
 
 interface PreviewMessage {
   source: 'angular-course-preview';
-  type: 'ready' | 'console' | 'error' | 'url' | 'network' | 'title' | 'check-result';
+  type: 'ready' | 'console' | 'error' | 'url' | 'network' | 'title' | 'check-result' | 'tests';
   level?: ConsoleEntry['level'];
   text?: string;
   url?: string;
@@ -51,6 +56,7 @@ interface PreviewMessage {
   entry?: NetworkEntry;
   pass?: boolean;
   hint?: string;
+  event?: TestEvent;
 }
 
 interface Props {
@@ -64,6 +70,8 @@ interface Props {
   actions?: ReactNode;
   /** Результат проверки шага (run.check) */
   onCheckResult?: (result: CheckResult) => void;
+  /** Переключатель «Приложение / Тесты»: есть, если в шаге есть тесты */
+  onModeChange?: (mode: PreviewMode) => void;
 }
 
 const DEFAULT_BACKEND: Required<BackendConfig> = { latency: 300, failRate: 0, tokenTtl: 3600 };
@@ -92,7 +100,7 @@ function statusClass(status: NetworkEntry['status']) {
   return status >= 400 ? 'failed' : 'ok';
 }
 
-export function Preview({ run, initialUrl, backend, actions, onCheckResult }: Props) {
+export function Preview({ run, initialUrl, backend, actions, onCheckResult, onModeChange }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [entries, setEntries] = useState<ConsoleEntry[]>([]);
   const [network, setNetwork] = useState<NetworkEntry[]>([]);
@@ -106,6 +114,8 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult }: Pr
   const [title, setTitle] = useState('');
   /** Текущий iframe: ключ (новый ключ — новый iframe) и адрес, с которого приложение стартует */
   const [frame, setFrame] = useState<{ key: string; startUrl: string; check: boolean } | null>(null);
+  /** Результаты тестов текущего запуска (режим «Тесты») */
+  const [testRun, setTestRun] = useState(emptyTestRun);
   const urlRef = useRef(initialUrl);
   const restarts = useRef(0);
 
@@ -122,6 +132,7 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult }: Pr
     setTitle('');
     setNetwork([]);
     setSelectedRequest(null);
+    setTestRun(emptyTestRun());
     setEntries([
       ...run.buildErrors.map((text) => ({ id: nextEntryId++, level: 'build' as const, text, count: 1 })),
       ...run.diagnostics.map((d) => ({
@@ -151,6 +162,7 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult }: Pr
         iframeRef.current?.contentWindow?.postMessage(
           {
             type: 'run',
+            mode: run.mode,
             files: run.files,
             styles: run.styles,
             entry: run.entry,
@@ -164,6 +176,9 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult }: Pr
         urlRef.current = data.url;
         setUrl(data.url);
         setTypedUrl(data.url);
+      } else if (data.type === 'tests' && data.event) {
+        const event = data.event;
+        setTestRun((current) => applyTestEvent(current, event));
       } else if (data.type === 'check-result') {
         onCheckResult?.({ pass: Boolean(data.pass), hint: data.hint });
       } else if (data.type === 'title' && data.title !== undefined) {
@@ -208,54 +223,95 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult }: Pr
 
   return (
     <div className="preview">
-      <div className="preview-tab" title="Заголовок вкладки — document.title приложения">
-        <span className="preview-tab-title">{title || '\u00a0'}</span>
+      <div className="preview-tab">
+        <span className="preview-tab-title" title="Заголовок вкладки — document.title приложения">
+          {run?.mode === 'tests' ? 'Тесты' : title || '\u00a0'}
+        </span>
+        {onModeChange && (
+          <div className="preview-modes" role="tablist" aria-label="Что показывает превью">
+            {(
+              [
+                ['app', 'Приложение'],
+                ['tests', 'Тесты'],
+              ] as const
+            ).map(([mode, label]) => (
+              <button
+                key={mode}
+                role="tab"
+                aria-selected={run?.mode === mode}
+                className={run?.mode === mode ? 'preview-mode active' : 'preview-mode'}
+                onClick={() => onModeChange(mode)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      <form
-        className="address-bar"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const target = typedUrl.trim() || '/';
-          // Ввод адреса — как в браузере: приложение загружается заново с этого адреса
-          start(target.startsWith('/') ? target : `/${target}`);
-        }}
-      >
-        <button
-          type="button"
-          className="icon-button"
-          title="Назад"
-          onClick={() => post({ type: 'history', delta: -1 })}
+      {run?.mode === 'tests' ? (
+        <div className="address-bar test-bar">
+          <button
+            type="button"
+            className="icon-button"
+            title="Запустить тесты заново"
+            onClick={() => start(initialUrl)}
+          >
+            ⟳
+          </button>
+          <TestSummary run={testRun} />
+          {actions}
+        </div>
+      ) : (
+        <form
+          className="address-bar"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const target = typedUrl.trim() || '/';
+            // Ввод адреса — как в браузере: приложение загружается заново с этого адреса
+            start(target.startsWith('/') ? target : `/${target}`);
+          }}
         >
-          ←
-        </button>
-        <button
-          type="button"
-          className="icon-button"
-          title="Вперёд"
-          onClick={() => post({ type: 'history', delta: 1 })}
-        >
-          →
-        </button>
-        <button
-          type="button"
-          className="icon-button"
-          title="Перезагрузить приложение с текущего адреса"
-          onClick={() => start(url)}
-        >
-          ⟳
-        </button>
-        <input
-          className="address-input"
-          value={typedUrl}
-          spellCheck={false}
-          aria-label="Адрес приложения"
-          onChange={(event) => setTypedUrl(event.target.value)}
-        />
-        {actions}
-      </form>
+          <button
+            type="button"
+            className="icon-button"
+            title="Назад"
+            onClick={() => post({ type: 'history', delta: -1 })}
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            title="Вперёд"
+            onClick={() => post({ type: 'history', delta: 1 })}
+          >
+            →
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            title="Перезагрузить приложение с текущего адреса"
+            onClick={() => start(url)}
+          >
+            ⟳
+          </button>
+          <input
+            className="address-input"
+            value={typedUrl}
+            spellCheck={false}
+            aria-label="Адрес приложения"
+            onChange={(event) => setTypedUrl(event.target.value)}
+          />
+          {actions}
+        </form>
+      )}
       <div className="preview-frame">
         {run && frame ? (
-          <iframe key={frame.key} ref={iframeRef} src="/preview.html" title="Результат" />
+          <>
+            <iframe key={frame.key} ref={iframeRef} src="/preview.html" title="Результат" />
+            {/* Тесты создают компоненты в iframe; поверх — отчёт */}
+            {run.mode === 'tests' && <TestReport run={testRun} />}
+          </>
         ) : (
           <div className="preview-empty">
             <Loader label="Компилируем…" compact />

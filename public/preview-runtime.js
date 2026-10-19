@@ -283,9 +283,10 @@ function resolveFile(files, fromFile, specifier) {
 /**
  * Превращает набор файлов в blob-модули. Относительные импорты (`./cart`), в том числе динамические
  * (`loadComponent: () => import('./admin')`), заменяются на blob-URL зависимостей, а «голые» (`@angular/core`)
- * резолвит import map.
+ * резолвит import map. Возвращает функцию «файл → blob-URL»: у нескольких точек входа (файлы тестов) общие
+ * зависимости получают один и тот же URL — значит, и один экземпляр модуля.
  */
-function linkModules(files, entry) {
+function linkModules(files) {
   const urls = new Map();
   const visiting = new Set();
 
@@ -331,7 +332,7 @@ function linkModules(files, entry) {
     return url;
   }
 
-  return build(entry, []);
+  return (entry) => build(entry, []);
 }
 
 /**
@@ -355,6 +356,155 @@ async function createPlatformWithDeferChunks() {
   platformBrowser([{ provide: core.ɵDEFER_BLOCK_DEPENDENCY_INTERCEPTOR, useValue: interceptor }]);
 }
 
+// ---------- Тесты (preview: tests) ----------
+
+/** Стек ошибки теста: места в файлах ученика (*.ts) со строками исходника — как «❯ файл:строка:столбец» у Vitest */
+function testStack(stack) {
+  const places = prettify(stack)
+    .split('\n')
+    .filter((line) => /^\s*at /.test(line) && !line.includes('@angular/'))
+    .map((line) => line.match(/([\w./-]+\.ts:\d+:\d+)/)?.[1])
+    .filter(Boolean);
+  return [...new Set(places)].map((place) => `❯ ${place}`).join('\n');
+}
+
+/**
+ * Окружение как у `ng test` в проекте Angular CLI 22 (@angular/build, unit-test, runner vitest): очистка TestBed до и после
+ * каждого теста, initTestEnvironment с errorOnUnknownElements/Properties и DynamicDOMTestComponentRenderer — см.
+ * docs/architecture.md, «Тесты в превью»
+ */
+async function setupTestBed(vitest) {
+  await vitest.setupGlobals(async () => {
+    const { NgModule } = await import('@angular/core');
+    const {
+      getTestBed,
+      ɵgetCleanupHook: getCleanupHook,
+      TestComponentRenderer,
+    } = await import('@angular/core/testing');
+    const { BrowserTestingModule, platformBrowserTesting } = await import('@angular/platform-browser/testing');
+    const { ɵgetDOM } = await import('@angular/common');
+    vitest.beforeEach(getCleanupHook(false));
+    vitest.afterEach(getCleanupHook(true));
+
+    class DynamicDOMTestComponentRenderer extends TestComponentRenderer {
+      insertRootElement(rootElId, tagName = 'div') {
+        this.removeAllRootElements();
+        const doc = ɵgetDOM().getDefaultDocument();
+        if (doc && doc.body) {
+          const rootElement = doc.createElement(tagName);
+          rootElement.setAttribute('id', rootElId);
+          doc.body.appendChild(rootElement);
+        }
+      }
+      removeAllRootElements() {
+        const dom = ɵgetDOM();
+        const doc = dom.getDefaultDocument();
+        for (const root of doc?.querySelectorAll?.('[id^=root]') ?? []) dom.remove(root);
+      }
+    }
+    class TestModule {}
+    NgModule({ providers: [{ provide: TestComponentRenderer, useClass: DynamicDOMTestComponentRenderer }] })(
+      TestModule,
+    );
+    getTestBed().initTestEnvironment([BrowserTestingModule, TestModule], platformBrowserTesting(), {
+      errorOnUnknownElements: true,
+      errorOnUnknownProperties: true,
+    });
+  });
+}
+
+/** Запуск *.spec.ts вместо main.ts: результаты — сообщениями { type: 'tests', event } */
+async function runTests(data) {
+  const restoreStorage = data.check ? isolateStorage() : () => {};
+  const checkModule = data.check ? loadCheck(data.check) : null;
+  if (checkModule)
+    await checkModule.then(
+      (module) => fillStorage(module.storage),
+      () => {},
+    );
+  const results = new Map();
+  const tasks = [];
+  const unhandled = [];
+  let vitest = null;
+  const onUnhandled = (event) => {
+    // Ошибку поймал раннер (как Vitest): в отчёте — «Ошибки вне тестов», в консоли превью — строка ошибки
+    event.preventDefault();
+    const error = event.reason ?? event.error ?? event.message;
+    const place = vitest?.currentPlace() ?? { file: '', test: '' };
+    unhandled.push({
+      kind: event.type === 'unhandledrejection' ? 'Unhandled Rejection' : 'Uncaught Exception',
+      message: `${error?.name ?? 'Error'}: ${error?.message ?? error}`,
+      stack: testStack(error?.stack ?? ''),
+      ...place,
+    });
+  };
+  window.addEventListener('error', onUnhandled);
+  window.addEventListener('unhandledrejection', onUnhandled);
+  try {
+    backend.configure(data.backend ?? {});
+    applyStyles(data.styles);
+    await init();
+    const link = linkModules(data.files);
+    const specs = Object.keys(data.files)
+      .filter((file) => file.endsWith('.spec.js'))
+      .sort()
+      .map((file) => ({ file: file.replace(/\.js$/, '.ts'), load: () => import(link(file)) }));
+    vitest = await import('vitest');
+    vitest.installGlobals(window);
+    await import('@angular/compiler');
+    await setupTestBed(vitest);
+    await vitest.runSpecs(specs, {
+      formatStack: testStack,
+      onEvent: (event) => {
+        if (event.type === 'collected') {
+          const walk = (node, file, path) => {
+            if (node.type === 'test') {
+              tasks.push({ id: node.id, file, name: node.name, fullName: [...path, node.name].join(' > ') });
+            } else {
+              for (const child of node.children) walk(child, file, [...path, node.name]);
+            }
+          };
+          for (const file of event.files) for (const child of file.children) walk(child, file.name, []);
+        }
+        if (event.type === 'result') results.set(event.id, event);
+        if (event.type === 'done') event.unhandled = unhandled;
+        send({ type: 'tests', event });
+      },
+    });
+  } catch (error) {
+    send({ type: 'error', text: prettify(error?.stack || String(error)) });
+    send({ type: 'tests', event: { type: 'done', duration: 0, unhandled, failed: String(error?.message ?? error) } });
+  } finally {
+    window.removeEventListener('error', onUnhandled);
+    window.removeEventListener('unhandledrejection', onUnhandled);
+  }
+  if (data.check) {
+    const tests = tasks.map((task) => {
+      const result = results.get(task.id);
+      return { ...task, state: result?.state ?? 'skip', errors: (result?.errors ?? []).map((e) => e.message) };
+    });
+    const result = await runTestsCheck(checkModule, tests, unhandled);
+    restoreStorage();
+    send({ type: 'check-result', ...result });
+  }
+}
+
+/** Проверка шага с тестами: контекст — результаты тестов ученика (check.ts получает tests) */
+async function runTestsCheck(checkModule, tests, unhandled) {
+  try {
+    const { default: check } = await checkModule;
+    const fail = (hint) => {
+      throw new CheckFailure(hint);
+    };
+    const result = await check({ document, tests, unhandled, logs: [], requests: [], errors: errorLog, fail });
+    if (!result?.pass) return { pass: false, hint: result?.hint ?? 'Проверка не прошла.' };
+    return { pass: true };
+  } catch (error) {
+    if (error instanceof CheckFailure) return { pass: false, hint: error.message };
+    return { pass: false, hint: `Проверка упала с ошибкой: ${error?.message ?? error}` };
+  }
+}
+
 function applyStyles(styles) {
   for (const css of styles ?? []) {
     const style = document.createElement('style');
@@ -372,6 +522,8 @@ window.addEventListener('message', async (event) => {
   if (data?.type === 'history') return history.go(data.delta);
   if (data?.type === 'backend-config') return backend.configure(data.config);
   if (data?.type !== 'run') return;
+
+  if (data.mode === 'tests') return runTests(data);
 
   // Проверка шага — на чистых данных магазина: сохранённая корзина ученика не должна влиять на результат
   const restoreStorage = data.check ? isolateStorage() : () => {};
@@ -395,7 +547,7 @@ window.addEventListener('message', async (event) => {
     // Сборка не дала точку входа (ошибка уже в консоли с меткой «Сборка») — запускать нечего
     if (!(data.entry in data.files)) return;
     await init();
-    const entryUrl = linkModules(data.files, data.entry);
+    const entryUrl = linkModules(data.files)(data.entry);
     // JIT-компилятор шаблонов должен быть загружен до кода приложения
     await import('@angular/compiler');
     await createPlatformWithDeferChunks();
@@ -532,6 +684,8 @@ async function runCheck(checkModule) {
       requests: checkRequests,
       logs: checkLogs,
       errors: errorLog,
+      tests: [],
+      unhandled: [],
     };
 
     await settle();

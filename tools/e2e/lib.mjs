@@ -1,7 +1,7 @@
 // Общие помощники браузерных проверок курса.
 // Нужен запущенный dev-сервер (npm run dev) и установленный Chrome.
-import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { angularJitApplicationTransform } from '@angular/compiler-cli';
@@ -30,14 +30,28 @@ export function launch() {
  */
 export { readStepDir as readDir };
 
+/** Все файлы обычной папки (не шага): { 'core/x.spec.ts': '…' } — например, фикстуры поверх кода шага */
+export function readFolder(dir) {
+  const files = {};
+  const walk = (sub) => {
+    for (const entry of readdirSync(join(dir, sub), { withFileTypes: true })) {
+      const rel = sub ? `${sub}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) walk(rel);
+      else files[rel] = readFileSync(join(dir, rel), 'utf8');
+    }
+  };
+  walk('');
+  return files;
+}
+
 /** Компилирует папку шага (start/ или solution/) тем же кодом, что и воркер платформы */
-export function compileDir(dir) {
-  return compileMap(readStepDir(dir));
+export function compileDir(dir, options) {
+  return compileMap(readStepDir(dir), options);
 }
 
 /** Компилирует набор файлов из памяти ({ 'main.ts': '…', 'app.ts': '…' }) — для экспериментов */
-export function compileMap(files) {
-  return compileFiles(ts, angularJitApplicationTransform, files);
+export function compileMap(files, options) {
+  return compileFiles(ts, angularJitApplicationTransform, files, options);
 }
 
 /**
@@ -47,7 +61,7 @@ export function compileMap(files) {
 export async function openPreview(
   browser,
   compiled,
-  { waitMs = 2000, width = 500, height = 600, url = '/', backend = { latency: 0 } } = {},
+  { waitMs = 2000, width = 500, height = 600, url = '/', backend = { latency: 0 }, mode = 'app' } = {},
 ) {
   const page = await browser.newPage();
   await page.setViewport({ width, height });
@@ -62,11 +76,13 @@ export async function openPreview(
     window.__runtimeErrors = [];
     window.__network = [];
     window.__url = '/';
+    window.__tests = [];
     window.addEventListener('message', (e) => {
       if (e.data?.source !== source) return;
       if (e.data.type === 'error') window.__runtimeErrors.push(e.data.text);
       if (e.data.type === 'network' && e.data.entry.status !== 'pending') window.__network.push(e.data.entry);
       if (e.data.type === 'url') window.__url = e.data.url;
+      if (e.data.type === 'tests') window.__tests.push(e.data.event);
     });
   }, SOURCE);
   await page.evaluate((run) => window.postMessage({ type: 'run', entry: 'main.js', ...run }, '*'), {
@@ -74,6 +90,7 @@ export async function openPreview(
     styles: compiled.styles,
     url,
     backend,
+    mode,
   });
   await wait(waitMs);
   await collect(page, logs, network);

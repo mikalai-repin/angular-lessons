@@ -289,6 +289,10 @@ node tools/e2e/run-chapter.mjs 03-signals         # все шаги в инте�
 - **zsh: `set -- $v`** не делит строку на слова — циклы по парам «папка режим» пишите явными вызовами.
 - **`grep -E "^(…|…)"` с кириллицей** у автора молча ничего не находил — фильтровать вывод `grep -v "^\[log\]"` или Python.
 - **Проверка `check.ts` и `matchMedia`**: «меньше движения» подменяется `win.matchMedia` на время шага проверки (`{ ...original(q), matches: true }`, вернуть в `finally`) — как `confirm` в 13.10.
+- **Тесты шага в чистом превью**: `node tools/e2e/run-tests.mjs <шаг/solution> [--with <папка>]` — отчёт как у Vitest; `--with` накладывает файлы папки поверх кода шага (набор образцов — `tools/e2e/fixtures/test-runner/`).
+- **Сверка с настоящим `ng test`**: `node tools/e2e/ng-test.mjs <шаг/solution> [--with <папка>] [--browser] [--include=src/app/…spec.ts]`. Первый запуск создаёт проект `ng new` в `tools/e2e/out/cli/hk` (несколько минут) и фиксирует `@angular/*` на версии курса: `ng new` ставит `^22.2.0` — последнюю 22.2.x. Angular CLI 22 и Vitest 5 требуют Node 22.12+/24.15+ — скрипт берёт Node через nvm (`NG_TEST_NODE`, по умолчанию 24.15). `--browser` ставит `@vitest/browser-playwright` и Chromium Playwright (~100 МБ). Частичная переустановка `npm install --save-exact @angular/…@22.2.1` поверх 22.2.3 ломала `node_modules` (пропадал `@angular/common`) — только чистая установка.
+- **`ng test` компилирует AOT**: тест с намеренной ошибкой шаблона роняет сборку всех тестов (`NG8001`) — в превью это ошибка одного теста.
+- **Объявления типов с `export {}`** превращают `declare module 'x'` в дополнение несуществующего модуля, а `skipLibCheck` прячет ошибку — тип молча становится `any` (так было с первым `shared/vitest.d.ts`). Глобальные объявления — без `import`/`export` на верхнем уровне.
 
 # Код магазина на конец последней главы
 

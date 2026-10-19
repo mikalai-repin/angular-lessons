@@ -160,9 +160,22 @@
 - Типы контекста — `shared/course-check.d.ts` (модуль `@course/check`); валидатор собирает `check.ts` и проверяет его типы вместе с кодом шагов.
 - `tools/e2e/checks/step-checks.mjs [глава…]` — на каждом шаге с `check.ts`: старт не проходит (с подсказкой), решение проходит, консоль чистая; в конце — что `localStorage` ученика после проверки на месте.
 
-## Тесты в превью — план (этап 4, глава 16)
+## Тесты в превью (глава 16)
 
-`TestBed` работает в JIT (его родной режим). Нужен раннер с API Vitest — тесты из курса должны без изменений запускаться в проекте Angular CLI (там Vitest по умолчанию — проверено по `@schematics/angular`). Формат — `lesson-format.md`, «Тесты в шаге».
+Шаг с `preview: tests` (или переключатель «Приложение / Тесты» над превью — он есть у шага, где есть `*.spec.ts`) запускает вместо `main.ts` все файлы `*.spec.ts`. Тесты курса без изменений работают в проекте Angular CLI 22 (`ng test`, Vitest 5): это проверено сравнением (`tools/e2e/ng-test.mjs`).
+
+- **Компиляция.** `compileFiles(…, { tests: true })` компилирует и `*.spec.ts` (в режиме приложения их нет в сборке, и ошибка в тесте не мешает запуску). Воркер получает флаг от `compileStep(files, { tests })`.
+- **Раннер** — `vendor-src/vitest.mjs`, собирается `copy-vendor` (esbuild) в `public/vendor/vitest.mjs`, в import map — как `vitest`. Матчеры и сообщения — настоящие `@vitest/expect` + `chai` 5.0.5 (`createExpect` повторяет Vitest 5), `vi.fn`/`vi.spyOn` — `@vitest/spy`, `vi.useFakeTimers` — `@sinonjs/fake-timers` с обёрткой как `FakeTimers` в Vitest. Сбор и выполнение тестов — свои (`@vitest/runner` в Vitest 5 отдельно не публикуется), семантика сверена с Vitest: хуки `beforeEach` снаружи внутрь, `afterEach`/`afterAll` — в обратном порядке, функция из `beforeEach`/`beforeAll` — очистка, `onTestFinished`, `.only` в пределах файла, `each` (`%s %i %#`, `$prop`), `for`, `fails`, `context.skip`, тайм-ауты 5000/10000 мс (место — строка объявления теста), упавший `beforeAll` — набор с ошибкой, тесты пропущены, `expect.assertions`/`hasAssertions`, не дождавшиеся `await` проверки `resolves`/`rejects` раннер дожидается после теста. После каждого теста — пауза на макрозадачу, в конце — ожидание простоя (`requestIdleCallback`): отложенные ошибки попадают в отчёт «Ошибки вне тестов», как «Unhandled Errors» у Vitest. Нет: `vi.mock` (модули не подменить — понятная ошибка), снапшотов, `expect.poll`, `each` с шаблонной строкой.
+- **Окружение** — как у сборщика `@angular/build:unit-test` (runner vitest): глобальные имена (`globals: true`), один граф модулей на все файлы (`isolate: false`), `beforeEach(getCleanupHook(false))`/`afterEach(getCleanupHook(true))` в глобальном наборе (`setupGlobals`), `initTestEnvironment([BrowserTestingModule, TestModule], platformBrowserTesting(), { errorOnUnknownElements: true, errorOnUnknownProperties: true })` с `DynamicDOMTestComponentRenderer` (`runTests`/`setupTestBed` в `preview-runtime.js`). Платформа с перехватчиком `@defer` в режиме тестов не создаётся.
+- **Отчёт** — события `{ type: 'tests', event }`: `collected` (дерево файлов и `describe`), `result` (состояние, время, ошибки: сообщение, diff, места `❯ файл.ts:строка:столбец`), `done` (время, `unhandled`). `src/preview/TestReport.tsx`: итог в панели вместо адресной строки, ⟳ — перезапуск, отчёт поверх кадра (тесты рисуют компоненты в том же iframe), прошедшие файлы сворачиваются, если что-то упало.
+- **Проверка шага** (`check.ts`) у шага с тестами получает `tests` (файл, имя, полное имя, состояние, ошибки) и `unhandled`; «Проверить» всегда запускает режим из frontmatter.
+- **Типы**: `shared/vitest.d.ts` — модуль `vitest` и глобальные `describe`/`it`/`expect`/`vi` (сигнатуры Vitest 5, `each` — как в Vitest) поверх настоящих типов `@vitest/expect`/`@vitest/spy`; редактор кладёт их и `.d.ts` зависимостей (`@vitest/utils`, `@vitest/pretty-format`, `tinyrainbow`, `@types/chai`), валидатор включает в `.content-check`.
+
+**Отличия от `ng test` (знать при написании главы 16):**
+
+- `ng test` собирает тесты **AOT**: ошибка шаблона (`NG8001` — неизвестный элемент) — ошибка сборки, ни один тест не запустится; в превью (JIT) — `NG0304` в одном тесте.
+- `ng test` по умолчанию — **jsdom** (Node): нет `matchMedia`, `IntersectionObserver`, раскладки (`getBoundingClientRect` — нули). Превью — настоящий Chromium, как `ng test --browsers=chromiumHeadless` (Vitest browser mode + Playwright). В jsdom «летящая обложка» 15.8 падает: `TypeError: matchMedia is not a function`.
+- `vi.mock` в превью нет.
 
 ## Загрузка контента и валидатор
 

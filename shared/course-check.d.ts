@@ -12,6 +12,19 @@ declare module '@course/check' {
     headers: Readonly<Record<string, string>>;
   }
 
+  /** Результат теста шага (*.spec.ts) — у шагов с preview: tests проверка получает их в context.tests */
+  export interface CheckTest {
+    /** Файл теста: 'core/cart-store.spec.ts' */
+    file: string;
+    /** Имя теста (it) */
+    name: string;
+    /** Имена describe и теста через « > »: 'CartStore > add считает штуки' */
+    fullName: string;
+    state: 'pass' | 'fail' | 'skip' | 'todo';
+    /** Сообщения ошибок упавшего теста */
+    errors: string[];
+  }
+
   export interface CheckContext {
     /** Документ приложения */
     document: Document;
@@ -43,6 +56,13 @@ declare module '@course/check' {
     readonly logs: readonly string[];
     /** Ошибки в консоли приложения с начала запуска */
     readonly errors: readonly string[];
+    /**
+     * Шаг с preview: tests — проверка запускается после тестов ученика, а не приложения: здесь их результаты.
+     * У такого шага нет приложения — DOM-помощники ($, click, navigate…) не нужны. У шага с приложением — []
+     */
+    readonly tests: readonly CheckTest[];
+    /** Ошибки вне тестов (таймеры, промисы после теста) — прогон с ними считается неудачным, как в Vitest */
+    readonly unhandled: readonly { message: string; file?: string; test?: string }[];
   }
 
   export interface CheckResult {

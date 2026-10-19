@@ -13,12 +13,12 @@ const COMPILER_URL = '/vendor/ts-angular.mjs';
 const importModule = new Function('url', 'return import(url)') as (url: string) => Promise<unknown>;
 let compiler: Promise<CompilerModule> | undefined;
 
-self.onmessage = async (event: MessageEvent<{ id: number; files: Record<string, string> }>) => {
-  const { id, files } = event.data;
+self.onmessage = async (event: MessageEvent<{ id: number; files: Record<string, string>; tests?: boolean }>) => {
+  const { id, files, tests } = event.data;
   try {
     compiler ??= importModule(new URL(COMPILER_URL, self.location.origin).href) as Promise<CompilerModule>;
     const { ts, angularJitApplicationTransform } = await compiler;
-    const result = compileFiles(ts, angularJitApplicationTransform, files);
+    const result = compileFiles(ts, angularJitApplicationTransform, files, { tests });
     self.postMessage({ id, result });
   } catch (error) {
     self.postMessage({ id, error: String((error as Error)?.stack ?? error) });

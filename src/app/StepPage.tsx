@@ -14,7 +14,7 @@ import {
   syncModels,
 } from '../editor/monaco';
 import { LessonPanel } from '../lesson/LessonPanel';
-import { Preview, type CheckResult, type PreviewRun } from '../preview/Preview';
+import { Preview, type CheckResult, type PreviewMode, type PreviewRun } from '../preview/Preview';
 import { progress } from '../progress/storage';
 import { useMediaQuery } from './useMediaQuery';
 
@@ -62,21 +62,27 @@ function StepWorkspace({ step }: { step: Step }) {
   const [mobileTab, setMobileTab] = useState<PaneId>('lesson');
   /** Проверка шага: идёт или её результат */
   const [check, setCheck] = useState<'running' | CheckResult | null>(null);
+  /** Что показывает превью: приложение или тесты. Frontmatter preview: tests — тесты при входе и при проверке */
+  const defaultMode: PreviewMode = step.meta.preview === 'tests' ? 'tests' : 'app';
+  const modeRef = useRef<PreviewMode>(defaultMode);
+  const hasTests = defaultMode === 'tests' || step.fileOrder.some((file) => file.endsWith('.spec.ts'));
   const panes = useCollapsiblePanes(!isNarrow, () => runCode());
 
   const timers = useRef<{ save?: number; autorun?: number }>({});
 
   const { prev } = neighbours(step);
 
-  /** withCheck: после запуска — проверка шага (check.ts) */
+  /** withCheck: после запуска — проверка шага (check.ts); проверка — всегда в режиме шага (preview из frontmatter) */
   const runCode = useCallback(
     async (withCheck = false) => {
       window.clearTimeout(timers.current.autorun);
       const id = ++runCounter;
       setCheck(withCheck ? 'running' : null);
+      if (withCheck) modeRef.current = defaultMode;
+      const mode = modeRef.current;
       // Код компилирует воркер (TypeScript 6 + JIT-трансформ Angular), ошибки типов даёт TS-воркер Monaco
       const [compiled, diagnostics, checkCode] = await Promise.all([
-        compileStep(readModels(step.id, step.fileOrder)).catch((error: Error) => ({
+        compileStep(readModels(step.id, step.fileOrder), { tests: mode === 'tests' }).catch((error: Error) => ({
           files: {},
           styles: [],
           errors: [`Компилятор не запустился: ${error.message}`],
@@ -89,6 +95,7 @@ function StepWorkspace({ step }: { step: Step }) {
       // Пока компилировали, мог начаться следующий запуск — устаревший результат не показываем
       if (id !== runCounter) return;
       setRun({
+        mode,
         files: compiled.files,
         styles: compiled.styles,
         buildErrors: compiled.errors,
@@ -98,7 +105,15 @@ function StepWorkspace({ step }: { step: Step }) {
         check: checkCode,
       });
     },
-    [step],
+    [step, defaultMode],
+  );
+
+  const onModeChange = useCallback(
+    (mode: PreviewMode) => {
+      modeRef.current = mode;
+      runCode();
+    },
+    [runCode],
   );
 
   const onCheckResult = useCallback(
@@ -248,6 +263,7 @@ function StepWorkspace({ step }: { step: Step }) {
       initialUrl={step.meta.url ?? '/'}
       backend={step.meta.backend ?? {}}
       onCheckResult={onCheckResult}
+      onModeChange={hasTests ? onModeChange : undefined}
       actions={!isNarrow && panes.collapseButton('result', '»')}
     />
   );

@@ -49,7 +49,8 @@ src/                  — код платформы (Vite + React + TS), осн�
   editor/ preview/ lesson/ app/ content/ progress/ quiz/
 shared/step-chain.js  — сборка полного кода шага из изменений (платформа, валидатор, e2e, генераторы)
 shared/compile-core.js — компиляция шага (templateUrl → template, TS 6 + JIT-трансформ); общая для браузера, e2e и валидатора
-public/preview-runtime.js — среда выполнения кода ученика в iframe (без сборщика)
+public/preview-runtime.js — среда выполнения кода ученика в iframe (без сборщика); режим тестов — runTests
+vendor-src/vitest.mjs — раннер тестов превью с API Vitest 5 (copy-vendor собирает в public/vendor/vitest.mjs)
 public/backend/       — учебный бэкенд (/api/…) и его данные (data/*.json)
 public/assets/        — обложки игр (scripts/build-covers.mjs), CREDITS.md
 public/vendor/, public/preview.html — генерирует scripts/copy-vendor.mjs (не в git)
@@ -68,9 +69,10 @@ tools/authoring/      — steps.py (запись только изменений
 - `python3 tools/authoring/format-content.py [глава…]` — пересобрать код шагов из `content/`: все главы после изменения `shared/lesson-prettier.json`, одну — после правки последнего шага прошлой главы (новый `baseHash`)
 - `npm run covers` — пересоздать SVG-обложки после изменения `public/backend/data/games.json`
 - `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, адрес, текст страницы, скриншот в `tools/e2e/out/`
+- `node tools/e2e/run-tests.mjs <папка шага> [--with <папка>]` — тесты шага (*.spec.ts) в чистом превью; `node tools/e2e/ng-test.mjs <папка шага> [--browser]` — те же тесты в настоящем `ng test` (проект Angular CLI в `tools/e2e/out/cli`, Node 24 через nvm)
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»
 - `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент из текста урока со своим сценарием действий
-- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–15 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `tools/e2e/aot-chapter.mjs <глава>` — `ngc --strictTemplates` по полному коду каждого шага главы; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`)
+- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–15 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `tools/e2e/aot-chapter.mjs <глава>` — `ngc --strictTemplates` по полному коду каждого шага главы; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`); `checks/test-runner.mjs <путь шага>` — отчёт тестов, переключатель «Приложение / Тесты», «Проверить» с тестами (после правок раннера)
 - Все проверки требуют запущенного `npm run dev` и Chrome (`CHROME_PATH`, по умолчанию путь macOS). Другой адрес — `BASE_URL=http://localhost:5181`
 
 ## Текущий статус

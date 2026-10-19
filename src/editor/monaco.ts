@@ -42,6 +42,19 @@ const localeTypes = import.meta.glob('../../node_modules/@angular/common/locales
 
 // Signal Forms ссылаются на типы Standard Schema
 import standardSchemaTypes from '../../node_modules/@standard-schema/spec/dist/index.d.ts?raw';
+// Тесты (*.spec.ts): API Vitest — свои объявления модуля 'vitest' и глобальных describe/it/expect/vi
+// поверх настоящих типов @vitest/expect и @vitest/spy (и того, на что они ссылаются)
+import vitestTypes from '../../shared/vitest.d.ts?raw';
+
+const vitestDependencyTypes = import.meta.glob(
+  [
+    '../../node_modules/@vitest/{expect,spy,pretty-format}/**/*.d.ts',
+    '../../node_modules/@vitest/utils/{,dist/}*.d.ts',
+    '../../node_modules/tinyrainbow/dist/*.d.ts',
+    '../../node_modules/@types/chai/index.d.ts',
+  ],
+  { query: '?raw', import: 'default', eager: true },
+) as Record<string, string>;
 import lessonPrettier from '../../shared/lesson-prettier.json';
 
 self.MonacoEnvironment = {
@@ -111,6 +124,14 @@ ts.typescriptDefaults.addExtraLib(
   `${NODE_MODULES}rxjs/operators/index.d.ts`,
 );
 ts.typescriptDefaults.addExtraLib(standardSchemaTypes, `${NODE_MODULES}@standard-schema/spec/index.d.ts`);
+for (const [path, source] of Object.entries(vitestDependencyTypes)) {
+  ts.typescriptDefaults.addExtraLib(source, NODE_MODULES + relativeToNodeModules(path));
+}
+// Корни пакетов: воркер ищет `<пакет>/index.d.ts` (поле exports он не читает)
+for (const pkg of ['@vitest/expect', '@vitest/spy', '@vitest/utils', '@vitest/pretty-format', 'tinyrainbow']) {
+  ts.typescriptDefaults.addExtraLib(`export * from './dist/index';`, `${NODE_MODULES}${pkg}/index.d.ts`);
+}
+ts.typescriptDefaults.addExtraLib(vitestTypes, 'file:///course-types/vitest.d.ts');
 
 // --- Форматирование кода (Prettier) ---
 /** Настройки — общие с файлами уроков на диске (shared/lesson-prettier.json: по ним форматирует write_steps

@@ -19,6 +19,8 @@ export interface StepMeta extends ChainMeta {
   url?: string;
   /** Настройки учебного бэкенда для шага */
   backend?: BackendConfig;
+  /** Что показывает превью при входе на шаг: приложение (по умолчанию) или тесты *.spec.ts */
+  preview?: 'app' | 'tests';
 }
 
 /** Настройки учебного бэкенда (public/backend/backend.js) */
