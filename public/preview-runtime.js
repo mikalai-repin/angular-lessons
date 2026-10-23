@@ -415,7 +415,8 @@ async function setupTestBed(vitest) {
 
 /** Запуск *.spec.ts вместо main.ts: результаты — сообщениями { type: 'tests', event } */
 async function runTests(data) {
-  const restoreStorage = data.check ? isolateStorage() : () => {};
+  // Своё хранилище на прогон, как в jsdom у `ng test`: тесты не видят корзину ученика и не стирают прогресс курса
+  installMemoryStorage();
   const checkModule = data.check ? loadCheck(data.check) : null;
   if (checkModule)
     await checkModule.then(
@@ -484,7 +485,6 @@ async function runTests(data) {
       return { ...task, state: result?.state ?? 'skip', errors: (result?.errors ?? []).map((e) => e.message) };
     });
     const result = await runTestsCheck(checkModule, tests, unhandled);
-    restoreStorage();
     send({ type: 'check-result', ...result });
   }
 }
@@ -578,6 +578,25 @@ function isolateStorage() {
   } catch {
     return () => {};
   }
+}
+
+/**
+ * localStorage в памяти вместо настоящего (режим тестов): общий с платформой localStorage тесты не трогают,
+ * а начинают, как в `ng test` (jsdom), с пустого. Живёт до перезапуска превью
+ */
+function installMemoryStorage() {
+  const items = new Map();
+  const storage = {
+    get length() {
+      return items.size;
+    },
+    key: (index) => [...items.keys()][index] ?? null,
+    getItem: (key) => (items.has(String(key)) ? items.get(String(key)) : null),
+    setItem: (key, value) => void items.set(String(key), String(value)),
+    removeItem: (key) => void items.delete(String(key)),
+    clear: () => items.clear(),
+  };
+  Object.defineProperty(window, 'localStorage', { value: storage, configurable: true });
 }
 
 // ---------- Проверка шага (check.ts) ----------

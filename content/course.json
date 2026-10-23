@@ -16,6 +16,7 @@
     "12-rxjs",
     "13-forms",
     "14-auth",
-    "15-performance"
+    "15-performance",
+    "16-testing"
   ]
 }

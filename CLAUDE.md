@@ -56,7 +56,7 @@ public/assets/        — обложки игр (scripts/build-covers.mjs), CRED
 public/vendor/, public/preview.html — генерирует scripts/copy-vendor.mjs (не в git)
 scripts/              — copy-vendor, validate-content, build-covers, step-files (старт шага по цепочке)
 tools/e2e/            — проверки в headless Chrome (lib, run-dir, run-chapter, exp, checks/)
-tools/authoring/      — steps.py (запись только изменений шага), format-content.py, генератор последней главы ch15-gen.py (образец; `dump <папка>` — полные снимки для опытов)
+tools/authoring/      — steps.py (запись только изменений шага), format-content.py, генератор последней главы ch16-gen.py (образец; `dump <папка>` — полные снимки для опытов)
 ```
 
 ## Команды
@@ -72,12 +72,12 @@ tools/authoring/      — steps.py (запись только изменений
 - `node tools/e2e/run-tests.mjs <папка шага> [--with <папка>]` — тесты шага (*.spec.ts) в чистом превью; `node tools/e2e/ng-test.mjs <папка шага> [--browser]` — те же тесты в настоящем `ng test` (проект Angular CLI в `tools/e2e/out/cli`, Node 24 через nvm)
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»
 - `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент из текста урока со своим сценарием действий
-- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–15 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `tools/e2e/aot-chapter.mjs <глава>` — `ngc --strictTemplates` по полному коду каждого шага главы; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`); `checks/test-runner.mjs <путь шага>` — отчёт тестов, переключатель «Приложение / Тесты», «Проверить» с тестами (после правок раннера)
+- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–15 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `tools/e2e/aot-chapter.mjs <глава>` — `ngc --strictTemplates` по полному коду каждого шага главы; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`); `checks/test-runner.mjs` — отчёт тестов на шагах главы 16, переключатель «Приложение / Тесты», «Проверить» с тестами (после правок раннера и `preview-runtime.js`)
 - Все проверки требуют запущенного `npm run dev` и Chrome (`CHROME_PATH`, по умолчанию путь macOS). Другой адрес — `BASE_URL=http://localhost:5181`
 
 ## Текущий статус
 
-Платформа готова, **главы 1–15 написаны**, у каждой главы есть квиз (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
+Платформа готова, **главы 1–16 написаны**, у каждой главы есть квиз (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
 
 ## Пользователь и тон работы
 

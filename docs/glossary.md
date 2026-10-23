@@ -294,10 +294,27 @@
 
 | English | Русский | Комментарий |
 |---|---|---|
-| test | тест | |
-| test runner | тест-раннер | |
-| fixture | фикстура | `ComponentFixture` |
-| mock / stub | подмена, заглушка | |
+| test | тест | `it('…', () => …)` |
+| test suite | набор тестов | `describe` |
+| test file / spec | файл тестов | `*.spec.ts` рядом с проверяемым файлом |
+| assertion | утверждение | `expect(значение).toBe(ожидаемое)` |
+| matcher | матчер | `toBe`, `toEqual`, `toContain`, `toHaveBeenCalledWith` |
+| test runner | тест-раннер | Vitest |
+| unit test | модульный тест | одна функция, пайп, сервис или компонент |
+| end-to-end (e2e) test | сквозной тест (e2e) | всё приложение в настоящем браузере |
+| test pyramid | пирамида тестов | много модульных, меньше интеграционных, мало сквозных |
+| testing module | тестовый модуль | то, что настраивает `TestBed.configureTestingModule` |
+| test bed | стенд | `TestBed`: маленькое приложение для теста со своим инжектором |
+| integration test | интеграционный тест | несколько частей вместе: компонент с шаблоном и сервисами, маршруты с гардами |
+| fake backend | поддельный сервер | `provideHttpClientTesting` + `HttpTestingController` |
+| auto change detection | автообнаружение изменений | `autoDetect` фикстуры: в зонлесс — включено |
+| code coverage | покрытие | `ng test --coverage`: какие строки выполнялись в тестах |
+| fixture | фикстура | `ComponentFixture`: компонент, созданный тестом, и управление им |
+| test double | тестовый двойник | общее название подмен: заглушка, шпион, подделка |
+| mock / stub / fake | подмена, заглушка, подделка | объект вместо настоящей зависимости |
+| spy | шпион | `vi.fn()`, `vi.spyOn`: запоминает вызовы |
+| unhandled error | ошибка вне тестов | исключение или отклонённый промис, который никто не обработал |
+| stable (application) | стабильное приложение | нет ожидающих задач (`PendingTasks`): `whenStable()` |
 | harness | обвязка (harness) | `RouterTestingHarness` |
 | build | сборка | |
 | bundle | бандл | |

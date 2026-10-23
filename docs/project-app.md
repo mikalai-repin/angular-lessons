@@ -62,7 +62,7 @@ core/
   (promo-codes.ts            промокоды списком в коде, главы 9–12; с главы 13 их проверяет сервер)
   shop-config.ts             SHOP_CONFIG: настройки магазина (InjectionToken); priorityCovers — глава 15
   fly-to-cart.ts             FlyToCart: обложки в полёте (сигнал), launch/land, prefers-reduced-motion (глава 15)
-  analytics.ts               учебная аналитика, загружается лениво (injectAsync); просмотры страниц — из App (глава 12)
+  analytics.ts               учебная аналитика, загружается лениво (injectAsync); просмотры страниц — из App (глава 12); ошибки загрузки глушатся (.catch, глава 16)
   logging-interceptor.ts     лог запросов HttpClient: метод, адрес, статус, время (глава 12)
   retry-interceptor.ts       повтор GET при ответе 5xx (глава 12)
   cache-interceptor.ts       кэш GET с меткой CACHE (HttpContextToken), ResponseCache на 10 с (глава 12)
@@ -92,6 +92,11 @@ checkout/                    оформление заказа (глава 10 �
 login/                       страница входа: форма Signal Forms (глава 13), вход через AuthStore и возврат по returnUrl (глава 14)
 account/                     кабинет: account.routes.ts (ленивый), favorites-page, orders-page (глава 10); «Мои заказы» с сервера, гард входа (глава 14)
 admin/                       админка: admin.routes.ts (ленивый, canMatch по роли), admin-home — сводка GET /api/admin/summary (глава 14); разделы — глава 17
+testing/
+  fake-game.ts               fakeGame(overrides): игра для тестов (глава 16)
+*.spec.ts                    тесты — рядом с проверяемым файлом (глава 16): shared/plural, shared/duration-pipe, shared/price-pipe,
+                             core/cart-store, shared/game-card/game-card, core/auth-store, core/auth-interceptor, app.routes,
+                             checkout/checkout-schema, checkout/checkout
 ```
 
 ## Данные и учебный бэкенд
@@ -161,7 +166,7 @@ interface Game {
 | 13 | Signal Forms: страница входа `/login` (`POST /api/login`, ошибка 401 у формы; сессия — глава 14), оформление заказа — форма (контакты с перекрёстной проверкой «телефон или e-mail», доставка: самовывоз/курьер с условными полями, открытки к подарку — список полей), отправка заказа `POST /api/orders` (409 — у формы, «Заказ №… оформлен», корзина и черновик очищаются, гард несохранённой формы), промокод проверяет сервер (`validateHttp`, `core/promo-codes.ts` удалён), отзыв — форма, звёзды `Rating` — своё поле формы (`FormValueControl`, выход `touch`); общие `FieldErrors`, `form-rules.ts`, `checkout-schema.ts` |
 | 14 | Авторизация: `AuthStore` (`core/auth-store.ts`), «Войти»/имя/«Выйти» в шапке, вход через хранилище и возврат по `returnUrl`, сессия после перезагрузки (`localStorage` + `provideAppInitializer` + `GET /api/me`), интерцептор `Authorization` (`core/auth-interceptor.ts`: только `/api/…`, 401 → обновление токена `POST /api/refresh` одним запросом на всех и повтор, иначе выход), отзыв от имени покупателя, гард входа на «Моих заказах» и `adminGuard` (`canMatch`) у ленивой админки (`admin/`, сводка с сервера), ссылка «Админка» только администратору, «Мои заказы» с сервера, «Выйти» уводит со страниц только для вошедших (повторная навигация) |
 | 15 | Строки корзины въезжают (`animate.enter`, класс) и уезжают, схлопываясь по высоте (`(animate.leave)` + Web Animations); отзывы — компонент `GameReviews` (`game/game-reviews/`) в `@defer (on viewport; prefetch on idle)` с заглушкой, `@loading` и `@error`; обложки — `NgOptimizedImage` (`ngSrc`, размеры, `priority` у обложки игры и первых `priorityCovers` карточек списков — новое поле `SHOP_CONFIG`), `LazyImage` удалена; «В корзину» в карточке — обложка летит в корзину (`core/fly-to-cart.ts`, `layout/flying-covers/` в шапке) |
-| 16 | Тесты на корзину, карточку, каталог |
+| 16 | Тесты (`*.spec.ts` рядом с кодом, 42 теста): `plural`, пайпы `duration`/`price`, `CartStore`, `GameCard` (подмена `FlyToCart` и `SHOP_CONFIG`), `AuthStore` и `authInterceptor` (поддельный сервер), маршруты (`app.routes.spec.ts`, `RouterTestingHarness`), схема и страница оформления заказа; помощник `testing/fake-game.ts`; аналитика больше не роняет корзину и навигацию (`.catch` у `injectAsync` в `CartStore.track()` и `App`) |
 | 17 | Админка: ленивый раздел, гард роли, таблица, форма редактирования |
 | 18 | NgRx: корзина и фильтры каталога на Signal Store, та же корзина на классическом Store |
 | 20 | Перенос в проект Angular CLI, AOT-сборка, SSR, деплой |

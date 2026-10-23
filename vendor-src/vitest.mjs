@@ -429,36 +429,34 @@ async function runTest(test, report) {
     if (error instanceof SkipError) skipped = true;
     else errors.push(error);
   }
-  // afterEach — изнутри наружу и в обратном порядке регистрации, затем очистки из beforeEach
-  for (const suite of [...suites].reverse()) {
-    for (const hook of [...suite.hooks.afterEach].reverse()) {
+  // afterEach — изнутри наружу и в обратном порядке регистрации, затем очистки из beforeEach.
+  // Как в Vitest: первая ошибка обрывает всю цепочку — внешние afterEach (и очистка TestBed из setup)
+  // и очистки beforeEach уже не выполняются
+  try {
+    for (const suite of [...suites].reverse()) {
+      for (const hook of [...suite.hooks.afterEach].reverse()) await callHook(hook, [context, suite], []);
+    }
+    for (const cleanup of cleanups.reverse()) await cleanup();
+  } catch (error) {
+    errors.push(error);
+  }
+  // onTestFinished, затем (если тест упал) onTestFailed — в обратном порядке регистрации
+  const callTestHooks = async (hooks) => {
+    for (const fn of [...hooks].reverse()) {
       try {
-        await callHook(hook, [context, suite], []);
+        await fn(context);
       } catch (error) {
         errors.push(error);
       }
     }
-  }
-  for (const cleanup of cleanups.reverse()) {
-    try {
-      await cleanup();
-    } catch (error) {
-      errors.push(error);
-    }
-  }
+  };
+  await callTestHooks(test.onFinished);
+  if (errors.length > 0) await callTestHooks(test.onFailed);
   let failed = errors.length > 0;
   if (test.fails && !skipped) {
     if (failed) errors.length = 0;
     else errors.push(new Error('Expect test to fail'));
     failed = !failed;
-  }
-  for (const fn of failed ? [...test.onFailed, ...test.onFinished] : test.onFinished) {
-    try {
-      await fn(context);
-    } catch (error) {
-      errors.push(error);
-      failed = true;
-    }
   }
   currentTest = null;
   lastTestName = fullName(test);
@@ -475,6 +473,15 @@ function allTests(suite) {
 }
 
 async function runSuite(suite, report) {
+  // Как в Vitest: набор (или файл) без единого теста — ошибка набора, у вложенных пустых — своя
+  if (allTests(suite).length === 0) {
+    if (suite.mode !== 'run') return;
+    for (const child of suite.children) await runSuite(child, report);
+    const error = new Error(`No test found in suite ${suite.name}`);
+    error.stack = error.message;
+    report({ id: suite.id, state: 'fail', errors: [report.formatError(error)] });
+    return;
+  }
   const runnable = allTests(suite).some((t) => t.mode === 'run');
   if (!runnable) {
     for (const t of allTests(suite)) report({ id: t.id, state: t.mode === 'todo' ? 'todo' : 'skip' });
@@ -482,28 +489,30 @@ async function runSuite(suite, report) {
   }
   const cleanups = [];
   try {
-    for (const hook of suite.hooks.beforeAll) await callHook(hook, [suite], cleanups);
-  } catch (error) {
-    // Упал beforeAll — как в Vitest: набор с ошибкой («Failed Suites»), его тесты пропущены
-    report({ id: suite.id, state: 'fail', errors: [report.formatError(error)] });
-    for (const t of allTests(suite)) report({ id: t.id, state: t.mode === 'todo' ? 'todo' : 'skip' });
-    return;
-  }
-  for (const child of suite.children) {
-    if (child.type === 'suite') await runSuite(child, report);
-    else {
-      await runTest(child, report);
-      await yieldToBrowser();
-    }
-  }
-  for (const hook of [...suite.hooks.afterAll].reverse()) {
     try {
-      await callHook(hook, [suite], []);
+      for (const hook of suite.hooks.beforeAll) await callHook(hook, [suite], cleanups);
+    } catch (error) {
+      // Упал beforeAll — как в Vitest: набор с ошибкой («Failed Suites»), его тесты пропущены
+      report({ id: suite.id, state: 'fail', errors: [report.formatError(error)] });
+      for (const t of allTests(suite)) report({ id: t.id, state: t.mode === 'todo' ? 'todo' : 'skip' });
+      return;
+    }
+    for (const child of suite.children) {
+      if (child.type === 'suite') await runSuite(child, report);
+      else {
+        await runTest(child, report);
+        await yieldToBrowser();
+      }
+    }
+  } finally {
+    // afterAll и очистки beforeAll — и тогда, когда beforeAll упал (как в Vitest)
+    try {
+      for (const hook of [...suite.hooks.afterAll].reverse()) await callHook(hook, [suite], []);
+      for (const cleanup of cleanups.reverse()) await cleanup();
     } catch (error) {
       report({ id: suite.id, state: 'fail', errors: [report.formatError(error)] });
     }
   }
-  for (const cleanup of cleanups.reverse()) await cleanup();
 }
 
 /**
