@@ -1,0 +1,46 @@
+/* Приветствие наверху главной */
+.hero {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.hero p {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+/* Заголовок подборки и ссылка «все» справа */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-head a {
+  font-size: 14px;
+}
+
+.section-title {
+  margin: 16px 0 8px;
+  font-size: 18px;
+}
+
+/* «Вы смотрели»: обложки последних игр в один ряд */
+.recent {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 96px));
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.recent img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}

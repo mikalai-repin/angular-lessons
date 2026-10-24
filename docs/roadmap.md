@@ -42,7 +42,7 @@
 - ✅ Квизы глав 3–12 (13 вопросов у главы 9, по 15 у остальных): у каждого вопроса — цитата из `lesson.md` за верный ответ и против неочевидных неверных, затем независимая сверка с текстом; квиз — в критерии готовности главы
 - ✅ Проверки `check.ts` для практикумов: кнопка «✓ Проверить», проверка в превью на чистом `localStorage` (`export storage` — стартовые данные), типы `@course/check`, `checks/step-checks.mjs`; проверки у практикумов глав 2–10, каждая прогнана на «мутациях» решения
 
-## Этап 4. Приложение: главы 9–18 — 🟨
+## Этап 4. Приложение: главы 9–18 — ✅
 
 - ✅ Глава 9. Состояние приложения (6 шагов)
 - ✅ Глава 10. Роутинг (11 шагов; в превью добавлен заголовок вкладки)
@@ -55,10 +55,19 @@
 - ✅ Тест-раннер в превью: `preview: tests` и переключатель «Приложение / Тесты», отчёт (файлы, `describe`, ошибки с diff и местом, «Ошибки вне тестов»), ⟳; API Vitest 5 — свой раннер + настоящие `@vitest/expect`/`chai`/`@vitest/spy`, фейковые таймеры `@sinonjs/fake-timers`; окружение как у `ng test` (сетап `@angular/build:unit-test`); `check.ts` получает `tests`; типы `shared/vitest.d.ts`; сверка с настоящим `ng test` (`tools/e2e/ng-test.mjs`, Chromium и jsdom) — совпадают числа тестов, тексты ошибок, порядок хуков, ошибки вне тестов
 - ✅ Глава 16. Тестирование (9 шагов: `plural`, пайпы и `TestBed`, `CartStore` — сигналы, `TestBed.tick()` и ошибки вне тестов (`NG0205` — правка аналитики в магазине), `GameCard` — фикстура и `whenStable`, подмена `FlyToCart`/`SHOP_CONFIG`, `AuthStore` и интерцептор с `HttpTestingController`, маршруты с `RouterTestingHarness`, практикум «Тесты оформления заказа» (`vi.waitFor`), под капотом — `ng test` против превью; квиз — 15 вопросов). Все 42 теста главы проходят в превью и в `ng test` (jsdom). Платформа: у тестов своё `localStorage` в памяти; раннер приведён к Vitest 5.0.5 (обрыв цепочки `afterEach`, пустой набор, `afterAll` после упавшего `beforeAll`); `checks/test-runner.mjs` — на шагах главы 16
 - ✅ Глава 17. Админка (8 шагов: макет раздела и вложенные маршруты под одним `canMatch`, таблица игр — сортировка по колонкам с `aria-sort`, поиск и страницы в адресе, форма редактирования — модель `linkedSignal` от ресурса, поля `GameFields` со входом `FieldTree`, `PUT` и `400`, сервис раздела `AdminGames` в `providers` маршрута и журнал, `withAutoCleanupInjectors`, очистка кэша после изменений, окно подтверждения через `createComponent` и гард на нём, практикум «Новая игра» с загрузкой обложки `FormData`; тесты схемы игры — 46 тестов проходят в превью и в `ng test`; квиз — 15 вопросов). Бэкенд: проверка полей игры, `PUT` заменяет игру, `POST /api/covers` (`multipart/form-data`), сортировки `-title`/`inStock`/`-inStock`; превью показывает `/uploads/…` из памяти бэкенда (`blob:`); `checks/ch17-admin.mjs`
-- ⬜ Пакеты NgRx 22 в превью (import map в `scripts/copy-vendor.mjs`, типы для Monaco) — до главы 18
-- ⬜ Глава 18. NgRx
+- ✅ Пакеты NgRx 22.0.1 в превью: `@ngrx/signals`, `store`, `effects`, `operators`, `store-devtools` — `copyPackage` в `scripts/copy-vendor.mjs` (import map по `exports`, 12 записей), типы в `src/editor/monaco.ts`; `tools/e2e/ng-test.mjs` ставит те же версии в проект CLI
+- ✅ Глава 18. NgRx (10 шагов: избранное на Signal Store, корзина — `withProps`, `_`-члены, `withLinkedState`, сущности `withEntities`, своё расширение `withStorage`, сверка с сервером на `rxMethod` + `tapResponse`, событие «заказ оформлен» — `eventGroup`/`injectDispatch`/`withReducer`/`withEventHandlers`; избранное на классическом Store — действия, `createFeature`, `selectSignal`, функциональные эффекты, мета-редьюсер-журнал; практикум «Вы смотрели» на `signalMethod`; под капотом — `signalStore` изнутри; квиз — 15 вопросов). 46 тестов магазина проходят на каждом шаге в превью и в `ng test`; `checks/ch18-ngrx.mjs`
 
 Критерий готовности: полный «Ход конём»: каталог → игра → корзина → оформление, вход, кабинет, админка.
+
+### Технический долг главы 18
+
+- Магазин на двух библиотечных подходах сразу: корзина и «Вы смотрели» — Signal Store, избранное — классический Store (так задумано для сравнения, сказано в 18.7–18.10). В настоящем проекте выбрали бы один; при переносе в CLI (глава 20) решить, оставлять ли так.
+- `core/cart-store.ts` импортирует `checkout/checkout-events.ts` — `core` зависит от раздела (события объявляет источник, как в документации NgRx).
+- Redux DevTools в превью не проверялись (расширения в headless Chrome нет): в 18.8 — только `provideStoreDevtools` без расширения. Проверить в главе 20 в настоящем проекте.
+- Сверка корзины (`refresh`) — запрос на каждую игру: в API нет «игры по списку id» (как и у страницы избранного).
+- `@ngrx/signals/resource` (`@experimental`) и `withLinkedState` сверх промокода, `deepComputed`, `signalState` в главе не показаны.
+- Тестов на новые хранилища нет (кроме прежних тестов корзины): кандидат — `unprotected` и тесты Signal Store в главе 20.
 
 ### Технический долг главы 17
 
@@ -202,9 +211,9 @@
 
 ## Следующий шаг
 
-**Глава 18 «NgRx»** по `docs/course-plan.md` и `docs/authoring-process.md`:
+**Глава 19 «Под капотом Angular»** (часть 3) по `docs/course-plan.md` и `docs/authoring-process.md`:
 
-1. Прочитать `CLAUDE.md`, `docs/authoring-process.md` целиком (в т. ч. «Код магазина на конец последней главы» и ловушки), `docs/writing-guide.md`, `docs/modern-angular.md` (пункт «Проверить» про NgRx 22).
-2. До текстов — платформа: пакеты NgRx 22 в превью (import map в `scripts/copy-vendor.mjs`, типы для Monaco в `src/editor/monaco.ts`), проверить работу в JIT, стабильность `@ngrx/signals/events`.
-3. Старт главы 18 — решение `08-practice` главы 17. В магазине уже есть сервисы на сигналах (`CartStore`, `FavoritesStore`, `AuthStore`, `AdminGames`) — глава переводит их части на Signal Store и показывает классический Store.
-4. Генератор — по образцу `tools/authoring/ch17-gen.py`; квиз — после текстов.
+1. Прочитать `CLAUDE.md`, `docs/authoring-process.md` целиком (в т. ч. «Код магазина на конец последней главы» и ловушки), `docs/writing-guide.md`, `docs/modern-angular.md`.
+2. До текстов — решить по этапу 5 (`roadmap.md`): нужна ли вкладка «Шаблон» (код JIT для выбранного компонента) и дерево компонентов/сигналов — глава 19 на них опирается. Помощники уже есть: журнал проверок `cd-log.ts` (`ng.ɵsetProfiler`, шаг 6.9).
+3. Старт главы 19 — решение `09-practice` главы 18 (шаг 10 без кода).
+4. Генератор — по образцу `tools/authoring/ch18-gen.py`; квиз — после текстов.

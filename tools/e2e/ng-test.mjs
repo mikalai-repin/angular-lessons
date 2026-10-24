@@ -3,7 +3,8 @@
 //
 // Проект создаётся один раз в tools/e2e/out/cli/hk (`ng new` той же версии Angular, что в курсе, затем пакеты
 // @angular/* фиксируются на ней). Angular CLI 22 требует Node 22.22+/24.15+: скрипт запускает его через nvm
-// (NG_TEST_NODE, по умолчанию 24.15). Код шага кладётся в src/app (main.ts и styles.css — в src/).
+// (NG_TEST_NODE, по умолчанию 24.15). Пакеты NgRx ставятся тех же версий, что у платформы.
+// Код шага кладётся в src/app (main.ts и styles.css — в src/).
 // --browser — Vitest в Chromium (как превью; ставит @vitest/browser-playwright и браузер Playwright),
 // без него — jsdom (так `ng test` работает по умолчанию: нет matchMedia, IntersectionObserver, раскладки).
 import { execSync } from 'node:child_process';
@@ -48,6 +49,14 @@ if (!existsSync(join(project, 'angular.json'))) {
   rmSync(join(project, 'node_modules'), { recursive: true, force: true });
   rmSync(join(project, 'package-lock.json'), { force: true });
   sh('npm install');
+}
+// Пакеты NgRx (глава 18) — те же версии, что у платформы (devDependencies курса)
+const ngrx = Object.entries(JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).devDependencies).filter(
+  ([name]) => name.startsWith('@ngrx/'),
+);
+const missing = ngrx.filter(([name]) => !existsSync(join(project, 'node_modules', name)));
+if (missing.length > 0) {
+  sh(`npm install --save-exact ${missing.map(([name, version]) => `${name}@${version}`).join(' ')}`);
 }
 if (browser && !existsSync(join(project, 'node_modules/@vitest/browser-playwright'))) {
   const vitest = JSON.parse(readFileSync(join(project, 'node_modules/vitest/package.json'), 'utf8')).version;

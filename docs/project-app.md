@@ -52,13 +52,22 @@ layout/breadcrumbs/          хлебные крошки из data маршру�
 layout/shop-title-strategy.ts заголовок вкладки «… — Ход конём» (глава 10)
 layout/quick-search/         быстрый поиск в шапке: подсказки потоком RxJS (глава 12)
 layout/flying-covers/        обложки, летящие в корзину: (animate.enter) + element.animate (глава 15)
-home/                        главная: приветствие, «Хиты», «Со скидкой» (глава 10)
+home/                        главная: приветствие, «Вы смотрели» (глава 18), «Хиты», «Со скидкой» (глава 10)
 cart/
   cart-page/                 страница корзины: позиции, итоги, промокод, «Оформить заказ» (глава 10; до неё — мини-корзина)
 not-found/                   «Нет такой страницы» (глава 10)
 core/
-  cart-store.ts              CartStore: закрытое состояние, итоги (computed), промокод (linkedSignal), склад, localStorage (с главы 11 — снимок игры, ключ v2)
-  favorites-store.ts         FavoritesStore: id избранного (глава 8), localStorage (глава 9); игры грузит страница (resource, глава 11)
+  cart-store.ts              CartStore: закрытое состояние, итоги (computed), промокод (linkedSignal), склад, localStorage (с главы 11 — снимок игры, ключ v2);
+                             с главы 18 — Signal Store: позиции — withEntities (ключ game.id), промокод — withLinkedState,
+                             сверка с сервером refresh (rxMethod), очистка по событию checkoutEvents.orderPlaced (withReducer)
+  with-storage.ts            withStorage(key, { save, restore }) — своё расширение Signal Store: localStorage (глава 18)
+  (favorites-store.ts        FavoritesStore: id избранного (глава 8), localStorage (глава 9), Signal Store (главы 18.1–18.6);
+                             с шага 18.7 — классический Store, файл удалён)
+  favorites-feature.ts       избранное в классическом Store: createFeature, редьюсер, selectIds/selectCount (глава 18)
+  favorites-effects.ts       эффекты NgRx: restoreFavorites (ROOT_EFFECTS_INIT), saveFavorites (глава 18);
+                             favorites-storage-actions.ts — действие Restored
+  action-log.ts              мета-редьюсер: журнал действий Store в консоли при разработке (глава 18)
+  recent-store.ts            RecentStore «Вы смотрели»: withEntities<Game>, withStorage, remember — signalMethod (глава 18)
   (promo-codes.ts            промокоды списком в коде, главы 9–12; с главы 13 их проверяет сервер)
   confirmation.ts            Confirmation: окно «Вы уверены?» из кода (createComponent + attachView), ask() → Promise<boolean> (глава 17)
   shop-config.ts             SHOP_CONFIG: настройки магазина (InjectionToken); priorityCovers — глава 15
@@ -75,7 +84,7 @@ core/
   models.ts                  типы Game, GamesPage, Review, CartItem, Order, User
   (games-data.ts             локальный каталог глав 2–10; удалён в главе 11)
 shared/
-  game-card/                 карточка игры (ts + html + css)
+  game-card/                 карточка игры (ts + html + css); game-card-actions.ts — действия карточки для Store (глава 18)
   price-pipe.ts              пайп цены «1 290 ₽» (имена файлов — как у `ng generate pipe` 22)
   players-pipe.ts            «2–4 игрока»
   duration-pipe.ts           «1 ч 30 мин» / «1 час 30 минут»
@@ -90,7 +99,7 @@ shared/
   (lazy-image.ts             ленивая обложка img[appLazy], главы 7–14; с главы 15 — NgOptimizedImage)
 catalog/                     каталог, фильтры, поиск (фильтры — query-параметры, глава 10; с сервера страницами, глава 11)
 game/                        страница игры (game-page, game-title — резолвер названия для крошки и заголовка), отзывы (глава 11; с главы 15 — game-reviews/, в @defer)
-checkout/                    оформление заказа (глава 10 — сводка, комментарий и гарды; глава 12 — черновик комментария; глава 13 — форма: checkout-schema.ts, отправка заказа, гард несохранённой формы)
+checkout/                    оформление заказа (глава 10 — сводка, комментарий и гарды; глава 12 — черновик комментария; глава 13 — форма: checkout-schema.ts, отправка заказа, гард несохранённой формы); checkout-events.ts — события оформления (eventGroup, глава 18)
 login/                       страница входа: форма Signal Forms (глава 13), вход через AuthStore и возврат по returnUrl (глава 14)
 account/                     кабинет: account.routes.ts (ленивый), favorites-page, orders-page (глава 10); «Мои заказы» с сервера, гард входа (глава 14)
 admin/                       админка (canMatch по роли в app.routes.ts, глава 14; разделы — глава 17):
@@ -183,7 +192,7 @@ interface Game {
 | 15 | Строки корзины въезжают (`animate.enter`, класс) и уезжают, схлопываясь по высоте (`(animate.leave)` + Web Animations); отзывы — компонент `GameReviews` (`game/game-reviews/`) в `@defer (on viewport; prefetch on idle)` с заглушкой, `@loading` и `@error`; обложки — `NgOptimizedImage` (`ngSrc`, размеры, `priority` у обложки игры и первых `priorityCovers` карточек списков — новое поле `SHOP_CONFIG`), `LazyImage` удалена; «В корзину» в карточке — обложка летит в корзину (`core/fly-to-cart.ts`, `layout/flying-covers/` в шапке) |
 | 16 | Тесты (`*.spec.ts` рядом с кодом, 42 теста): `plural`, пайпы `duration`/`price`, `CartStore`, `GameCard` (подмена `FlyToCart` и `SHOP_CONFIG`), `AuthStore` и `authInterceptor` (поддельный сервер), маршруты (`app.routes.spec.ts`, `RouterTestingHarness`), схема и страница оформления заказа; помощник `testing/fake-game.ts`; аналитика больше не роняет корзину и навигацию (`.catch` у `injectAsync` в `CartStore.track()` и `App`) |
 | 17 | Админка: макет раздела с меню, таблица игр (сортировка по колонкам, поиск, страницы — в адресе), форма редактирования (`PUT`, поля — `GameFields`), сервис раздела `AdminGames` в провайдерах маршрута и журнал на сводке, очистка кэша после изменений, окно подтверждения удаления (`createComponent`) и гард несохранённой формы на нём, новая игра с загрузкой обложки (`FormData`) |
-| 18 | NgRx: корзина и фильтры каталога на Signal Store, та же корзина на классическом Store |
+| 18 | NgRx: избранное и корзина на Signal Store (`core/favorites-store.ts` → затем классический Store; `core/cart-store.ts` — сущности `withEntities` с ключом `game.id`, своё расширение `core/with-storage.ts`, сверка с сервером `refresh` на `rxMethod` при открытии корзины — «Сверяем цены и остатки…», событие `checkoutEvents.orderPlaced` очищает корзину), избранное на классическом Store (`GameCardActions`, `favoritesFeature`, эффекты сохранения, журнал действий `core/action-log.ts`), «Вы смотрели» на главной (`core/recent-store.ts`, `signalMethod`) |
 | 20 | Перенос в проект Angular CLI, AOT-сборка, SSR, деплой |
 
 ## Разбор «настоящего» кода (часть 3)

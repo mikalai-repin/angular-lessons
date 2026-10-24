@@ -13,7 +13,11 @@ import { angularHtmlLanguage, defineCourseThemes } from './angular-html';
 // добавляем файл-заглушку `<подпуть>/index.d.ts` с `export * from '<настоящий файл>'`.
 
 const angularTypes = import.meta.glob(
-  '../../node_modules/@angular/{core,common,compiler,platform-browser,forms,router}/types/*.d.ts',
+  [
+    '../../node_modules/@angular/{core,common,compiler,platform-browser,forms,router}/types/*.d.ts',
+    // NgRx (глава 18) — тот же список, что NGRX_PACKAGES в scripts/copy-vendor.mjs
+    '../../node_modules/@ngrx/{signals,store,effects,operators,store-devtools}/types/*.d.ts',
+  ],
   {
     query: '?raw',
     import: 'default',
@@ -22,7 +26,10 @@ const angularTypes = import.meta.glob(
 ) as Record<string, string>;
 
 const angularPackages = import.meta.glob(
-  '../../node_modules/@angular/{core,common,compiler,platform-browser,forms,router}/package.json',
+  [
+    '../../node_modules/@angular/{core,common,compiler,platform-browser,forms,router}/package.json',
+    '../../node_modules/@ngrx/{signals,store,effects,operators,store-devtools}/package.json',
+  ],
   { import: 'default', eager: true },
 ) as Record<string, { exports: Record<string, string | { types?: string }> }>;
 

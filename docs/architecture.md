@@ -60,6 +60,7 @@
 Фиксируются точно в `package.json` и `content/course.json` (`angularVersion`):
 
 - `@angular/core`, `common`, `compiler`, `compiler-cli`, `platform-browser`, `forms`, `router` — **22.2.1** (в `devDependencies`: в бандл платформы не попадают, нужны vendor-скрипту, Monaco и проверкам). `@angular/animations` не подключаем: пакет устарел.
+- `@ngrx/signals`, `store`, `effects`, `operators`, `store-devtools` — **22.0.1** (глава 18; тоже `devDependencies`, точные версии). `@ngrx/entity`, `router-store` и прочие не подключены.
 - `typescript` — **6.0.3**: `@angular/compiler-cli@22` требует `>=6.0 <6.1`. В курсе PixiJS стоит TypeScript 7 (Go-версия без JS API) — здесь нельзя.
 - `rxjs` — **7.8.2**.
 - `zone.js` не подключаем (зонлесс — по умолчанию в v22).
@@ -100,11 +101,12 @@
 Запускается перед `dev` и `build` (`predev`, `prebuild`), <1 с:
 
 - `public/vendor/angular/<пакет>/*.mjs` (+ `.map`) — `fesm2022` пакетов Angular как есть (они ссылаются на соседние чанки относительными путями);
+- `public/vendor/ngrx/<пакет>/*.mjs` — то же для пакетов NgRx (`NGRX_PACKAGES`, глава 18): раскладка `fesm2022` + `exports` такая же, как у Angular, — копирует одна функция `copyPackage`. Типы для редактора — те же пять пакетов в `src/editor/monaco.ts` (заглушки подпутей строит общий код);
 - `public/vendor/angular/common/locales/{ru,en}.mjs` — локали для пайпов (глава 7);
 - `public/vendor/rxjs.mjs` — RxJS одним файлом (esbuild);
 - `public/vendor/ts-angular.mjs` — TypeScript 6 + трансформ для воркера: esbuild, `platform: browser`, модули Node (`fs`, `path`, `module`, `url`, `os`, `crypto`, `process`, `util`) заменены заглушкой `scripts/node-stub.mjs`. ~4 МБ (1,2 МБ gzip). Пересобирается только при смене версий TypeScript/compiler-cli (метка `ts-angular.stamp.json`);
 - `public/vendor/es-module-lexer.js`;
-- **`public/preview.html`** — из `scripts/preview.template.html` с import map. Карта строится по полю `exports` в `package.json` пакетов (26 записей): новые подпути при обновлении Angular попадут в неё сами. `rxjs/operators` указывает на тот же `rxjs.mjs` (в RxJS 7 операторы экспортируются и из корня).
+- **`public/preview.html`** — из `scripts/preview.template.html` с import map. Карта строится по полю `exports` в `package.json` пакетов (39 записей, из них 12 — NgRx): новые подпути при обновлении Angular попадут в неё сами. `rxjs/operators` указывает на тот же `rxjs.mjs` (в RxJS 7 операторы экспортируются и из корня).
 
 `public/vendor/` и `public/preview.html` — в `.gitignore` (генерируются).
 

@@ -241,13 +241,23 @@
 |---|---|---|
 | state management | управление состоянием | |
 | Signal Store | Signal Store | имя не переводим; «стор» — только в разговорных фразах |
-| store feature | расширение стора | `signalStoreFeature` |
-| entity | сущность | `withEntities` |
-| action | действие (action) | классический Store |
-| reducer | редьюсер | |
+| store feature | часть хранилища | `withState`, `withComputed`, `withMethods`… — из них `signalStore` собирает хранилище |
+| custom store feature | своё расширение | `signalStoreFeature`: несколько частей одной функцией (`withStorage`) |
+| state slice | поле состояния | `ids` в `withState({ ids: [] })`; у каждого — свой сигнал |
+| linked state | связанное состояние | `withLinkedState` |
+| private store member | закрытый член хранилища | имя с `_`: `_config`, `_track` |
+| entity | сущность | `withEntities`; коллекция сущностей — `entityMap` + `ids` |
+| reactive method | метод на RxJS | `rxMethod` |
+| event (Events plugin) | событие | `eventGroup`, `injectDispatch`; в Signal Store |
+| event handler | обработчик событий | `withEventHandlers` |
+| classic Store | классический Store | `@ngrx/store` |
+| action | действие (action) | классический Store; не путать с методом-действием хранилища из главы 9 |
+| reducer | редьюсер | `createReducer`, `withReducer` |
+| meta-reducer | мета-редьюсер | обёртка вокруг редьюсера всего Store |
+| feature (createFeature) | часть состояния (feature) | `favoritesFeature`: имя, редьюсер, селекторы |
 | selector | селектор | `createSelector`; не путать с селектором компонента — уточнять «селектор состояния» |
 | effect (NgRx) | эффект NgRx | не путать с `effect()` Angular — всегда уточнять |
-| dispatch | отправить действие | `store.dispatch` |
+| dispatch | отправить действие | `store.dispatch`; событие — тоже «отправить» |
 
 ## Формы
 

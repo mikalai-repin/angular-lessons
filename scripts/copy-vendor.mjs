@@ -1,5 +1,6 @@
 // Готовит всё, что нужно превью для запуска кода ученика без сборщика (запускается перед dev и build):
 //   public/vendor/angular/<пакет>/  — ESM-файлы пакетов Angular (fesm2022) как есть;
+//   public/vendor/ngrx/<пакет>/     — то же для пакетов NgRx (глава 18);
 //   public/vendor/rxjs.mjs          — RxJS одним файлом (в пакете сотни модулей);
 //   public/vendor/ts-angular.mjs    — TypeScript + JIT-трансформ из @angular/compiler-cli для воркера компиляции;
 //   public/vendor/vitest.mjs        — API Vitest для тестов в превью (vendor-src/vitest.mjs + @vitest/expect, chai, @vitest/spy);
@@ -19,15 +20,18 @@ const readJson = (path) => JSON.parse(readFileSync(resolve(root, path), 'utf8'))
 
 // Пакеты Angular, доступные коду ученика. @angular/animations не подключаем: пакет устарел (см. docs/modern-angular.md)
 const ANGULAR_PACKAGES = ['core', 'common', 'compiler', 'platform-browser', 'forms', 'router'];
+// Пакеты NgRx (глава 18) — такая же раскладка fesm2022 + exports. Тот же список — в src/editor/monaco.ts
+const NGRX_PACKAGES = ['signals', 'store', 'effects', 'operators', 'store-devtools'];
 // Локали для пайпов дат и чисел (глава 7): `import localeRu from '@angular/common/locales/ru'`.
 // Тот же список — в src/editor/monaco.ts (localeTypes): типы локалей для редактора
 const LOCALES = ['ru', 'en'];
 
 const importMap = {};
 
-for (const name of ANGULAR_PACKAGES) {
-  const pkgDir = `node_modules/@angular/${name}`;
-  const target = resolve(out, 'angular', name);
+/** Копирует fesm2022 пакета в public/vendor/<scope>/<name>/ и добавляет его подпути из `exports` в import map */
+function copyPackage(scope, name) {
+  const pkgDir = `node_modules/@${scope}/${name}`;
+  const target = resolve(out, scope, name);
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   for (const file of readdirSync(resolve(root, pkgDir, 'fesm2022'))) {
@@ -37,9 +41,12 @@ for (const name of ANGULAR_PACKAGES) {
   for (const [subpath, entry] of Object.entries(exports)) {
     const file = typeof entry === 'string' ? entry : entry.default;
     if (subpath.includes('*') || !file?.startsWith('./fesm2022/')) continue;
-    importMap[`@angular/${name}${subpath.slice(1)}`] = `/vendor/angular/${name}/${file.slice('./fesm2022/'.length)}`;
+    importMap[`@${scope}/${name}${subpath.slice(1)}`] = `/vendor/${scope}/${name}/${file.slice('./fesm2022/'.length)}`;
   }
 }
+
+for (const name of ANGULAR_PACKAGES) copyPackage('angular', name);
+for (const name of NGRX_PACKAGES) copyPackage('ngrx', name);
 
 mkdirSync(resolve(out, 'angular/common/locales'), { recursive: true });
 for (const locale of LOCALES) {
@@ -114,5 +121,5 @@ const importMapJson = JSON.stringify({ imports: importMap }, null, 2).replace(/\
 writeFileSync(resolve(root, 'public/preview.html'), template.replace('<!--IMPORT_MAP-->', importMapJson));
 
 console.log(
-  `[vendor] Angular: ${ANGULAR_PACKAGES.length} пакетов, ${Object.keys(importMap).length} записей в import map`,
+  `[vendor] Angular: ${ANGULAR_PACKAGES.length} пакетов, NgRx: ${NGRX_PACKAGES.length}, ${Object.keys(importMap).length} записей в import map`,
 );
