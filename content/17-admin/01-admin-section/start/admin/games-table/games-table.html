@@ -1,0 +1,34 @@
+@if (games.hasValue()) {
+  @let page = games.value();
+  <p class="muted">Игр в каталоге: {{ page.total }}</p>
+  <table class="table">
+    <thead>
+      <tr>
+        <!-- scope="col" — заголовок колонки: экранный диктор прочитает его у каждой ячейки -->
+        <th scope="col">Игра</th>
+        <th scope="col" class="num">Цена</th>
+        <th scope="col" class="num">Склад</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (game of page.items; track game.id) {
+        <tr>
+          <td>{{ game.title }}</td>
+          <td class="num">{{ game.price | price }}</td>
+          <td class="num" [class.out]="game.inStock === 0">
+            {{ game.inStock }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+} @else if (games.isLoading()) {
+  <p class="muted">Загружаем игры…</p>
+} @else if (games.error()) {
+  <p class="error-message">
+    Не удалось загрузить игры.
+    <button class="link-button" (click)="games.reload()">
+      Повторить
+    </button>
+  </p>
+}

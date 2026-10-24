@@ -60,12 +60,13 @@ core/
   cart-store.ts              CartStore: закрытое состояние, итоги (computed), промокод (linkedSignal), склад, localStorage (с главы 11 — снимок игры, ключ v2)
   favorites-store.ts         FavoritesStore: id избранного (глава 8), localStorage (глава 9); игры грузит страница (resource, глава 11)
   (promo-codes.ts            промокоды списком в коде, главы 9–12; с главы 13 их проверяет сервер)
+  confirmation.ts            Confirmation: окно «Вы уверены?» из кода (createComponent + attachView), ask() → Promise<boolean> (глава 17)
   shop-config.ts             SHOP_CONFIG: настройки магазина (InjectionToken); priorityCovers — глава 15
   fly-to-cart.ts             FlyToCart: обложки в полёте (сигнал), launch/land, prefers-reduced-motion (глава 15)
   analytics.ts               учебная аналитика, загружается лениво (injectAsync); просмотры страниц — из App (глава 12); ошибки загрузки глушатся (.catch, глава 16)
   logging-interceptor.ts     лог запросов HttpClient: метод, адрес, статус, время (глава 12)
   retry-interceptor.ts       повтор GET при ответе 5xx (глава 12)
-  cache-interceptor.ts       кэш GET с меткой CACHE (HttpContextToken), ResponseCache на 10 с (глава 12)
+  cache-interceptor.ts       кэш GET с меткой CACHE (HttpContextToken), ResponseCache на 10 с (глава 12); успешный не-GET очищает кэш (глава 17)
   auth-store.ts              AuthStore: токен и пользователь (сигналы), logIn/logOut, restore (GET /api/me при запуске),
                              refresh (одно обновление на всех), метка SKIP_AUTH (глава 14)
   auth-interceptor.ts        Authorization: Bearer для /api/…, 401 → обновление токена и повтор, иначе выход (глава 14)
@@ -83,6 +84,7 @@ shared/
   field-errors/              ошибки поля формы списком под полем (глава 13)
   form-rules.ts              общие правила форм: emailRules (глава 13)
   quantity/                  выбор количества «− N +» (model.required, min/max)
+  confirm-dialog/            окно подтверждения: <dialog> + showModal, <form method="dialog">, выход answer (глава 17)
   tooltip.ts                 директива атрибута (подсказка при наведении)
   in-view.ts                 директива «появился на экране» (IntersectionObserver)
   (lazy-image.ts             ленивая обложка img[appLazy], главы 7–14; с главы 15 — NgOptimizedImage)
@@ -91,7 +93,19 @@ game/                        страница игры (game-page, game-title �
 checkout/                    оформление заказа (глава 10 — сводка, комментарий и гарды; глава 12 — черновик комментария; глава 13 — форма: checkout-schema.ts, отправка заказа, гард несохранённой формы)
 login/                       страница входа: форма Signal Forms (глава 13), вход через AuthStore и возврат по returnUrl (глава 14)
 account/                     кабинет: account.routes.ts (ленивый), favorites-page, orders-page (глава 10); «Мои заказы» с сервера, гард входа (глава 14)
-admin/                       админка: admin.routes.ts (ленивый, canMatch по роли), admin-home — сводка GET /api/admin/summary (глава 14); разделы — глава 17
+admin/                       админка (canMatch по роли в app.routes.ts, глава 14; разделы — глава 17):
+  admin.routes.ts            макет AdminLayout с providers: [AdminGames]; '' — сводка, games — таблица,
+                             games/new — новая игра, games/:id — редактирование (резолвер крошки, гард несохранённой формы)
+  admin-layout/              макет раздела: «Админка», меню «Сводка · Игры», <router-outlet>
+  admin-home/                сводка GET /api/admin/summary и журнал изменений за сеанс
+  games-table/               таблица игр: q, sort, page — query-параметры; aria-sort, страницы, «Удалить» с подтверждением
+  game-edit/  game-new/      редактирование (модель — linkedSignal от ресурса, PUT) и новая игра (POST)
+  game-fields/               поля игры для обеих форм: вход FieldTree<GameDraft>
+  cover-upload/              поле обложки (FormValueControl<string>): файл → POST /api/covers → адрес
+  game-schema.ts             GameDraft, toDraft, CATEGORIES, gameSchema (+ game-schema.spec.ts)
+  admin-games.ts             AdminGames (@Service({ autoProvided: false }), провайдер маршрута): save, create, remove,
+                             uploadCover, журнал changes
+  admin-guards.ts            unsavedChangesGuard (CanDeactivateFn, окно Confirmation)
 testing/
   fake-game.ts               fakeGame(overrides): игра для тестов (глава 16)
 *.spec.ts                    тесты — рядом с проверяемым файлом (глава 16): shared/plural, shared/duration-pipe, shared/price-pipe,
@@ -130,7 +144,7 @@ interface Game {
 
 | Метод и путь | Что делает | Глава |
 |---|---|---|
-| `GET /api/games?q=&category=&players=&inStock=&rating=&onSale=&sort=&page=&size=` | Страница каталога: `{ items, total, page, size }`; `sort`: `price`, `-price`, `rating`, `title`; `rating` — рейтинг от; `onSale=true` — только со скидкой (`oldPrice`); `size` по умолчанию 12; `q` ищет по названию и тегам; пустой параметр — как отсутствующий | 11 |
+| `GET /api/games?q=&category=&players=&inStock=&rating=&onSale=&sort=&page=&size=` | Страница каталога: `{ items, total, page, size }`; `sort`: `price`, `-price`, `rating`, `title`, для админки (глава 17) ещё `-title`, `inStock`, `-inStock`; `rating` — рейтинг от; `onSale=true` — только со скидкой (`oldPrice`); `size` по умолчанию 12; `q` ищет по названию и тегам; пустой параметр — как отсутствующий | 11 |
 | `GET /api/games/:id` | Игра (по `id` или `slug`) или 404 | 11 |
 | `GET /api/categories` | Категории | 11 |
 | `GET /api/games/:id/reviews` | Отзывы | 11, 15 |
@@ -142,7 +156,8 @@ interface Game {
 | `GET /api/admin/summary` | Сводка для админки `{ games, outOfStock, orders, users }`; без токена — 401, не admin — 403 | 14 |
 | `GET /api/promo/:code` | Промокод (`{ code, percent }` или `{ code, amount, minTotal }`, регистр не важен) или 404 — асинхронная проверка | 13 |
 | `POST /api/orders`, `GET /api/orders` | Заказ: `{ items: [{ gameId, quantity }], … }` → 201 с `id` (уменьшает склад) или 409 «„…“: на складе только N», 400 — пустой заказ; без токена `userId: null`. Список — только с токеном (свои заказы) | 13, 14 |
-| `PUT /api/games/:id`, `POST /api/games`, `DELETE /api/games/:id` | Админка (роль admin) | 17 |
+| `PUT /api/games/:id`, `POST /api/games`, `DELETE /api/games/:id` | Админка (роль admin; без токена 401, не admin 403). `PUT` заменяет редактируемые поля целиком (`title`, `cover`, `price`, `oldPrice`, `category`, `players`, `playTime`, `age`, `inStock`, `description`; `oldPrice: null` — скидки нет), `id`, `slug`, рейтинг и теги ведёт сервер; `POST` → 201 с новым `id`, `slug: game-N`, рейтинг 0. Проверка (400): название, цена — целое > 0, цена до скидки > цены, остаток — целое ≥ 0, категория, игроки (от ≥ 1, до ≥ от), время, возраст, обложка. `DELETE` → 204 | 17 |
+| `POST /api/covers` | Загрузка обложки (admin): `multipart/form-data`, файл в поле `file` → 201 `{ url: '/uploads/N-имя' }`; нет файла — 400, не SVG/PNG/JPEG/WebP — 415, больше 1 МБ — 413. Адрес работает только в превью (см. `architecture.md`) | 17 |
 | `GET /api/email-available?email=` | Свободен ли e-mail (в главе 13 не понадобился; регистрация — по необходимости) | — |
 
 Учётные записи: `user@example.com / user` и `admin@example.com / admin`. Вход выдаёт JWT (HS256, ключ учебный и открытый — `JWT_SECRET` в `backend.js`): токен доступа живёт `tokenTtl` секунд (по умолчанию 3600, шаг задаёт `backend: { tokenTtl }`), refresh-токен — 7 дней. Сервер не хранит выданные токены (проверяет подпись и срок) — вход переживает перезапуск превью; хранит только отозванные refresh-токены (до перезапуска). Недействительный или истёкший токен в заголовке `Authorization` — 401 на любом адресе, кроме входа, обновления и выхода. Вечные учебные токены `token-user` и `token-admin` по-прежнему принимаются — ими удобно начинать проверки «уже вошедшим» (`check.ts` 14.9). Промокоды: `KNIGHT10` (−10 %), `CHESS500` (−500 ₽ от 3000 ₽). `POST /api/orders` уменьшает остаток на складе и отвечает 409, если игр не хватает. Это учебный бэкенд, и в тексте урока об этом сказано.
@@ -167,7 +182,7 @@ interface Game {
 | 14 | Авторизация: `AuthStore` (`core/auth-store.ts`), «Войти»/имя/«Выйти» в шапке, вход через хранилище и возврат по `returnUrl`, сессия после перезагрузки (`localStorage` + `provideAppInitializer` + `GET /api/me`), интерцептор `Authorization` (`core/auth-interceptor.ts`: только `/api/…`, 401 → обновление токена `POST /api/refresh` одним запросом на всех и повтор, иначе выход), отзыв от имени покупателя, гард входа на «Моих заказах» и `adminGuard` (`canMatch`) у ленивой админки (`admin/`, сводка с сервера), ссылка «Админка» только администратору, «Мои заказы» с сервера, «Выйти» уводит со страниц только для вошедших (повторная навигация) |
 | 15 | Строки корзины въезжают (`animate.enter`, класс) и уезжают, схлопываясь по высоте (`(animate.leave)` + Web Animations); отзывы — компонент `GameReviews` (`game/game-reviews/`) в `@defer (on viewport; prefetch on idle)` с заглушкой, `@loading` и `@error`; обложки — `NgOptimizedImage` (`ngSrc`, размеры, `priority` у обложки игры и первых `priorityCovers` карточек списков — новое поле `SHOP_CONFIG`), `LazyImage` удалена; «В корзину» в карточке — обложка летит в корзину (`core/fly-to-cart.ts`, `layout/flying-covers/` в шапке) |
 | 16 | Тесты (`*.spec.ts` рядом с кодом, 42 теста): `plural`, пайпы `duration`/`price`, `CartStore`, `GameCard` (подмена `FlyToCart` и `SHOP_CONFIG`), `AuthStore` и `authInterceptor` (поддельный сервер), маршруты (`app.routes.spec.ts`, `RouterTestingHarness`), схема и страница оформления заказа; помощник `testing/fake-game.ts`; аналитика больше не роняет корзину и навигацию (`.catch` у `injectAsync` в `CartStore.track()` и `App`) |
-| 17 | Админка: ленивый раздел, гард роли, таблица, форма редактирования |
+| 17 | Админка: макет раздела с меню, таблица игр (сортировка по колонкам, поиск, страницы — в адресе), форма редактирования (`PUT`, поля — `GameFields`), сервис раздела `AdminGames` в провайдерах маршрута и журнал на сводке, очистка кэша после изменений, окно подтверждения удаления (`createComponent`) и гард несохранённой формы на нём, новая игра с загрузкой обложки (`FormData`) |
 | 18 | NgRx: корзина и фильтры каталога на Signal Store, та же корзина на классическом Store |
 | 20 | Перенос в проект Angular CLI, AOT-сборка, SSR, деплой |
 

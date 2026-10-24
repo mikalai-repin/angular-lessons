@@ -1,0 +1,7 @@
+/* Короткие числовые поля — по несколько в ряд */
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0 12px;
+  max-width: 480px;
+}

@@ -1,0 +1,12 @@
+<!-- Окно закрывается само: кнопкой формы method="dialog" (returnValue — value кнопки) или по Esc ('') -->
+<dialog
+  #dialog
+  class="confirm"
+  (close)="answer.emit(dialog.returnValue === 'yes')"
+>
+  <p>{{ question() }}</p>
+  <form method="dialog" class="actions">
+    <button class="link-button" value="no">Отмена</button>
+    <button class="button" value="yes">{{ action() }}</button>
+  </form>
+</dialog>

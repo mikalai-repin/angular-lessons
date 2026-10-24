@@ -18,6 +18,9 @@
 
 const DEFAULT_CONFIG = { latency: 300, failRate: 0, tokenTtl: 3600 };
 const PAGE_SIZE = 12;
+// Обложка игры, которую загружает админка (глава 17): только картинки и не больше 1 МБ
+const COVER_TYPES = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp'];
+const COVER_MAX_SIZE = 1024 * 1024;
 // Срок жизни refresh-токена, с
 const REFRESH_TTL = 7 * 24 * 3600;
 // Ключ подписи токенов. Настоящий сервер держит его в секрете; учебный — на виду, чтобы токен можно было разобрать
@@ -86,6 +89,8 @@ export function createBackend({ originalFetch, report }) {
     );
     db = Object.fromEntries(entries);
     db.orders = [];
+    // Загруженные обложки: адрес /uploads/… → файл. Живут, как и остальные данные, до перезапуска превью
+    db.uploads = new Map();
   }
 
   /**
@@ -160,6 +165,9 @@ export function createBackend({ originalFetch, report }) {
       '-price': (a, b) => b.price - a.price,
       rating: (a, b) => b.rating - a.rating,
       title: (a, b) => a.title.localeCompare(b.title, 'ru'),
+      '-title': (a, b) => b.title.localeCompare(a.title, 'ru'),
+      inStock: (a, b) => a.inStock - b.inStock,
+      '-inStock': (a, b) => b.inStock - a.inStock,
     };
     if (comparators[sort]) items.sort(comparators[sort]);
     const size = Number(query.get('size')) || PAGE_SIZE;
@@ -167,10 +175,40 @@ export function createBackend({ originalFetch, report }) {
     return json(200, { items: items.slice((page - 1) * size, page * size), total: items.length, page, size });
   }
 
+  const isWhole = (value, min) => Number.isInteger(value) && value >= min;
+
+  /** Что не так с игрой из админки (POST и PUT /api/games…): текст ошибки или null */
   function validateGame(body) {
-    if (!body?.title?.trim()) return 'Нужно название';
-    if (!(body.price > 0)) return 'Цена должна быть больше нуля';
+    if (typeof body?.title !== 'string' || !body.title.trim()) return 'Нужно название';
+    if (!isWhole(body.price, 1)) return 'Цена — целое число рублей больше нуля';
+    if (body.oldPrice != null && !(isWhole(body.oldPrice, 1) && body.oldPrice > body.price))
+      return 'Цена до скидки должна быть больше цены';
+    if (!isWhole(body.inStock, 0)) return 'Остаток — целое число, не меньше нуля';
+    if (!db.categories.some((c) => c.id === body.category)) return 'Нет такой категории';
+    const { min, max } = body.players ?? {};
+    if (!(isWhole(min, 1) && isWhole(max, min))) return 'Игроков: от одного, «до» не меньше «от»';
+    if (!isWhole(body.playTime, 1)) return 'Время партии — целое число минут';
+    if (!isWhole(body.age, 0)) return 'Возраст — целое число лет';
+    if (typeof body.cover !== 'string' || !body.cover) return 'Нужна обложка';
     return null;
+  }
+
+  /** Поля игры, которые меняет админка. Остальные (id, slug, рейтинг, теги) ведёт сервер */
+  const EDITABLE = [
+    'title',
+    'cover',
+    'price',
+    'oldPrice',
+    'category',
+    'players',
+    'playTime',
+    'age',
+    'inStock',
+    'description',
+  ];
+  function editable(body) {
+    const fields = Object.fromEntries(EDITABLE.filter((key) => body[key] != null).map((key) => [key, body[key]]));
+    return { ...fields, description: String(fields.description ?? '') };
   }
 
   // [метод, путь, обработчик(request, params, query, body)]
@@ -330,7 +368,8 @@ export function createBackend({ originalFetch, report }) {
         if (denied) return denied;
         const problem = validateGame(body);
         if (problem) return error(400, problem);
-        const game = { ...body, id: Math.max(0, ...db.games.map((g) => g.id)) + 1 };
+        const id = Math.max(0, ...db.games.map((g) => g.id)) + 1;
+        const game = { id, slug: `game-${id}`, ...editable(body), rating: 0, tags: [] };
         db.games.push(game);
         return json(201, game);
       },
@@ -345,7 +384,9 @@ export function createBackend({ originalFetch, report }) {
         if (index === -1) return error(404, 'Игра не найдена');
         const problem = validateGame(body);
         if (problem) return error(400, problem);
-        db.games[index] = { ...db.games[index], ...body, id: db.games[index].id };
+        // Игра заменяется целиком: поле, которого нет в запросе (oldPrice: null — скидку сняли), пропадает
+        const { id: gameId, slug, rating, tags, color } = db.games[index];
+        db.games[index] = { id: gameId, slug, ...editable(body), rating, tags, color };
         return json(200, db.games[index]);
       },
     ],
@@ -358,6 +399,22 @@ export function createBackend({ originalFetch, report }) {
         const before = db.games.length;
         db.games = db.games.filter((g) => String(g.id) !== id);
         return db.games.length < before ? { status: 204, body: null } : error(404, 'Игра не найдена');
+      },
+    ],
+    [
+      'POST',
+      '/api/covers',
+      async (request, _p, _q, body) => {
+        // Файл обложки — в теле multipart/form-data, поле file. Ответ — адрес, по которому картинка доступна
+        const [, denied] = await requireUser(request, 'admin');
+        if (denied) return denied;
+        const file = body instanceof FormData ? body.get('file') : null;
+        if (!(file instanceof File)) return error(400, 'Нет файла в поле file');
+        if (!COVER_TYPES.includes(file.type)) return error(415, 'Обложка — картинка SVG, PNG, JPEG или WebP');
+        if (file.size > COVER_MAX_SIZE) return error(413, 'Файл больше 1 МБ');
+        const url = `/uploads/${db.uploads.size + 1}-${encodeURIComponent(file.name)}`;
+        db.uploads.set(url, file);
+        return json(201, { url });
       },
     ],
   ].map(([method, pattern, handler]) => ({ method, regexp: compile(pattern), handler }));
@@ -406,13 +463,30 @@ export function createBackend({ originalFetch, report }) {
     report(entry);
 
     let requestBody = null;
-    try {
-      const text = await request.text();
-      requestBody = text ? JSON.parse(text) : null;
-    } catch {
-      requestBody = undefined;
+    let badMultipart = false;
+    if (request.headers.get('Content-Type')?.startsWith('multipart/form-data')) {
+      // Форма с файлами (FormData): во вкладке «Сеть» — поля и описание файлов, а не их содержимое.
+      // Заголовок без boundary (его поставили руками) — тело не разобрать
+      try {
+        requestBody = await request.formData();
+        entry.requestBody = Object.fromEntries(
+          [...requestBody].map(([name, value]) => [
+            name,
+            value instanceof File ? `файл ${value.name}, ${value.type || 'тип неизвестен'}, ${value.size} байт` : value,
+          ]),
+        );
+      } catch {
+        badMultipart = true;
+      }
+    } else {
+      try {
+        const text = await request.text();
+        requestBody = text ? JSON.parse(text) : null;
+      } catch {
+        requestBody = undefined;
+      }
+      if (requestBody !== null) entry.requestBody = requestBody;
     }
-    if (requestBody !== null) entry.requestBody = requestBody;
 
     try {
       if (!db) await load();
@@ -423,7 +497,8 @@ export function createBackend({ originalFetch, report }) {
     }
 
     let result;
-    if (requestBody === undefined) result = error(400, 'Тело запроса — не JSON');
+    if (badMultipart) result = error(400, 'Не удалось разобрать тело multipart/form-data: нет границы (boundary)');
+    else if (requestBody === undefined) result = error(400, 'Тело запроса — не JSON');
     else if (Math.random() < config.failRate)
       result = error(500, 'Сервер недоступен (ошибка включена во вкладке «Сеть»)');
     else {
@@ -464,9 +539,15 @@ export function createBackend({ originalFetch, report }) {
     if (failed) throw new Error(`Не удалось загрузить ${name}: ошибка 500`);
   }
 
+  /** Загруженный файл по адресу /uploads/… (зовёт preview-runtime.js, когда картинка просит такой адрес) */
+  function upload(url) {
+    return db?.uploads.get(url) ?? null;
+  }
+
   return {
     handle,
     chunk,
+    upload,
     configure(next) {
       config = { ...DEFAULT_CONFIG, ...next };
     },

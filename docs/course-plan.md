@@ -272,14 +272,18 @@
 
 ### Глава 17. Админка (сборка всего вместе)
 
-| # | Шаг | Понятия | Результат |
-|---|---|---|---|
-| 17.1 | Ленивый раздел | `loadChildren`, свои провайдеры раздела | |
-| 17.2 | Гард роли | `adminGuard` (`CanMatchFn`) уже есть с главы 14 — разделы админки под ним; что ещё проверяет сервер | Только admin |
-| 17.3 | Таблица товаров | Сортировка, фильтр, страницы | |
-| 17.4 | Редактирование | Signal Forms + `httpResource` + `PUT` | |
-| 17.5 | Подтверждение удаления | Диалог: компонент через `createComponent` или CDK Dialog (обзор) | |
-| **Практикум** | Новая игра | Форма создания с загрузкой обложки | |
+Цель: рабочая админка из того, что уже изучено (роутинг, ресурсы, формы, DI, интерцепторы), и то, без чего админка не обходится: состояние таблицы в адресе, форма с данными с сервера, сервис раздела, сброс кэша после изменений, компонент из кода. Все шаги — вошедшим администратором (`admin@example.com` / `admin`; текст шага 1 просит войти).
+
+| Шаг | Что вводит | Старт |
+|---|---|---|
+| 01-admin-section | вводный шаг; макет `AdminLayout` + `<router-outlet>`, дочерние маршруты `''` (сводка) и `games`; `routerLink="."` и `{ exact: true }`; один `canMatch` на родителе закрывает раздел (покупатель: 404, модуль не грузится); таблица «что проверяет сервер» (401/403 на изменениях и сводке, `GET /api/games` открыт); `<table>`, `scope="col"`; эксперимент — без `exact` активны обе ссылки | custom: `admin-layout/` (шаблон с `TODO`), готовая `games-table/` (`GET /api/games?size=10`), из сводки убран заголовок |
+| 02-sorting | `?sort=` во входе (`toSort`), шаблонный тип `` `-${SortColumn}` ``, `sortBy` через `navigate` + `merge`, кнопки в `<th>`, `[attr.aria-sort]` с `null`, стрелка CSS по `aria-sort`; новые значения `sort` бэкенда (`-title`, `inStock`, `-inStock`); эксперименты: `?sort=abc`, `'none'` вместо `null` | custom: стили `.sort` и стрелок в `games-table.css` |
+| 03-search-pages | входы `q`, `page` (`numberAttribute` + `Math.max`), `debounced`, `shown` — `linkedSignal` с прошлым ответом, `pages` — `computed`, сброс страницы в `search`/`sortBy`, `setParams` с `replaceUrl`, `aria-current`, ошибка по `status()`; «Назад» после поиска — первая страница (`replaceUrl` заменил `?page=3`); лишний запрос первой страницы со старым `q`; эксперимент — без `shown` | previous |
+| 04-edit-form | `GameDraft` (`number \| null`), `toDraft`, `min`, перекрёстное правило `oldPrice`; модель формы — `linkedSignal` от ресурса; поля — `GameFields` со входом `FieldTree<GameDraft>`; `<select>` с `[formField]`; `PUT` и `400` сервера ошибкой формы, `navigate(['..'])`; `games` без компонента с крошкой, `:id` с `gameTitleResolver`, ресурс с `CACHE`; атрибуты `min`/`required` от `[formField]`; тесты схемы; эксперименты: 2990.5 → 400, `isAdmin = true` → 403, снятая скидка; `deep` — PUT/PATCH | custom: `game-schema.ts` (`TODO` правила), `game-schema.spec.ts` (2 теста + `TODO`), готовый `game-fields/`, заготовка `game-edit/`, ссылка на игру в таблице |
+| 05-section-service | `AdminGames` — `@Service({ autoProvided: false })` в `providers` маршрута макета: инжектор окружения маршрута (схема), журнал `changes` на сводке; эксперименты: `inject` в шапке → `NG0201 … Source: Environment Injector`, с `@Service()` — второй экземпляр молча, сервис создаётся при первом обращении и живёт после ухода, `withAutoCleanupInjectors()` (`@publicApi 22.2`) уничтожает его; `deep` — `getOrCreateRouteInjectorIfNeeded`, `_injector`, `shouldDestroyInjector`; `legacy` — ленивый `NgModule` | custom: `admin-games.ts` без декоратора |
+| 06-cache | старая цена после сохранения (ресурс и резолвер с `CACHE`, 10 с, после `PUT` ни одного запроса); успешный не-`GET` → `ResponseCache.clear()` (`tap` + `HttpResponse`); ошибка `400` кэш не трогает; `tip` — ключи кэша, `Cache-Control` | custom: `clear()` в `ResponseCache`, `inject` в начале интерцептора, `TODO` |
+| 07-confirm-dialog | почему не `confirm()`; `ConfirmDialog` (`<form method="dialog">`, `returnValue`, Esc); `Confirmation.ask` — `createComponent` с `environmentInjector` и `bindings` (`inputBinding`, `outputBinding`), хост-элемент в `body`, `ApplicationRef.attachView(hostView)`, `destroy`; `DELETE` и журнал; `aria-label` у кнопки, `visually-hidden`; `unsavedChangesGuard` с промисом ответа, `HasUnsavedChanges`, `reset()` после сохранения; эксперименты: без `attachView` (окно не открылось, только «Отмена» в DOM), без `append` (`InvalidStateError` от `showModal`), без `destroy`, без `reset`; тест окна в jsdom — `showModal is not a function`; CDK `Dialog` — обзор (`DIALOG_DATA`, `DialogRef.closed`, проверен `ngc` с `@angular/cdk` 22.2.1); `deep` — компонент из шаблона и из кода, `ViewContainerRef.createComponent`, `<router-outlet>` | custom: готовый `shared/confirm-dialog/`, заготовка `core/confirmation.ts`, `visually-hidden` в `styles.css` |
+| 08-practice | практикум «Новая игра»: маршрут `new` раньше `:id`, «+ Новая игра» над таблицей, `AdminGames.create`/`uploadCover` (`FormData`, `multipart/form-data` без своего `Content-Type`), `CoverUpload` — `FormValueControl<string>` (`input.files`, «Загружаем…», ошибки 413/415), поле обложки в `GameFields` и `required(cover)`, `GameNew` (черновик, `reset`, переход с `?q=`), гард; загруженные обложки в превью (`/uploads/…` → `blob:`); «Как в настоящем проекте» — `reportUploadProgress` и `NG02824`, `withXhr()`; `check.ts`; «Итоги главы» | custom: заготовки `game-new/`, `cover-upload/` (шаблон и стили готовы), `create`/`uploadCover` с `TODO`, стили `.toolbar` |
 
 ---
 
@@ -367,7 +371,7 @@
 | DOM и жизненный цикл | `viewChild`, `contentChild(ren)`, `afterNextRender`, `afterRenderEffect`, `DestroyRef`, хуки | 6 |
 | Директивы и пайпы | `@Directive`, `hostDirectives`, `@Pipe`, встроенные пайпы, локали | 7 |
 | DI | `inject`, `@Service`, `@Injectable`, провайдеры, `InjectionToken`, иерархия, `injectAsync` | 8 |
-| Роутер | `provideRouter`, `routerLink`, параметры, `loadComponent`, гарды, резолверы, `withViewTransitions` | 10, 14, 17 |
+| Роутер | `provideRouter`, `routerLink`, параметры, `loadComponent`, гарды, резолверы, `withViewTransitions`, провайдеры маршрута, `withAutoCleanupInjectors` | 10, 14, 17 |
 | HTTP | `provideHttpClient`, `HttpClient`, `httpResource`, интерцепторы, `withXsrfConfiguration` | 11, 12, 14 |
 | RxJS | `Observable`, операторы, `toSignal`, `toObservable`, `takeUntilDestroyed` | 12 |
 | Формы | Signal Forms (`form`, `FormField`, валидаторы, `submit`, `schema`); реактивные формы обзорно | 13 |
@@ -378,7 +382,7 @@
 | Внутреннее устройство | Ivy, `LView`, планировщик, zone.js, примитивы сигналов, инжекторы | 19 |
 | Инструменты | CLI, `ng build`, `strictTemplates`, SSR, гидратация, DevTools | 20 |
 
-Не входит в курс (упоминаем ссылкой): Angular Material и CDK (кроме обзора виртуальной прокрутки в 15.7 и 17.5), i18n (`@angular/localize`), Service Worker / PWA, Angular Elements, микрофронтенды, `upgrade` с AngularJS.
+Не входит в курс (упоминаем ссылкой): Angular Material и CDK (кроме обзора виртуальной прокрутки в 15.7 и `Dialog` в 17.7), i18n (`@angular/localize`), Service Worker / PWA, Angular Elements, микрофронтенды, `upgrade` с AngularJS.
 
 ## Объём
 

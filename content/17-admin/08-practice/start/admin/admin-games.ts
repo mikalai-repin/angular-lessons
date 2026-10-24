@@ -1,0 +1,58 @@
+import { Service, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { Game } from '../core/models';
+import { GameDraft } from './game-schema';
+
+// Запись журнала: что сделано и когда
+export interface Change {
+  text: string;
+  time: Date;
+}
+
+// Изменения каталога из админки: запросы к серверу и журнал того, что сделано за сеанс.
+// autoProvided: false — сам в DI не попадает: его выдаёт провайдер маршрута админки
+@Service({ autoProvided: false })
+export class AdminGames {
+  private readonly http = inject(HttpClient);
+
+  private readonly changesState = signal<Change[]>([]);
+  // Журнал: новые записи — сверху
+  readonly changes = this.changesState.asReadonly();
+
+  // Сохранить игру: PUT /api/games/:id. Ответ сервера — игра, какой она стала
+  async save(id: number, draft: GameDraft) {
+    const game = await firstValueFrom(
+      this.http.put<Game>(`/api/games/${id}`, draft),
+    );
+    this.log(`Изменена игра «${game.title}»`);
+    return game;
+  }
+
+  // Удалить игру: DELETE /api/games/:id
+  async remove(game: Game) {
+    await firstValueFrom(
+      this.http.delete(`/api/games/${game.id}`),
+    );
+    this.log(`Удалена игра «${game.title}»`);
+  }
+
+  // Добавить игру: POST /api/games. Ответ — игра с id, который выдал сервер
+  async create(draft: GameDraft): Promise<Game> {
+    // TODO: POST /api/games с черновиком, запись в журнал «Добавлена игра «…»», вернуть игру из ответа
+    throw new Error('Не написано');
+  }
+
+  // Загрузить обложку: файл — в теле FormData (multipart/form-data). Ответ — адрес картинки
+  async uploadCover(file: File): Promise<string> {
+    // TODO: FormData с файлом в поле file → POST /api/covers, вернуть url из ответа
+    throw new Error('Не написано');
+  }
+
+  private log(text: string) {
+    this.changesState.update((changes) => [
+      { text, time: new Date() },
+      ...changes,
+    ]);
+  }
+}

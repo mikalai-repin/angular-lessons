@@ -1,0 +1,95 @@
+/* Над таблицей: поиск и «Новая игра» */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 320px;
+  padding: 8px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font: inherit;
+}
+
+/* Таблица игр: во всю ширину, строки разделены линией */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #d2d2d7;
+  text-align: left;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Числа — по правому краю: так разряды стоят друг под другом */
+.table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Игры нет на складе */
+.table .out {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+/* Заголовок колонки — кнопка сортировки */
+.sort {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Стрелка — по aria-sort: тот же атрибут, что слышит экранный диктор */
+[aria-sort='ascending'] .sort::after {
+  content: ' ↑';
+}
+
+[aria-sort='descending'] .sort::after {
+  content: ' ↓';
+}
+
+/* Пока грузится новая страница — прежняя бледнее */
+.table.loading {
+  opacity: 0.5;
+}
+
+/* Номера страниц под таблицей */
+.pages {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.pages button {
+  min-width: 32px;
+  padding: 4px 8px;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Текущая страница: aria-current сообщает о ней экранному диктору, а цвет — глазам */
+.pages button[aria-current='page'] {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}

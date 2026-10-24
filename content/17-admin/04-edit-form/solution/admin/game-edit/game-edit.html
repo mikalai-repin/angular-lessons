@@ -1,0 +1,23 @@
+<a class="back-link" routerLink="..">← Игры</a>
+@if (game.hasValue()) {
+  <h2>{{ game.value().title }}</h2>
+  <form [formRoot]="gameForm">
+    <app-game-fields [fields]="gameForm" />
+    <!-- Ошибки всей формы: их вернуло сохранение -->
+    @for (error of gameForm().errors(); track error.kind) {
+      <p class="error-message">{{ error.message }}</p>
+    }
+    <button class="button" [disabled]="gameForm().submitting()">
+      {{ gameForm().submitting() ? 'Сохраняем…' : 'Сохранить' }}
+    </button>
+  </form>
+} @else if (game.isLoading()) {
+  <p class="muted">Загружаем игру…</p>
+} @else if (game.error()) {
+  <p class="error-message">
+    Не удалось загрузить игру.
+    <button class="link-button" (click)="game.reload()">
+      Повторить
+    </button>
+  </p>
+}

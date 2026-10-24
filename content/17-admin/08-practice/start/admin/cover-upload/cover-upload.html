@@ -1,0 +1,22 @@
+@if (value()) {
+  <img
+    class="preview"
+    [src]="value()"
+    alt="Обложка"
+    width="75"
+    height="100"
+  />
+}
+<input
+  #file
+  type="file"
+  accept="image/*"
+  [disabled]="uploading()"
+  (change)="upload(file)"
+/>
+@if (uploading()) {
+  <span class="muted">Загружаем…</span>
+}
+@if (error(); as error) {
+  <span class="error-message">{{ error }}</span>
+}

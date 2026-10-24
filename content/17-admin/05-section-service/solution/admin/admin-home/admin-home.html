@@ -1,0 +1,30 @@
+@if (summary.hasValue()) {
+  @let s = summary.value();
+  <ul>
+    <li>
+      Игр в каталоге: {{ s.games }}, нет в наличии:
+      {{ s.outOfStock }}
+    </li>
+    <li>Заказов: {{ s.orders }}</li>
+    <li>Пользователей: {{ s.users }}</li>
+  </ul>
+} @else if (summary.isLoading()) {
+  <p class="muted">Загружаем сводку…</p>
+} @else if (summary.error(); as error) {
+  <p class="error-message">
+    Сервер отказал: {{ errorText(error) }}
+  </p>
+}
+<h2>Изменения за сеанс</h2>
+<ul class="changes">
+  @for (change of admin.changes(); track change) {
+    <li>
+      <span class="muted">{{
+        change.time | date: 'HH:mm:ss'
+      }}</span>
+      {{ change.text }}
+    </li>
+  } @empty {
+    <li class="muted">Пока ничего не меняли.</li>
+  }
+</ul>

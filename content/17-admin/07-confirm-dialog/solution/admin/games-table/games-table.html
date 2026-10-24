@@ -1,0 +1,95 @@
+<input
+  #searchBox
+  class="search"
+  type="search"
+  placeholder="Найти игру"
+  aria-label="Поиск по названию"
+  [value]="q()"
+  (input)="search(searchBox.value)"
+/>
+@if (shown(); as shown) {
+  <p class="muted">Найдено игр: {{ shown.total }}</p>
+  <!-- Пока грузится новая страница, видна прежняя — бледнее -->
+  <table class="table" [class.loading]="games.isLoading()">
+    <thead>
+      <tr>
+        <!-- aria-sort — как отсортирована колонка. По нему же CSS рисует стрелку -->
+        <th scope="col" [attr.aria-sort]="sortOf('title')">
+          <button class="sort" (click)="sortBy('title')">
+            Игра
+          </button>
+        </th>
+        <th
+          scope="col"
+          class="num"
+          [attr.aria-sort]="sortOf('price')"
+        >
+          <button class="sort" (click)="sortBy('price')">
+            Цена
+          </button>
+        </th>
+        <th
+          scope="col"
+          class="num"
+          [attr.aria-sort]="sortOf('inStock')"
+        >
+          <button class="sort" (click)="sortBy('inStock')">
+            Склад
+          </button>
+        </th>
+        <th scope="col">
+          <span class="visually-hidden">Действия</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (game of shown.items; track game.id) {
+        <tr>
+          <td>
+            <!-- Ссылка относительная: /admin/games + /4 -->
+            <a [routerLink]="[game.id]">{{ game.title }}</a>
+          </td>
+          <td class="num">{{ game.price | price }}</td>
+          <td class="num" [class.out]="game.inStock === 0">
+            {{ game.inStock }}
+          </td>
+          <td class="num">
+            <button
+              class="link-button"
+              [attr.aria-label]="'Удалить ' + game.title"
+              (click)="remove(game)"
+            >
+              Удалить
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="muted">Ничего не найдено</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if (pages().length > 1) {
+    <nav class="pages" aria-label="Страницы">
+      @for (n of pages(); track n) {
+        <button
+          [attr.aria-current]="n === page() ? 'page' : null"
+          (click)="goTo(n)"
+        >
+          {{ n }}
+        </button>
+      }
+    </nav>
+  }
+} @else if (games.isLoading()) {
+  <p class="muted">Загружаем игры…</p>
+}
+@if (games.status() === 'error') {
+  <p class="error-message">
+    Не удалось загрузить игры.
+    <button class="link-button" (click)="games.reload()">
+      Повторить
+    </button>
+  </p>
+}

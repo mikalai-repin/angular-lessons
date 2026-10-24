@@ -1,0 +1,11 @@
+<a class="back-link" routerLink="..">← Игры</a>
+<h2>Новая игра</h2>
+<form [formRoot]="gameForm">
+  <app-game-fields [fields]="gameForm" />
+  @for (error of gameForm().errors(); track error.kind) {
+    <p class="error-message">{{ error.message }}</p>
+  }
+  <button class="button" [disabled]="gameForm().submitting()">
+    {{ gameForm().submitting() ? 'Добавляем…' : 'Добавить' }}
+  </button>
+</form>

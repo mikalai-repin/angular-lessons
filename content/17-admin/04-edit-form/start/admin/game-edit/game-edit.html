@@ -1,0 +1,14 @@
+<a class="back-link" routerLink="..">← Игры</a>
+@if (game.hasValue()) {
+  <h2>{{ game.value().title }}</h2>
+  <!-- TODO: форма [formRoot]: поля игры (app-game-fields), ошибки всей формы и кнопка «Сохранить» -->
+} @else if (game.isLoading()) {
+  <p class="muted">Загружаем игру…</p>
+} @else if (game.error()) {
+  <p class="error-message">
+    Не удалось загрузить игру.
+    <button class="link-button" (click)="game.reload()">
+      Повторить
+    </button>
+  </p>
+}

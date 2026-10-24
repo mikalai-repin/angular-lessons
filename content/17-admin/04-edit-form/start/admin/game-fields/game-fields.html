@@ -1,0 +1,59 @@
+@let game = fields();
+<label class="field">
+  Название
+  <input [formField]="game.title" />
+  <app-field-errors [field]="game.title" />
+</label>
+<label class="field">
+  Категория
+  <select [formField]="game.category">
+    @for (category of categories; track category.id) {
+      <option [value]="category.id">
+        {{ category.title }}
+      </option>
+    }
+  </select>
+</label>
+<div class="row">
+  <label class="field">
+    Цена, ₽
+    <input type="number" [formField]="game.price" />
+    <app-field-errors [field]="game.price" />
+  </label>
+  <label class="field">
+    До скидки, ₽
+    <input type="number" [formField]="game.oldPrice" />
+    <app-field-errors [field]="game.oldPrice" />
+  </label>
+  <label class="field">
+    На складе, шт.
+    <input type="number" [formField]="game.inStock" />
+    <app-field-errors [field]="game.inStock" />
+  </label>
+</div>
+<div class="row">
+  <label class="field">
+    Игроков от
+    <input type="number" [formField]="game.players.min" />
+    <app-field-errors [field]="game.players.min" />
+  </label>
+  <label class="field">
+    Игроков до
+    <input type="number" [formField]="game.players.max" />
+    <app-field-errors [field]="game.players.max" />
+  </label>
+  <label class="field">
+    Партия, мин
+    <input type="number" [formField]="game.playTime" />
+    <app-field-errors [field]="game.playTime" />
+  </label>
+  <label class="field">
+    Возраст от
+    <input type="number" [formField]="game.age" />
+    <app-field-errors [field]="game.age" />
+  </label>
+</div>
+<label class="field">
+  Описание
+  <textarea rows="4" [formField]="game.description"></textarea>
+</label>

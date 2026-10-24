@@ -264,6 +264,30 @@ window.fetch = (input, init) => {
   return originalFetch(input, init);
 };
 
+// Обложки, загруженные в учебный бэкенд (POST /api/covers, глава 17), лежат в памяти превью — по сети их не получить.
+// Адрес /uploads/… у <img> превью подменяет на blob: с этим файлом. Код ученика (и NgOptimizedImage, который blob:
+// в ngSrc не принимает) видит обычный адрес, как у файла на настоящем сервере
+const uploadUrls = new Map();
+function uploadedSrc(value) {
+  const path = String(value);
+  const file = path.startsWith('/uploads/') ? backend.upload(path) : null;
+  if (!file) return value;
+  if (!uploadUrls.has(path)) uploadUrls.set(path, URL.createObjectURL(file));
+  return uploadUrls.get(path);
+}
+const imgSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+Object.defineProperty(HTMLImageElement.prototype, 'src', {
+  ...imgSrc,
+  set(value) {
+    imgSrc.set.call(this, uploadedSrc(value));
+  },
+});
+const setAttribute = Element.prototype.setAttribute;
+Element.prototype.setAttribute = function (name, value) {
+  const src = this instanceof HTMLImageElement && name.toLowerCase() === 'src';
+  return setAttribute.call(this, name, src ? uploadedSrc(value) : value);
+};
+
 // ---------- Модули ----------
 
 function resolveFile(files, fromFile, specifier) {

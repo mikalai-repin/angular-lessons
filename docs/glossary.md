@@ -102,6 +102,8 @@
 | render phase | фаза (колбэка после отрисовки) | `earlyRead`, `write`, `mixedReadWrite`, `read` |
 | destroy callback | колбэк уничтожения | `DestroyRef.onDestroy` |
 | modal dialog | модальное окно | `<dialog>` + `showModal()` |
+| dynamic component | динамический компонент, компонент из кода | `createComponent`, `ViewContainerRef.createComponent` (глава 17) |
+| host view | хост-представление | `ComponentRef.hostView`: его включают в обнаружение изменений `ApplicationRef.attachView` |
 | profiler | профайлер | `ng.ɵsetProfiler`, Angular DevTools |
 | parent / child component | родительский / дочерний компонент | |
 
@@ -184,6 +186,8 @@
 | link commands | команды (ссылки) | `[routerLink]="['/games', id]"` |
 | active link | активная ссылка | `routerLinkActive` |
 | child routes | вложенные (дочерние) маршруты | `children` |
+| layout (component) | макет (раздела) | компонент с меню и `<router-outlet>`: `AdminLayout`, `Account` |
+| route providers | провайдеры маршрута | `Route.providers`: свой инжектор окружения для маршрута и его детей (глава 17) |
 | redirect | переадресация | `redirectTo` |
 | route data | данные маршрута | `data`, `resolve` |
 | breadcrumbs | хлебные крошки | практикум главы 10 |
@@ -201,6 +205,9 @@
 | interceptor chain | цепочка интерцепторов | `withInterceptors([…])`: запрос — сверху вниз, ответ — снизу вверх |
 | retry | повтор (запроса) | `retry({ count, delay })` |
 | cache | кэш | сохранённые ответы сервера (`cacheInterceptor`, глава 12) |
+| cache invalidation | сброс (очистка) кэша | после изменения данных: `ResponseCache.clear()` (глава 17) |
+| file upload | загрузка файла | `<input type="file">` + `FormData` → `multipart/form-data` (глава 17) |
+| sort order | порядок сортировки | `aria-sort`: `ascending`/`descending` |
 | HTTP context | контекст запроса | `HttpContext` + `HttpContextToken`: метки запроса для интерцепторов, на сервер не уходят |
 | endpoint | адрес API | |
 | API (web API) | API сервера | набор адресов `/api/…`, по которым приложение просит и отправляет данные (глава 11) |
@@ -337,3 +344,5 @@
 | in stock | в наличии | |
 | wishlist / favorites | избранное | |
 | admin panel | админка | |
+| draft | черновик (игры) | `GameDraft`: данные формы админки, числа — `number \| null` |
+| change log | журнал изменений | `AdminGames.changes` на сводке админки |

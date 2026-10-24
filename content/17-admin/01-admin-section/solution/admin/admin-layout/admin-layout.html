@@ -1,0 +1,19 @@
+<h1>Админка</h1>
+<!-- Ссылки относительные: от адреса макета, /admin. «.» — сам /admin -->
+<nav class="sections">
+  <a
+    routerLink="."
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }"
+    ariaCurrentWhenActive="page"
+    >Сводка</a
+  >
+  <a
+    routerLink="games"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    >Игры</a
+  >
+</nav>
+<!-- Сюда роутер выводит страницу раздела: сводку или таблицу игр -->
+<router-outlet />

@@ -1,0 +1,21 @@
+.confirm {
+  max-width: 320px;
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.25);
+}
+
+.confirm::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+
+.confirm p {
+  margin: 0 0 16px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+}

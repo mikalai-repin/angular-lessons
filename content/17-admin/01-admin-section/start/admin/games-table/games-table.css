@@ -1,0 +1,30 @@
+/* Таблица игр: во всю ширину, строки разделены линией */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #d2d2d7;
+  text-align: left;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Числа — по правому краю: так разряды стоят друг под другом */
+.table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Игры нет на складе */
+.table .out {
+  color: var(--brand);
+  font-weight: 600;
+}
