@@ -1,0 +1,10 @@
+@for (star of stars; track star) {
+  <!-- Клавиатура — у хоста (role="slider", стрелки), мышь — у звёзд -->
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+  <span
+    class="star"
+    [class.full]="star <= value()"
+    [class.half]="star - 0.5 <= value() && value() < star"
+    (click)="select(star, $event)"
+  ></span>
+}

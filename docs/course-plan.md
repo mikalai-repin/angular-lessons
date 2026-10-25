@@ -326,19 +326,22 @@
 
 ### Глава 20. Настоящий проект (на машине ученика)
 
-Шаги этой главы выполняются в терминале, не в превью. Текст урока даёт команды и ожидаемый вывод; автор проверяет каждую команду сам.
+Цель: перенести магазин в проект Angular CLI 22 и пройти путь до выпуска. Шаги выполняются в терминале ученика; в редакторе — тот же магазин (код превью меняют шаги 3, 5, 7, 9), а команды, их вывод и файлы, которых в превью нет (`server.ts`, `app.routes.server.ts`, `angular.json`, `provideClientHydration`, `hydrate`-триггеры), — в тексте. Весь вывод в уроках получен на проекте `tools/e2e/out/ch20/hod-konem`, собранном по шагам (CLI 22.2.4, Angular 22.2.3 — так ставит `ng new` из CLI 22.2.1). Платформа получила кнопку «Скачать»: код шага архивом поверх `ng new` (`shared/cli-project.js`, учебный бэкенд — `cli-project/server/api.mjs`).
 
-| # | Шаг | О чём |
+| Шаг | Что вводит | Старт |
 |---|---|---|
-| 20.1 | Angular CLI | `npm i -g @angular/cli`, `ng new`, структура проекта, `angular.json` |
-| 20.2 | Перенос магазина | Файлы из курса → `src/app`, учебный бэкенд → `public/` + интерцептор-заглушка или JSON-сервер |
-| 20.3 | Сборка | `ng serve`, `ng build`, esbuild/Vite, бюджеты, размер бандла |
-| 20.4 | Строгие шаблоны | `strictTemplates`: ошибки, которые JIT показывал только во время выполнения |
-| 20.5 | Генераторы и инструменты | `ng generate`, `ng add`, `ng update`, линтер |
-| 20.6 | Тесты | `ng test`, тесты из главы 16 без изменений |
-| 20.7 | SSR и гидратация | `@angular/ssr`, пререндеринг, гидратация, инкрементальная гидратация с `@defer` |
-| 20.8 | Окружения и деплой | Конфигурации, статический хостинг |
-| 20.9 | Angular DevTools | Расширение браузера: дерево компонентов, профилировщик, граф сигналов |
+| 01-angular-cli | вводный шаг главы; требования к Node (`^22.22.3 \|\| ^24.15.0 \|\| >=26`), `npm i -g @angular/cli@22.2.1`, вопросы первого запуска и `ng new` (стили, SSR, AI-инструменты), вывод `ng serve`, структура проекта, `angular.json` (цели, сборщики, конфигурации), `tsconfig.json` — `strict` (TS 6) и `strictTemplates` (Angular 22) включены по умолчанию; `ng version` — 22.2.3/22.2.4; врезки — `ng` запускает сборщики, `angular.json` 16.2 | custom: магазин 19.7 без `debug/`, `main.ts` как у `ng new`; noSolution |
+| 02-move-shop | кнопка «Скачать» (раскладка архива), `rm -rf src/app`, NgRx `--save-exact`, semver и `package-lock.json`, учебный бэкенд `server/api.mjs` (Fetch API в Node), `proxy.conf.json` + `proxyConfig`, `index.html` (`lang`, `title`); эксперименты: бэкенд остановлен — 502 и `[vite] http proxy error … ECONNREFUSED`, нет прокси — 200 с `index.html`; Angular DevTools (по angular.dev) | noSolution |
+| 03-build | отчёт `ng build` (начальные/ленивые, raw/transfer, имена ленивых частей = приёмы курса), `dist/`, хеши (`outputHashing`), бюджеты — 515,97 kB > 500 kB; `--stats-json` → `browser-stats.json`; задание — корзина, оформление, вход через `loadComponent` → 428,48 kB, общий ленивый чанк форм 63,41 kB; dev-сборка 1,74 MB; `NG0751` (HMR + `@defer`), `ng serve --no-hmr` | previous; решение — `app.routes.ts` |
+| 04-strict-templates | проверки строгого режима; эксперименты превью/`ng build`: `oldPrice` в арифметике («не число ₽» / `TS2532`), строка во входе (`TS2322`), `NG0304`/`NG0303` ↔ `NG8001`/`NG8002`, сигнал без `()` («[Computed: 0]» / `NG8109`, `NG8117`); `extendedDiagnostics` (`defaultCategory`, `checks`); legacy — `fullTemplateTypeCheck` (в 22 нет), `$any` | noSolution |
+| 05-cli-tools | `ng generate` (`--dry-run`, `@Service()`, таблица схем, `schematics` в `angular.json`), `ng add angular-eslint` (22.6.0), `ng lint` — 7 замечаний; задание — исправить (`console.warn` вместо пустых `catch`, импорт `Game`, `eslint-disable-next-line` у `FieldAria` и звёзд `Rating`); `ng update`, миграции `@angular/core:*-migration`; врезка — схемы и `Tree` | previous; решение — 6 файлов |
+| 06-tests | `ng test` (46 тестов, режим наблюдения), `--reporters=verbose`, упавший тест (правило склада — 3 теста в 2 файлах), `--coverage` (`@vitest/coverage-v8`, 51,94 %), `--browsers=chromiumHeadless`; предупреждение — `NG0205` после снятия пустого `catch` | noSolution |
+| 07-ssr | CSR/SSR/SSG; `ng add @angular/ssr` (файлы, `mergeApplicationConfig`, `server.ts`, `angular.json`); `localStorage is not defined` при извлечении маршрутов; таблица API браузера в магазине; задание — `BROWSER_STORAGE` (`PLATFORM_ID`, `isPlatformBrowser`) в `AuthStore`, `withStorage`, эффектах избранного, `Checkout`; `getPrerenderParams is missing` → `app.routes.server.ts` (`Prerender`/`Server`/`Client`); пререндер ходит к API при сборке; `allowedHosts` (SSRF), пересылка `/api` в `server.ts` (`createWebRequestFromNodeRequest`); аналитика на сервере → `isPlatformBrowser` в `App`; `NG02961` → `priorityCovers: 5`; 455,19 kB | previous; решение — `core/browser-storage.ts` и 6 файлов |
+| 08-hydration | `provideClientHydration`, журнал «Angular hydrated…», `ngh`, `ng-state` и кэш передачи HTTP (пропускает `Authorization`), гость на сервере / покупатель в браузере без ошибок, `NG0500` (таблица без `<tbody>`, полный текст), `ngSkipHydration`, повтор событий (`jsaction`, в 22 вместе с инкрементальной гидратацией), `@defer (on viewport; hydrate on viewport)` у «Со скидкой» — 14/307 вместо 30/790, щелчок гидратирует блок и повторяется; почему не в превью (`NG0508`/`NG0505`) | noSolution |
+| 09-deploy | задание — `loggingInterceptor` только при `isDevMode()`; `ng g environments`, `fileReplacements` (проверено: ключи разных сборок), секреты не в окружении; `dist/` SSR без `node_modules`, `PORT`/`NG_ALLOWED_HOSTS`/`API_URL`, PM2; `outputMode: "static"` — ошибка с маршрутом `Server`; `ng deploy` без цели; список перед выпуском; врезка — `ngDevMode: 'false'` | previous; решение — `app.config.ts` |
+| 10-practice | практикум «Статический магазин» (в проекте, без `check.ts`): `outputMode: static`, `getPrerenderParams` с `inject(HttpClient)`, `PrerenderFallback.Client` → 42 страницы; статический сервер: игра работает без API (данные из `ng-state`), `/cart` — 404 (правило на `index.csr.html`), цена — на момент сборки; «Итоги главы» | noSolution |
+
+Квиз — 15 вопросов.
 
 ### Глава 21. Разбор настоящего кода
 

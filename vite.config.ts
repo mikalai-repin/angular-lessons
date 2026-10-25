@@ -1,8 +1,26 @@
+import { readdirSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
+
+/** Список файлов public/assets (пути от public/: 'assets/covers/…') — для кнопки «Скачать» (src/app/download.ts) */
+function publicFiles(): Plugin {
+  const id = 'virtual:public-files';
+  return {
+    name: 'public-files',
+    resolveId: (source) => (source === id ? `\0${id}` : undefined),
+    load(resolved) {
+      if (resolved !== `\0${id}`) return;
+      const files = readdirSync('public/assets', { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
+        .map((entry) => `${entry.parentPath}/${entry.name}`.replace(/^public\//, ''))
+        .sort();
+      return `export default ${JSON.stringify(files)};`;
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), publicFiles()],
   // 5173 и 5174 обычно заняты курсом PixiJS
   server: { port: 5180, strictPort: true },
   worker: { format: 'es' },

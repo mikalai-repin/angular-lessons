@@ -197,6 +197,12 @@
 - `tsc -p .content-check/tsconfig.json` — типы полного кода шагов по настоящим `@angular/*` (настройки из `tsconfig.content.json`, как в `ng new`).
 - **План** (этап 5): `ngc` с `strictTemplates` по каждому `solution/`.
 
+## Кнопка «Скачать» (глава 20)
+
+Под редактором любого шага. `src/app/download.ts` собирает ZIP без сжатия (`zip.ts`, из `../pixi-js`) с корнем `hod-konem-<глава>-<шаг>/`: код из редактора по раскладке `shared/cli-project.js` (`main.ts`, `styles.css` → `src/`, импорты `main.ts` → `./app/…`; остальное → `src/app/`), README с командами (`ng new`, `rm -rf src/app`, `npm install --save-exact` пакетов не из `ng new` с версиями из `package.json` курса). Если код ходит на `/api/` — обложки (`public/assets`, список — виртуальный модуль `virtual:public-files` из `vite.config.ts`), `server/api.mjs` и `proxy.conf.json` из `cli-project/`, `server/backend.mjs` (= `public/backend/backend.js`) и `server/data/*.json`. Архив накладывается поверх проекта `ng new`; тот же модуль раскладки использует `tools/e2e/cli-overlay.mjs`, а `checks/download.mjs` скачивает архив из интерфейса и сверяет его с кодом шага.
+
+`cli-project/server/api.mjs` — `createServer` Node.js вокруг `createBackend`: запрос → `Request` (тело целиком), `backend.handle` → ответ; `/uploads/…` — `backend.upload`; данные — `readFile` из `server/data`; `PORT` (3000), `LATENCY` (300 мс); журнал запросов в терминал. Нужен Node.js 22+ (`Request`, `crypto.subtle`).
+
 ## Структура исходников
 
 ```
@@ -210,9 +216,12 @@ src/
   content/        — загрузка content/
   progress/       — localStorage (шаги, лучшие результаты квизов)
   quiz/           — страница квиза главы /<глава>/quiz (перенесена из ../react-learn)
+  app/download.ts, app/zip.ts — кнопка «Скачать»: код шага архивом поверх проекта ng new (глава 20)
 shared/
   compile-core.js — компиляция шага (браузер и Node)
   step-chain.js   — разбор lesson.md и сборка полного кода шагов из изменений (платформа и Node)
+  cli-project.js  — раскладка кода шага в проекте CLI (src/app, src/main.ts, пакеты, README архива)
+cli-project/      — файлы архива «Скачать»: server/api.mjs (HTTP-сервер учебного бэкенда), proxy.conf.json
   lesson-prettier.json — настройки «Формат» для кода уроков
 public/
   preview-runtime.js  — среда выполнения
@@ -231,6 +240,9 @@ tools/e2e/
   run-chapter.mjs  — все шаги главы в интерфейсе с «Решением»
   exp.mjs          — эксперимент со сценарием
   aot-chapter.mjs  — ngc --strictTemplates по полному коду каждого шага главы
+  cli-overlay.mjs  — код шага поверх проекта ng new (раскладка архива «Скачать»)
+  cli-browse.mjs   — приложение проекта CLI в Chrome: консоль, запросы, текст, сценарий, --js-off
+  checks/download.mjs     — кнопка «Скачать»: раскладка архива и совпадение с кодом шага
   checks/preview.mjs      — демо шага 1.1: роутинг, бэкенд, отмена запросов, ленивая загрузка, ошибка 500
   checks/platform.mjs     — интерфейс: ошибки TS/сборки/Angular, схлопывание, адресная строка, «Сеть»
   checks/chNN-*.mjs       — главы: шаги кнопкой «Далее», «Решение», взаимодействие, эксперименты
@@ -238,7 +250,7 @@ tools/e2e/
 tools/authoring/
   steps.py          — write_steps (запись только изменений), step_dir, rep/cut
   format-content.py — пересборка глав из content/ (формат, base/baseHash)
-  ch15-gen.py       — генератор последней главы (образец; `dump <папка>` — полные снимки шагов для опытов)
+  ch20-gen.py       — генератор последней главы (образец; `dump <папка>` — полные снимки шагов для опытов)
 ```
 
 ## Подводные камни

@@ -16,6 +16,7 @@ import {
 import { LessonPanel } from '../lesson/LessonPanel';
 import { Preview, type CheckResult, type PreviewMode, type PreviewRun } from '../preview/Preview';
 import { progress } from '../progress/storage';
+import { downloadProject } from './download';
 import { useMediaQuery } from './useMediaQuery';
 
 const AUTORUN_DELAY = 1000;
@@ -59,6 +60,7 @@ function StepWorkspace({ step }: { step: Step }) {
   const [run, setRun] = useState<PreviewRun | null>(null);
   const [autorun, setAutorun] = useState(progress.getAutorun);
   const [hasBackup, setHasBackup] = useState(() => Boolean(progress.getBackup(step.id)));
+  const [downloading, setDownloading] = useState(false);
   const [mobileTab, setMobileTab] = useState<PaneId>('lesson');
   /** Проверка шага: идёт или её результат */
   const [check, setCheck] = useState<'running' | CheckResult | null>(null);
@@ -184,6 +186,17 @@ function StepWorkspace({ step }: { step: Step }) {
     setHasBackup(false);
   }
 
+  async function onDownload() {
+    setDownloading(true);
+    try {
+      await downloadProject(step, filesRef.current);
+    } catch (error) {
+      window.alert(`Не удалось собрать архив: ${(error as Error).message}`);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   function toggleAutorun(value: boolean) {
     setAutorun(value);
     progress.setAutorun(value);
@@ -234,6 +247,14 @@ function StepWorkspace({ step }: { step: Step }) {
         </button>
         <button className="button" onClick={onReset}>
           Сброс
+        </button>
+        <button
+          className="button"
+          onClick={onDownload}
+          disabled={downloading}
+          title="Скачать код шага архивом — поверх проекта Angular CLI (глава 20)"
+        >
+          {downloading ? 'Собираю…' : 'Скачать'}
         </button>
         <label className="toggle">
           <input type="checkbox" checked={autorun} onChange={(event) => toggleAutorun(event.target.checked)} />

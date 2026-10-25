@@ -20,6 +20,7 @@
     "16-testing",
     "17-admin",
     "18-ngrx",
-    "19-internals"
+    "19-internals",
+    "20-real-project"
   ]
 }
