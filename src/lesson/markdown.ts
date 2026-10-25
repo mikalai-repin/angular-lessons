@@ -145,6 +145,16 @@ function createMarkdown(highlighter: HighlighterCore) {
   return md;
 }
 
+/** Подсветка отдельного фрагмента кода теми же темами, что в уроке (вкладка «Шаблон» превью) */
+export async function highlightCode(code: string, lang: string): Promise<string> {
+  const highlighter = await getHighlighter();
+  return highlighter.codeToHtml(code, {
+    lang: LANG_ALIASES[lang] ?? lang,
+    themes: { light: 'github-light', dark: 'github-dark' },
+    defaultColor: false,
+  });
+}
+
 let mdPromise: Promise<ReturnType<typeof createMarkdown>> | undefined;
 
 export async function renderMarkdown(source: string): Promise<string> {

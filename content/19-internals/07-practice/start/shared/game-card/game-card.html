@@ -1,0 +1,104 @@
+<!-- priority читается один раз, когда картинка создана. Карточка стала первой (или перестала) —
+     создаём картинку заново: иначе NG02953 -->
+@if (priority()) {
+  <img
+    #cover
+    class="cover"
+    [ngSrc]="game().cover"
+    width="300"
+    height="400"
+    priority
+    [alt]="game().title"
+  />
+} @else {
+  <img
+    #cover
+    class="cover"
+    [ngSrc]="game().cover"
+    width="300"
+    height="400"
+    [alt]="game().title"
+  />
+}
+@let category = game().category;
+<span class="category">
+  @switch (category) {
+    @case ('family') {
+      Семейная
+    }
+    @case ('strategy') {
+      Стратегия
+    }
+    @case ('party') {
+      Для компании
+    }
+    @case ('cooperative') {
+      Кооперативная
+    }
+    @case ('kids') {
+      Детская
+    }
+    @default never;
+  }
+</span>
+<div class="stickers">
+  <ng-content select="[sticker]" />
+</div>
+<h2 class="title">
+  <a class="title-link" [routerLink]="['/games', game().id]">
+    {{ game().title }}
+  </a>
+</h2>
+<app-rating
+  [value]="game().rating"
+  readonly
+  [appTooltip]="'Рейтинг ' + (game().rating | number)"
+/>
+<p class="meta">
+  <span>{{ game().players | players }}</span>
+  <span>{{ game().playTime | duration }}</span>
+</p>
+<p class="price">
+  {{ game().price | price }}
+  @if (game().oldPrice; as oldPrice) {
+    <s class="old-price">{{ oldPrice | price }}</s>
+  }
+</p>
+@if (game().inStock === 0) {
+  <p class="stock stock-out">Нет в наличии</p>
+} @else if (stock().available === 0) {
+  <p class="stock stock-few">
+    Все {{ game().inStock }} шт. в корзине
+  </p>
+} @else if (game().inStock <= fewLeft) {
+  <p class="stock stock-few">
+    Осталось {{ game().inStock }} шт.
+  </p>
+} @else {
+  <p class="stock stock-ok">В наличии</p>
+}
+<div class="actions">
+  <button
+    class="button"
+    [disabled]="stock().available === 0"
+    (click)="addToCart()"
+  >
+    В корзину
+  </button>
+  <button
+    class="favorite"
+    [class.active]="isFavorite()"
+    [attr.aria-label]="
+      isFavorite() ? 'Убрать из избранного' : 'В избранное'
+    "
+    [attr.aria-pressed]="isFavorite()"
+    (click)="toggleFavorite()"
+  >
+    {{ isFavorite() ? '♥' : '♡' }}
+  </button>
+</div>
+@if (stock().inCart > 0) {
+  <p class="in-cart muted">
+    В корзине: {{ stock().inCart }} шт.
+  </p>
+}

@@ -4,6 +4,7 @@
 //   public/vendor/rxjs.mjs          — RxJS одним файлом (в пакете сотни модулей);
 //   public/vendor/ts-angular.mjs    — TypeScript + JIT-трансформ из @angular/compiler-cli для воркера компиляции;
 //   public/vendor/vitest.mjs        — API Vitest для тестов в превью (vendor-src/vitest.mjs + @vitest/expect, chai, @vitest/spy);
+//   public/vendor/zone.mjs          — zone.js для шага о нём (глава 19);
 //   public/vendor/es-module-lexer.js;
 //   public/preview.html             — из scripts/preview.template.html с import map, построенной по полю
 //                                     `exports` пакетов: при обновлении Angular новые подпути попадут в карту сами.
@@ -83,6 +84,11 @@ buildSync({
   logLevel: 'warning',
 });
 importMap['vitest'] = '/vendor/vitest.mjs';
+
+// zone.js (глава 19): шаг подключает его строкой import 'zone.js' в main.ts — как polyfills в старых проектах.
+// Файл грузится, только если код ученика его импортирует
+copyFileSync(resolve(root, 'node_modules/zone.js/fesm2015/zone.js'), resolve(out, 'zone.mjs'));
+importMap['zone.js'] = '/vendor/zone.mjs';
 
 copyFileSync(resolve(root, 'node_modules/es-module-lexer/dist/lexer.js'), resolve(out, 'es-module-lexer.js'));
 

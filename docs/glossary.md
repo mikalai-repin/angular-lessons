@@ -340,6 +340,37 @@
 | hydration | гидратация | |
 | prerendering | пререндеринг | |
 
+## Под капотом (глава 19)
+
+| English | Русский | Комментарий |
+|---|---|---|
+| instruction | инструкция | функция Angular, которую вызывает код шаблона: `ɵɵelementStart`, `ɵɵconditional` |
+| creation / update block | блок создания / блок обновления | `rf & 1` / `rf & 2` функции шаблона |
+| component definition | определение компонента | `ɵcmp` — результат `ɵɵdefineComponent` |
+| factory | фабрика | `ɵfac`: создаёт экземпляр класса |
+| DomOnly mode | режим «только DOM» (`DomOnly`) | инструкции `domElementStart`, `domListener`: без сопоставления директив |
+| pure function (template) | чистая функция (шаблона) | `ɵɵpureFunction1`: литерал массива или объекта, который не создаётся заново |
+| LView | `LView`, представление | массив на экземпляр компонента или встроенного шаблона: заголовок, узлы, привязки, директивы |
+| TView | `TView`, общая часть шаблона | одна на тип: функция шаблона, TNode, заготовка `blueprint` |
+| TNode | `TNode`, описание узла | тег, атрибуты, директивы узла — в `tView.data` |
+| LContainer | `LContainer`, контейнер | место `@if`, `@for`, `<router-outlet>`: список встроенных представлений |
+| first create pass | первый проход создания | `firstCreatePass`: первый экземпляр строит TNode и сопоставляет директивы |
+| view flags | флаги представления | `LViewFlags`: `Dirty`, `RefreshView`, `HasChildViewsToRefresh`, `CheckAlways` |
+| template consumer | потребитель-шаблон | узел графа сигналов (`kind: 'template'`) у представления |
+| scheduler | планировщик (проверок) | `ChangeDetectionScheduler`: ему сообщают о возможных изменениях, он запускает `tick()` |
+| notification source | источник уведомления | кто разбудил планировщик: событие, сигнал, `markForCheck`… |
+| Targeted / Global mode | точечный / общий режим (обхода) | режимы `detectChangesInView` |
+| checkNoChanges pass | повторная проверка (режима разработки) | после `tick()`; ошибка `NG0100` |
+| zone | зона | контекст zone.js; зона Angular — `NgZone` |
+| reactive node | узел (графа сигналов) | `ReactiveNode` за символом `SIGNAL` |
+| version (of a node) | версия (узла) | растёт, только когда значение изменилось |
+| epoch | эпоха | глобальный счётчик записей в сигналы |
+| signal primitives | примитивы сигналов | `@angular/core/primitives/signals` |
+| type-check block | блок проверки типов (TCB) | TypeScript-функция, в которую ngtsc переводит шаблон |
+| compilation locality | локальность компиляции | компилятору нужен только сам компонент и его `imports` |
+| partial compilation | частичная компиляция | библиотеки: `ɵɵngDeclareComponent`, доводит сборщик проекта |
+| dev mode / production mode | режим разработки / режим продакшена | `ngDevMode` |
+
 ## Магазин «Ход конём»
 
 | English | Русский | Комментарий |

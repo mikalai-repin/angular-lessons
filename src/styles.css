@@ -2014,3 +2014,139 @@ a.button {
     flex-wrap: wrap;
   }
 }
+
+/* Нижняя панель превью: развёрнутая (код во вкладке «Шаблон») */
+.console.expanded {
+  height: 75%;
+}
+
+.console-header .panel-tabs {
+  margin-right: auto;
+}
+
+.panel-expand {
+  margin-left: 8px;
+}
+
+/* Вкладка «Шаблон» */
+.inspector-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 6px;
+  font-size: 12px;
+}
+
+.inspector-select {
+  font: inherit;
+  max-width: 60%;
+}
+
+.inspector-note {
+  color: var(--text-muted);
+}
+
+.inspector-part {
+  padding: 6px 12px 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-top: 1px solid var(--surface-2);
+}
+
+.inspector-code,
+.inspector-code pre {
+  margin: 0;
+  padding: 4px 12px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  background: transparent !important;
+}
+
+.inspector-code pre {
+  padding: 0;
+}
+
+/* Вкладка «Дерево» */
+.tree-row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 2px 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.tree-row:hover,
+.tree-row.selected {
+  background: var(--surface-2);
+}
+
+.tree-name {
+  font-weight: 600;
+}
+
+.tree-tag {
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.tree-fields {
+  padding-top: 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--surface-2);
+}
+
+.tree-field {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 1px 12px 1px 0;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.tree-field.muted {
+  color: var(--text-muted);
+}
+
+.tree-field-name {
+  flex: none;
+}
+
+.tree-field-name::after {
+  content: ':';
+}
+
+.tree-kind {
+  flex: none;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 10.5px;
+}
+
+.tree-kind-signal,
+.tree-kind-linkedSignal,
+.tree-kind-model {
+  color: var(--accent);
+}
+
+.tree-kind-computed {
+  color: var(--tip);
+}
+
+.tree-kind-input {
+  color: var(--warning);
+}
+
+.tree-field-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+}

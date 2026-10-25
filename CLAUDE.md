@@ -56,7 +56,7 @@ public/assets/        — обложки игр (scripts/build-covers.mjs), CRED
 public/vendor/, public/preview.html — генерирует scripts/copy-vendor.mjs (не в git)
 scripts/              — copy-vendor, validate-content, build-covers, step-files (старт шага по цепочке)
 tools/e2e/            — проверки в headless Chrome (lib, run-dir, run-chapter, exp, checks/)
-tools/authoring/      — steps.py (запись только изменений шага), format-content.py, генератор последней главы ch18-gen.py (образец; `dump <папка>` — полные снимки для опытов)
+tools/authoring/      — steps.py (запись только изменений шага), format-content.py, генератор последней главы ch19-gen.py (образец; `dump <папка>` — полные снимки для опытов)
 ```
 
 ## Команды
@@ -70,14 +70,15 @@ tools/authoring/      — steps.py (запись только изменений
 - `npm run covers` — пересоздать SVG-обложки после изменения `public/backend/data/games.json`
 - `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, адрес, текст страницы, скриншот в `tools/e2e/out/`
 - `node tools/e2e/run-tests.mjs <папка шага> [--with <папка>]` — тесты шага (*.spec.ts) в чистом превью; `node tools/e2e/ng-test.mjs <папка шага> [--browser]` — те же тесты в настоящем `ng test` (проект Angular CLI в `tools/e2e/out/cli`, Node 24 через nvm, пакеты NgRx — версий курса)
+- `node tools/e2e/ng-build.mjs <папка шага> [--jit] [--dev]` — код шага в настоящей сборке `ng build` (тот же проект CLI), размеры файлов
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»
 - `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент из текста урока со своим сценарием действий
-- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–15, 17 и 18 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `tools/e2e/aot-chapter.mjs <глава>` — `ngc --strictTemplates` по полному коду каждого шага главы; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`); `checks/test-runner.mjs` — отчёт тестов на шагах главы 16, переключатель «Приложение / Тесты», «Проверить» с тестами (после правок раннера и `preview-runtime.js`)
+- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/chNN-*.mjs` — проверки глав 2–15, 17–19 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `tools/e2e/aot-chapter.mjs <глава>` — `ngc --strictTemplates` по полному коду каждого шага главы; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`); `checks/test-runner.mjs` — отчёт тестов на шагах главы 16, переключатель «Приложение / Тесты», «Проверить» с тестами (после правок раннера и `preview-runtime.js`)
 - Все проверки требуют запущенного `npm run dev` и Chrome (`CHROME_PATH`, по умолчанию путь macOS). Другой адрес — `BASE_URL=http://localhost:5181`
 
 ## Текущий статус
 
-Платформа готова, **главы 1–18 написаны** (часть 2 закончена), у каждой главы есть квиз (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
+Платформа готова, **главы 1–19 написаны** (часть 2 закончена, часть 3 начата), у каждой главы есть квиз (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
 
 ## Пользователь и тон работы
 

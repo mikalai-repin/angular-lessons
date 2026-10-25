@@ -104,6 +104,35 @@ expect(
 );
 await page.screenshot({ path: `${OUT}/platform-network.png` });
 
+// Вкладка «Шаблон» (глава 19): код JIT для классов ученика — определение с функцией шаблона и фабрика
+await page.$$eval('.panel-tab', (els) => els.find((e) => e.textContent?.startsWith('Шаблон'))?.click());
+await wait(2500);
+const classes = await page.$$eval('.inspector-select option', (els) => els.map((e) => e.textContent));
+expect(classes.includes('App'), `«Шаблон»: в списке классов есть App (${classes.join(', ')})`);
+const templateCode = await page.$eval('.console-body', (e) => e.textContent ?? '');
+expect(
+  /function \w+_Template\(rf, ctx\)/.test(templateCode) && templateCode.includes('ɵfac'),
+  '«Шаблон»: функция шаблона и фабрика отформатированы',
+);
+expect(!classes.some((c) => /^(Router|HttpClient|NgIf)$/.test(c ?? '')), '«Шаблон»: классов Angular в списке нет');
+
+// Вкладка «Дерево»: компоненты на странице, поля раскрываются щелчком, наведение подсвечивает хост в приложении
+await page.$$eval('.panel-tab', (els) => els.find((e) => e.textContent?.startsWith('Дерево'))?.click());
+await wait(1500);
+const treeRows = await page.$$eval('.tree-row .tree-name', (els) => els.map((e) => e.textContent));
+expect(treeRows[0] === 'App', `«Дерево»: корень — App (${treeRows.join(', ')})`);
+const firstRow = await page.$('.tree-row');
+await firstRow?.click();
+await firstRow?.hover();
+await wait(300);
+expect((await page.$$('.tree-field')).length > 0, '«Дерево»: щелчок раскрывает поля компонента');
+expect(
+  await frame().evaluate(() => document.querySelector('.course-highlight')?.getAttribute('style')?.includes('block')),
+  '«Дерево»: наведение подсвечивает компонент в приложении',
+);
+await page.screenshot({ path: `${OUT}/platform-tree.png` });
+await page.$$eval('.panel-tab', (els) => els.find((e) => e.textContent?.startsWith('Консоль'))?.click());
+
 // Строка главы с «Свернуть» прилипает к верху панели урока при прокрутке
 await page.$eval('.lesson-scroll', (e) => e.scrollTo(0, 600));
 await wait(300);

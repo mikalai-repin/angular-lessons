@@ -572,8 +572,12 @@ window.addEventListener('message', async (event) => {
     if (!(data.entry in data.files)) return;
     await init();
     const entryUrl = linkModules(data.files)(data.entry);
+    userClasses = new Set(
+      Object.values(data.files).flatMap((code) => [...code.matchAll(/\bclass\s+([\w$]+)/g)].map((m) => m[1])),
+    );
     // JIT-компилятор шаблонов должен быть загружен до кода приложения
     await import('@angular/compiler');
+    await captureJitSources();
     await createPlatformWithDeferChunks();
     await import(entryUrl);
   } catch (error) {
@@ -745,5 +749,180 @@ async function runCheck(checkModule) {
     return { pass: false, hint: `Проверка упала с ошибкой: ${error?.message ?? error}` };
   }
 }
+
+// ---------- Вкладки «Шаблон» и «Дерево» (глава 19) ----------
+
+/** Код, который JIT-компилятор сгенерировал за этот запуск: 'ng:///GameCard.js' → исходник */
+const jitSources = new Map();
+let templatesTimer = null;
+
+/**
+ * JIT-компилятор превращает определение компонента в JavaScript и выполняет его через JitEvaluator.evaluateCode
+ * (класс экспортирует @angular/compiler). Перехватываем исходник до выполнения — это ровно тот код, который AOT
+ * записал бы в собранный файл, только с именами jit___ вместо i0.ɵɵ. Родителю — пачкой, когда компиляции затихли
+ */
+async function captureJitSources() {
+  const { JitEvaluator } = await import('@angular/compiler');
+  const original = JitEvaluator.prototype.evaluateCode;
+  JitEvaluator.prototype.evaluateCode = function (sourceUrl, ctx, ...rest) {
+    try {
+      jitSources.set(sourceUrl, ctx.toSource());
+      clearTimeout(templatesTimer);
+      templatesTimer = setTimeout(sendTemplates, 50);
+    } catch {
+      // Перехват не должен ломать компиляцию
+    }
+    return original.call(this, sourceUrl, ctx, ...rest);
+  };
+}
+
+/** Классы из кода ученика: в «Шаблоне» показываем только их, без сотен классов самого Angular */
+let userClasses = new Set();
+
+const PART_KIND = { ɵdir: 'directive', ɵpipe: 'pipe', ɵprov: 'service' };
+
+/**
+ * ng:///GameCard.js → определение компонента (полная JIT-компиляция), ng:///GameCard/ɵfac.js → фабрика,
+ * ng:///Tooltip/ɵdir.js, ng:///PricePipe/ɵpipe.js, ng:///CartStore/ɵprov.js — директива, пайп, сервис
+ */
+function sendTemplates() {
+  const classes = new Map();
+  for (const [url, source] of jitSources) {
+    const match = /^ng:\/\/\/(.+?)\.js$/.exec(url);
+    if (!match) continue;
+    const [name, part = 'ɵcmp'] = match[1].split('/');
+    if (!userClasses.has(name)) continue;
+    const code = source
+      .replace(/^"use strict";\n?/, '')
+      .replace(/^'use strict';\n?/, '')
+      .replace(/\n?return \{[^\n]*\};?\s*$/, '')
+      .trim();
+    if (!classes.has(name)) classes.set(name, { name, kind: 'other', parts: [] });
+    const item = classes.get(name);
+    if (part === 'ɵcmp') item.kind = 'component';
+    else if (PART_KIND[part] && item.kind === 'other') item.kind = PART_KIND[part];
+    item.parts.push({ part, code });
+  }
+  send({ type: 'templates', items: [...classes.values()] });
+}
+
+/** Элементы-хосты компонентов по номеру — для подсветки строки дерева в приложении */
+const treeElements = new Map();
+const treeIds = new WeakMap();
+let nextTreeId = 1;
+
+/** Имена полей-входов компонента: ɵcmp.inputs — { публичноеИмя: [флаги, имяПоля, …] } */
+function inputFields(component) {
+  const names = new Set();
+  for (const value of Object.values(component.constructor.ɵcmp?.inputs ?? {})) {
+    for (const part of [value].flat()) if (typeof part === 'string') names.add(part);
+  }
+  return names;
+}
+
+/**
+ * Поля экземпляра: сигналы — вид и значение (из узла, без вызова: вызов создал бы зависимость), остальное —
+ * значение. Служебное поле __ngContext__ (номер представления компонента) пропускаем
+ */
+function describeFields(component) {
+  const inputs = inputFields(component);
+  const outputs = new Set(Object.keys(component.constructor.ɵcmp?.outputs ?? {}));
+  const fields = [];
+  for (const [name, value] of Object.entries(component)) {
+    if (name === '__ngContext__') continue;
+    let kind = '';
+    let text;
+    try {
+      if (typeof value === 'function') {
+        const node = signalNode(value);
+        if (!node) continue;
+        kind = node.kind && node.kind !== 'unknown' ? node.kind : 'computation' in node ? 'computed' : 'signal';
+        if (inputs.has(name)) kind = outputs.has(`${name}Change`) ? 'model' : 'input';
+        // formatValue пишет сигнал как «signal(3)» — вид уже в отдельной колонке
+        text = /^\w+\(([\s\S]*)\)$/.exec(formatValue(value))?.[1] ?? '';
+      } else {
+        text = formatValue(value, 1);
+      }
+    } catch {
+      text = '…';
+    }
+    fields.push({ name, kind, value: text.length > 300 ? `${text.slice(0, 300)}…` : text });
+  }
+  return fields;
+}
+
+/** Дерево компонентов на странице: хосты компонентов в порядке DOM, вложенность — по DOM */
+function componentTree() {
+  const ng = window.ng;
+  if (!ng?.getComponent) return [];
+  treeElements.clear();
+  const walk = (element) => {
+    const nodes = [];
+    for (const child of element.children) {
+      const component = ng.getComponent(child);
+      if (component) {
+        let id = treeIds.get(child);
+        if (!id) treeIds.set(child, (id = nextTreeId++));
+        treeElements.set(id, child);
+        nodes.push({
+          id,
+          name: component.constructor.name,
+          tag: child.tagName.toLowerCase(),
+          fields: describeFields(component),
+          children: walk(child),
+        });
+      } else {
+        nodes.push(...walk(child));
+      }
+    }
+    return nodes;
+  };
+  return walk(document.body);
+}
+
+let highlightBox = null;
+
+function highlightElement(id) {
+  const element = id ? treeElements.get(id) : null;
+  if (!element || !element.isConnected) {
+    highlightBox?.remove();
+    highlightBox = null;
+    return;
+  }
+  highlightBox ??= Object.assign(document.createElement('div'), { className: 'course-highlight' });
+  const rect = element.getBoundingClientRect();
+  Object.assign(highlightBox.style, {
+    position: 'fixed',
+    zIndex: 2147483647,
+    pointerEvents: 'none',
+    background: 'rgba(120, 80, 220, 0.18)',
+    outline: '2px solid rgba(120, 80, 220, 0.9)',
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+  });
+  // Хост без собственной коробки (display: contents и т. п.) — нулевой прямоугольник; подсветку не показываем
+  highlightBox.style.display = rect.width || rect.height ? 'block' : 'none';
+  document.documentElement.append(highlightBox);
+}
+
+window.addEventListener('message', (event) => {
+  if (event.source !== parentWindow) return;
+  const data = event.data;
+  if (data?.type === 'inspect-tree') {
+    let nodes = [];
+    try {
+      nodes = componentTree();
+    } catch {
+      // Приложение посреди перестройки — пришлём в следующий раз
+    }
+    send({ type: 'tree', nodes });
+  } else if (data?.type === 'highlight') {
+    highlightElement(data.id);
+  } else if (data?.type === 'inspect-templates') {
+    sendTemplates();
+  }
+});
 
 send({ type: 'ready' });

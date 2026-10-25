@@ -19,6 +19,7 @@
     "15-performance",
     "16-testing",
     "17-admin",
-    "18-ngrx"
+    "18-ngrx",
+    "19-internals"
   ]
 }

@@ -1,6 +1,6 @@
 # Программа курса
 
-> **Состояние:** у написанных глав (1–13) в таблицах — **фактический** состав шагов: папка шага, что он вводит, с чего начинается (`custom` — своя заготовка поверх результата прошлого шага, `noSolution` — шаг без задания). У остальных — план: он уточняется при написании главы, а после неё таблица заменяется фактической.
+> **Состояние:** у написанных глав (1–19) в таблицах — **фактический** состав шагов: папка шага, что он вводит, с чего начинается (`custom` — своя заготовка поверх результата прошлого шага, `noSolution` — шаг без задания). У остальных — план: он уточняется при написании главы, а после неё таблица заменяется фактической.
 
 Курс состоит из **трёх частей**:
 
@@ -310,15 +310,19 @@
 
 ### Глава 19. Под капотом Angular
 
-| # | Шаг | О чём |
+Цель: увидеть механизм за правилами, которыми пользовались восемнадцать глав, — на коде «Хода конём». Магазин не меняется: появляются помощники для исследования в `debug/` и инструменты превью — вкладки «Шаблон» (код JIT для классов ученика) и «Дерево» (компоненты, входы и сигналы; этап 5). zone.js 0.16.3 подключён в превью (import map, типы Monaco). DI отдельным шагом не разбирали: он разобран в 8.9, связь `NodeInjector` с `LView` — врезка шага 2.
+
+| Шаг | Что вводит | Старт |
 |---|---|---|
-| 19.1 | Компилятор | Шаблон → инструкции Ivy (вкладка «Шаблон»): создание и обновление, `ɵɵelementStart`, `ɵɵtextInterpolate` |
-| 19.2 | Представления | `LView`, `TView`, почему компоненты дешёвые |
-| 19.3 | Обнаружение изменений | Планировщик зонлесс, «грязные» представления, OnPush/`Eager`, `markForCheck` |
-| 19.4 | zone.js | Как было раньше, `provideZoneChangeDetection`, почему от него отказались |
-| 19.5 | Сигналы изнутри | `@angular/core/primitives/signals`: реактивные узлы, версии, эпохи |
-| 19.6 | DI изнутри | `R3Injector`, `NodeInjector`, bloom-фильтр |
-| 19.7 | JIT против AOT | Что делает `ngtsc`, проверка типов шаблонов, tree-shaking |
+| 01-template-code | вводный шаг части 3; вкладка «Шаблон»: определение `GameCard` (`selectors`, `viewQuery`, `hostBindings`, `inputs` с `InputFlags.SignalBased`, `decls`/`vars`, `consts`), `ɵfac`; функции встроенных шаблонов, `conditionalCreate` + `conditional(номер места)`, `@switch` — цепочка сравнений, `@let` — переменная; `nextContext`, контекст `@if (…; as x)`; `pureFunction1` (память в ячейках привязок); `DomOnly` (`domElementStart`/`domListener`) — JIT: пустой `imports`, AOT: нет используемых директив (`NG8113`); dev-сборка CLI — тот же код в `dist/`; эксперименты: `routerLink` строкой — без `_c3`, `vars` 26; пайп в `imports` `Rating` | custom (= база), noSolution |
+| 02-views | вкладка «Дерево» (поля, виды сигналов, подсветка); помощник `debug/view-log.ts` (Alt + щелчок, `ɵgetLContext`): `LView` — заголовок 0–27, узлы, привязки, прочее; `LContainer`, `LView` дочернего компонента в ячейке родителя, пайпы в ячейках узлов; `TView` (`template`, `data`/TNode, `blueprint`, `bindingStartIndex`), один на тип (`ɵcmp.tView`), `firstCreatePass`; `__ngContext__` (верхний уровень шаблона и хосты директив); корневое представление страницы роутера; врезка — `NodeInjector` в «прочем» (9 чисел на элемент); эксперимент: «В корзину» — `81: -1` → `35` | custom: `debug/view-log.ts`, `main.ts` с `TODO` |
+| 03-change-detection | помощник `debug/cd-log.ts` — журнал проверок с причинами (обёртка `ɵChangeDetectionScheduler.notify`, профайлер, снимок флагов обходом `CHILD_HEAD`/`NEXT`); флаги `Dirty`, `RefreshView`, `HasChildViewsToRefresh`, `CheckAlways`, потребитель-шаблон (ячейка 24); код `markViewDirty` и `markAncestorsForTraversal` (уточнение к 6.9); `detectChangesInView`, режимы `Targeted`/`Global`; push без вычислений и pull у 11 карточек; повторные проходы (100/10, `NG0103`); повторная проверка режима разработки, `provideCheckNoChangesConfig({ exhaustive: true })` (`@developerPreview 20.0`) — `NG0100`; эксперименты: `Eager` — 11 × `GameCard (Eager)`, `stamp()` с `Math.random()` | custom: `debug/cd-log.ts`, `main.ts` с `TODO` |
+| 04-zone | `import 'zone.js'` + `provideZoneChangeDetection()`, `polyfills` в CLI; что подменяет зона, `onMicrotaskEmpty` → `tick()` в `Global` от корня; журнал `Проверка [—]`; эксперименты: поле в `setInterval` (OnPush — «Секунд: 0», `Eager` у `App` и шапки — идёт, повторная проверка в журнале), `Zone.current.name`, `runOutsideAngular`, `NG0908`, `NG0914` + `NG0408`; почему отказались (`ZoneAwarePromise`, `async`/`await` и сборщик CLI, 35 КБ / 12,6 КБ gzip); перевод на зонлесс; `legacy` — `NgZone` | previous |
+| 05-signals-inside | `@angular/core/primitives/signals`; узел (`value`, `version`, `dirty`, связи с `lastReadVersion`, `lastCleanEpoch`), эпоха; `signal()` = `createSignal` + методы; `producerAccessed`, `signalSetFn`, `producerNotifyConsumers`, `consumerPollProducersForChange`; лаборатория `debug/signal-lab.ts`: свой `watch` на `createWatch` (задание) — две записи / одна, то же значение, тот же итог — версия прежняя; эксперимент: `computed` с объектом и `equal`; врезка — эпохи; как устроен `effect` (`runEffect`) | custom: магазин без zone.js, `debug/signal-lab.ts` с `TODO` в `watch`, `runSignalLab()` в `main.ts` |
+| 06-jit-aot | ngtsc: анализ, связи (`dependencies` в AOT-определении, локальность, частичная компиляция библиотек), проверка типов (TCB `Rating` через API компилятора), генерация; эксперимент `titel`: превью — пустые заголовки, `ngc` — `TS2551`; размеры сборки AOT/JIT (515,57 kB / 1,33 MB, компилятор в `polyfills`, нет чанка `@defer`); tree-shaking инструкций; режим разработки и продакшена | noSolution |
+| 07-practice | практикум «Лишние проверки»: три закладки — `markForCheck()` по таймеру в шапке, `Eager` у карточки, `computed` `stock` с новым объектом; журнал проверок и «Дерево»; `check.ts` (профайлер: простой 2,5 с, «В корзину» — одна карточка, корзина работает; подсказки по `onPush` определения); «Итоги главы» | custom: закладки в `game-card.ts`/`.html` и `header.ts`, `main.ts` без лаборатории |
+
+Квиз — 15 вопросов.
 
 ### Глава 20. Настоящий проект (на машине ученика)
 

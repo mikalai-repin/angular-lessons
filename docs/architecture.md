@@ -38,7 +38,9 @@
 | **Тема** | Кнопка ☀/☾ в шапке переключает светлую и тёмную (`src/app/theme.ts`, `progress.theme`); **по умолчанию — тёмная**, системная настройка не учитывается. На `<html>` — `data-theme="light|dark"`; стили — `[data-theme='dark']`, редактор следит за атрибутом (`MutationObserver` в `monaco.ts`). Превью приложения ученика всегда светлое |
 | **Панель урока** | Строка «Глава N…» с кнопкой «Свернуть» — липкая (`position: sticky` прямо в `.lesson-scroll`; `top` с поправкой на верхний отступ панели), при прокрутке под ней появляется граница (класс `scrolled`) |
 | **Подсветка шаблонов Angular** (`src/editor/angular-html.ts`) | Своя грамматика Monarch для языка `html`: HTML + `@if`/`@for`/`@switch`/`@defer`/`@let` с выражениями, `{{ }}` (и в значениях атрибутов), `[prop]`, `[(model)]`, `(event)`, `#ref`, `*ngIf`, `animate.enter`, выражения (переменные, вызовы, пайпы, `$event`, строки, ключевые слова). Темы `course-light`/`course-dark` — `vs`/`vs-dark` + цвета Angular-токенов. Зарегистрирована для `html`, поэтому автодополнение HTML и Prettier работают как прежде |
-| Вкладка «Шаблон», дерево компонентов | **План** (этап 5) |
+| **Вкладка «Шаблон»** (глава 19, `src/preview/Inspector.tsx`) | Код, который JIT-компилятор сгенерировал за запуск для **классов ученика** (имена классов — из скомпилированных файлов шага): `preview-runtime.js` подменяет `JitEvaluator.prototype.evaluateCode` из `@angular/compiler` и запоминает исходник по `sourceUrl` (`ng:///GameCard.js` — определение, `ng:///GameCard/ɵfac.js` — фабрика, `…/ɵdir`, `…/ɵpipe`, `…/ɵprov`); пачка уходит родителю сообщением `templates` через 50 мс после последней компиляции. Выбор класса — `<select>` по группам (компоненты, директивы, пайпы, сервисы); код форматирует Prettier (`babel`, ширина 72) и подсвечивает Shiki (`highlightCode` из `src/lesson/markdown.ts`), результат кэшируется. Ленивые классы появляются, когда их загрузили |
+| **Вкладка «Дерево»** (глава 19) | Компоненты на странице по DOM (`ng.getComponent` у каждого элемента), вложенность — по DOM. Щелчок раскрывает поля экземпляра: у сигналов вид (`signal`, `computed`, `linkedSignal`; `input` и `model` — по `ɵcmp.inputs`/`outputs`) и значение из узла без вызова, у остальных — `formatValue`; `__ngContext__` скрыт. Пока вкладка открыта, родитель раз в секунду шлёт `inspect-tree`. Наведение на строку — `highlight { id }`: полупрозрачная рамка `.course-highlight` поверх хоста в iframe |
+| Нижняя панель: ▴/▾ | Разворачивает «Консоль / Сеть / Шаблон / Дерево» на 75 % высоты превью (`.console.expanded`). В режиме «Тесты» вкладок «Шаблон» и «Дерево» нет |
 
 ## Стек
 
@@ -63,7 +65,7 @@
 - `@ngrx/signals`, `store`, `effects`, `operators`, `store-devtools` — **22.0.1** (глава 18; тоже `devDependencies`, точные версии). `@ngrx/entity`, `router-store` и прочие не подключены.
 - `typescript` — **6.0.3**: `@angular/compiler-cli@22` требует `>=6.0 <6.1`. В курсе PixiJS стоит TypeScript 7 (Go-версия без JS API) — здесь нельзя.
 - `rxjs` — **7.8.2**.
-- `zone.js` не подключаем (зонлесс — по умолчанию в v22).
+- `zone.js` — **0.16.3** (`devDependencies`, точная версия): только для шага 19.4, приложения курса — зонлесс (по умолчанию в v22).
 - `monaco-editor` — **0.57.0** точно (внутри TS 5.9).
 
 Обновление Angular — только между главами: `npm i @angular/*@<версия> @angular/compiler-cli@<версия>`, `npm run vendor` (пересоберёт `ts-angular.mjs` по метке версий), поменять `angularVersion` в `content/course.json`, прогнать `validate`, обе проверки из `tools/e2e/checks/` и `run-chapter` по всем главам.
@@ -105,6 +107,7 @@
 - `public/vendor/angular/common/locales/{ru,en}.mjs` — локали для пайпов (глава 7);
 - `public/vendor/rxjs.mjs` — RxJS одним файлом (esbuild);
 - `public/vendor/ts-angular.mjs` — TypeScript 6 + трансформ для воркера: esbuild, `platform: browser`, модули Node (`fs`, `path`, `module`, `url`, `os`, `crypto`, `process`, `util`) заменены заглушкой `scripts/node-stub.mjs`. ~4 МБ (1,2 МБ gzip). Пересобирается только при смене версий TypeScript/compiler-cli (метка `ts-angular.stamp.json`);
+- `public/vendor/zone.mjs` — `zone.js/fesm2015/zone.js` (0.16.3) и запись `zone.js` в import map: глава 19 подключает зону строкой `import 'zone.js'` в `main.ts`; без импорта файл не грузится. Типы для редактора — `zone.d.ts` и `lib/*.d.ts` в `src/editor/monaco.ts`;
 - `public/vendor/es-module-lexer.js`;
 - **`public/preview.html`** — из `scripts/preview.template.html` с import map. Карта строится по полю `exports` в `package.json` пакетов (39 записей, из них 12 — NgRx): новые подпути при обновлении Angular попадут в неё сами. `rxjs/operators` указывает на тот же `rxjs.mjs` (в RxJS 7 операторы экспортируются и из корня).
 
@@ -116,8 +119,8 @@
 
 | Направление | Сообщение |
 |---|---|
-| iframe → родитель | `ready`; `console { level, text }`; `error { text }`; `url { url }`; `title { title }`; `network { entry }` (одна запись приходит дважды: `pending`, затем итог; в записи — `requestHeaders`, `requestBody`, `responseBody`) |
-| родитель → iframe | `run { files, entry: 'main.js', styles, url, backend }`; `navigate { url }`; `history { delta }`; `backend-config { config }` |
+| iframe → родитель | `ready`; `console { level, text }`; `error { text }`; `url { url }`; `title { title }`; `network { entry }` (одна запись приходит дважды: `pending`, затем итог; в записи — `requestHeaders`, `requestBody`, `responseBody`); `templates { items: [{ name, kind, parts: [{ part, code }] }] }`; `tree { nodes: [{ id, name, tag, fields, children }] }` |
+| родитель → iframe | `run { files, entry: 'main.js', styles, url, backend }`; `navigate { url }`; `history { delta }`; `backend-config { config }`; `inspect-templates`, `inspect-tree`, `highlight { id \| null }` (вкладки «Шаблон» и «Дерево») |
 
 Порядок запуска (`run`):
 
@@ -203,7 +206,7 @@ src/
   lesson/         — markdown (контейнеры tip/warning/task/deep/legacy/hint), навигация по шагам
   editor/         — Monaco (monaco.ts: типы, Prettier, диагностика), вкладки (CodeEditor.tsx)
   compiler/       — веб-воркер компиляции и клиент
-  preview/        — Preview.tsx: iframe, адресная строка, консоль, «Сеть»
+  preview/        — Preview.tsx: iframe, адресная строка, консоль, «Сеть»; Inspector.tsx: вкладки «Шаблон» и «Дерево»
   content/        — загрузка content/
   progress/       — localStorage (шаги, лучшие результаты квизов)
   quiz/           — страница квиза главы /<глава>/quiz (перенесена из ../react-learn)

@@ -39,6 +39,13 @@ const rxjsTypes = import.meta.glob('../../node_modules/rxjs/dist/types/**/*.d.ts
   eager: true,
 }) as Record<string, string>;
 
+// zone.js (глава 19): `import 'zone.js'` и глобальный Zone
+const zoneTypes = import.meta.glob('../../node_modules/zone.js/{zone.d.ts,lib/*.d.ts}', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
 // Данные локалей для пайпов (`import localeRu from '@angular/common/locales/ru'`) — те же, что копирует
 // scripts/copy-vendor.mjs (LOCALES). Подпуть `./locales/*` в `exports` — шаблон, заглушки для него не строятся
 const localeTypes = import.meta.glob('../../node_modules/@angular/common/locales/{ru,en}.d.ts', {
@@ -122,6 +129,10 @@ for (const [path, pkg] of Object.entries(angularPackages)) {
 for (const [path, source] of Object.entries(localeTypes)) {
   ts.typescriptDefaults.addExtraLib(source, NODE_MODULES + relativeToNodeModules(path));
 }
+for (const [path, source] of Object.entries(zoneTypes)) {
+  ts.typescriptDefaults.addExtraLib(source, NODE_MODULES + relativeToNodeModules(path));
+}
+ts.typescriptDefaults.addExtraLib(`import './zone';`, `${NODE_MODULES}zone.js/index.d.ts`);
 for (const [path, source] of Object.entries(rxjsTypes)) {
   ts.typescriptDefaults.addExtraLib(source, NODE_MODULES + relativeToNodeModules(path));
 }

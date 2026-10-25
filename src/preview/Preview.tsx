@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { BackendConfig, FileMap } from '../content/course';
 import { Loader } from '../app/Loader';
 import type { Diagnostic } from '../editor/monaco';
+import { TemplatePanel, TreePanel, type TemplateItem, type TreeNode } from './Inspector';
 import { TestReport, TestSummary, applyTestEvent, emptyTestRun, type TestEvent } from './TestReport';
 
 export interface ConsoleEntry {
@@ -48,7 +49,7 @@ export interface CheckResult {
 
 interface PreviewMessage {
   source: 'angular-course-preview';
-  type: 'ready' | 'console' | 'error' | 'url' | 'network' | 'title' | 'check-result' | 'tests';
+  type: 'ready' | 'console' | 'error' | 'url' | 'network' | 'title' | 'check-result' | 'tests' | 'templates' | 'tree';
   level?: ConsoleEntry['level'];
   text?: string;
   url?: string;
@@ -57,6 +58,8 @@ interface PreviewMessage {
   pass?: boolean;
   hint?: string;
   event?: TestEvent;
+  items?: TemplateItem[];
+  nodes?: TreeNode[];
 }
 
 interface Props {
@@ -73,6 +76,8 @@ interface Props {
   /** Переключатель «Приложение / Тесты»: есть, если в шаге есть тесты */
   onModeChange?: (mode: PreviewMode) => void;
 }
+
+type Panel = 'console' | 'network' | 'template' | 'tree';
 
 const DEFAULT_BACKEND: Required<BackendConfig> = { latency: 300, failRate: 0, tokenTtl: 3600 };
 const LATENCIES = [0, 300, 1000, 3000];
@@ -104,7 +109,14 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [entries, setEntries] = useState<ConsoleEntry[]>([]);
   const [network, setNetwork] = useState<NetworkEntry[]>([]);
-  const [panel, setPanel] = useState<'console' | 'network'>('console');
+  const [panel, setPanel] = useState<Panel>('console');
+  /** Нижняя панель развёрнута на большую часть превью: код во вкладке «Шаблон» длинный */
+  const [panelExpanded, setPanelExpanded] = useState(false);
+  /** Вкладка «Шаблон»: сгенерированный код классов ученика и выбранный класс (сохраняется между запусками) */
+  const [templates, setTemplates] = useState<TemplateItem[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  /** Вкладка «Дерево»: компоненты на странице; обновляется раз в секунду, пока вкладка открыта */
+  const [tree, setTree] = useState<TreeNode[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
   const [backendConfig, setBackendConfig] = useState({ ...DEFAULT_BACKEND, ...backend });
   /** Адрес, который показывает адресная строка (приложение сообщает о каждом переходе) */
@@ -132,6 +144,8 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
     setTitle('');
     setNetwork([]);
     setSelectedRequest(null);
+    setTemplates([]);
+    setTree([]);
     setTestRun(emptyTestRun());
     setEntries([
       ...run.buildErrors.map((text) => ({ id: nextEntryId++, level: 'build' as const, text, count: 1 })),
@@ -181,6 +195,10 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
         setTestRun((current) => applyTestEvent(current, event));
       } else if (data.type === 'check-result') {
         onCheckResult?.({ pass: Boolean(data.pass), hint: data.hint });
+      } else if (data.type === 'templates' && data.items) {
+        setTemplates(data.items);
+      } else if (data.type === 'tree' && data.nodes) {
+        setTree(data.nodes);
       } else if (data.type === 'title' && data.title !== undefined) {
         setTitle(data.title);
       } else if (data.type === 'network' && data.entry) {
@@ -212,6 +230,15 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
     iframeRef.current?.contentWindow?.postMessage(message, '*');
   }
 
+  // Дерево компонентов меняется вместе с приложением: пока вкладка открыта, спрашиваем его раз в секунду
+  useEffect(() => {
+    if (panel !== 'tree' || !frame) return;
+    const ask = () => iframeRef.current?.contentWindow?.postMessage({ type: 'inspect-tree' }, '*');
+    ask();
+    const timer = setInterval(ask, 1000);
+    return () => clearInterval(timer);
+  }, [panel, frame]);
+
   function updateBackend(patch: Partial<BackendConfig>) {
     const next = { ...backendConfig, ...patch };
     setBackendConfig(next);
@@ -219,6 +246,8 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
   }
 
   const selected = network.find((e) => e.id === selectedRequest);
+  // В режиме «Тесты» приложения нет — вкладки «Шаблон» и «Дерево» скрыты
+  const shownPanel = run?.mode === 'tests' && (panel === 'template' || panel === 'tree') ? 'console' : panel;
   const errorCount = entries.filter((e) => e.level === 'error' || e.level === 'build').length;
 
   return (
@@ -318,32 +347,63 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
           </div>
         )}
       </div>
-      <div className="console">
+      <div className={panelExpanded ? 'console expanded' : 'console'}>
         <div className="console-header">
           <div className="panel-tabs" role="tablist">
             <button
               role="tab"
-              aria-selected={panel === 'console'}
-              className={panel === 'console' ? 'panel-tab active' : 'panel-tab'}
+              aria-selected={shownPanel === 'console'}
+              className={shownPanel === 'console' ? 'panel-tab active' : 'panel-tab'}
               onClick={() => setPanel('console')}
             >
               Консоль{errorCount > 0 && <span className="panel-badge error">{errorCount}</span>}
             </button>
             <button
               role="tab"
-              aria-selected={panel === 'network'}
-              className={panel === 'network' ? 'panel-tab active' : 'panel-tab'}
+              aria-selected={shownPanel === 'network'}
+              className={shownPanel === 'network' ? 'panel-tab active' : 'panel-tab'}
               onClick={() => setPanel('network')}
             >
               Сеть{network.length > 0 && <span className="panel-badge">{network.length}</span>}
             </button>
+            {run?.mode !== 'tests' && (
+              <>
+                <button
+                  role="tab"
+                  aria-selected={shownPanel === 'template'}
+                  className={shownPanel === 'template' ? 'panel-tab active' : 'panel-tab'}
+                  title="Код, который компилятор Angular сгенерировал для ваших классов"
+                  onClick={() => setPanel('template')}
+                >
+                  Шаблон
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={shownPanel === 'tree'}
+                  className={shownPanel === 'tree' ? 'panel-tab active' : 'panel-tab'}
+                  title="Компоненты на странице, их входы и сигналы"
+                  onClick={() => setPanel('tree')}
+                >
+                  Дерево
+                </button>
+              </>
+            )}
           </div>
-          {panel === 'console' && entries.length > 0 && (
+          <button
+            type="button"
+            className="icon-button panel-expand"
+            title={panelExpanded ? 'Уменьшить панель' : 'Развернуть панель'}
+            aria-pressed={panelExpanded}
+            onClick={() => setPanelExpanded((value) => !value)}
+          >
+            {panelExpanded ? '▾' : '▴'}
+          </button>
+          {shownPanel === 'console' && entries.length > 0 && (
             <button className="link-button" onClick={() => setEntries([])}>
               Очистить
             </button>
           )}
-          {panel === 'network' && (
+          {shownPanel === 'network' && (
             <div className="backend-controls">
               <label title="Задержка ответа учебного бэкенда">
                 Задержка
@@ -371,7 +431,15 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
             </div>
           )}
         </div>
-        {panel === 'console' ? (
+        {shownPanel === 'template' ? (
+          <div className="console-body">
+            <TemplatePanel items={templates} selected={selectedClass} onSelect={setSelectedClass} />
+          </div>
+        ) : shownPanel === 'tree' ? (
+          <div className="console-body" onMouseLeave={() => post({ type: 'highlight', id: null })}>
+            <TreePanel nodes={tree} onHighlight={(id) => post({ type: 'highlight', id })} />
+          </div>
+        ) : shownPanel === 'console' ? (
           <div className="console-body">
             {entries.length === 0 ? (
               <div className="console-empty">Здесь появится вывод console.log и ошибки</div>
