@@ -371,6 +371,19 @@
 | partial compilation | частичная компиляция | библиотеки: `ɵɵngDeclareComponent`, доводит сборщик проекта |
 | dev mode / production mode | режим разработки / режим продакшена | `ngDevMode` |
 
+## Чтение чужого кода (глава 21)
+
+| English | Русский | Комментарий |
+|---|---|---|
+| monorepo | монорепозиторий | много пакетов в одном репозитории: angular/angular — `packages/` и `adev/` |
+| lock file | lock-файл | `package-lock.json`: точные версии всего дерева зависимостей |
+| cherry-pick | перенос коммита (cherry-pick) | копия коммита из `main` в ветку выпуска |
+| dead code | мёртвый код | код, который никто не импортирует и не вызывает |
+| soft 404 | «мягкая 404» | несуществующий адрес, на который сервер отвечает 200 |
+| cross-origin isolation | изоляция страницы (cross-origin isolation) | заголовки COOP/COEP; нужна для `SharedArrayBuffer` и WebContainers |
+| WebContainers | WebContainers | Node.js в браузере (StackBlitz): встроенный редактор angular.dev |
+| pending task | ожидающая задача | `PendingTasks.add()`: пока есть, приложение не стабильно, сервер не сериализует страницу |
+
 ## Магазин «Ход конём»
 
 | English | Русский | Комментарий |

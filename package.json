@@ -14,6 +14,7 @@
     "validate": "node scripts/validate-content.mjs && tsc -p .content-check/tsconfig.json",
     "step": "node scripts/step-files.mjs",
     "covers": "node scripts/build-covers.mjs",
+    "reference": "node scripts/fetch-reference.mjs",
     "e2e:dir": "node tools/e2e/run-dir.mjs",
     "e2e:chapter": "node tools/e2e/run-chapter.mjs"
   },

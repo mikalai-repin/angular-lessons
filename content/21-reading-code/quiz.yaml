@@ -1,0 +1,190 @@
+# Первый вариант в options — правильный: порядок вопросов и вариантов перемешивается при каждой попытке
+questions:
+  - question: |
+      В `adev/package.json` записано `"@angular/core": "workspace:*"`. Откуда сайт берёт `@angular/core`?
+    options:
+      - Из папки `packages/` того же коммита репозитория
+      - Из npm, ровно версию 22.2.1, как после `--save-exact`
+      - Из npm, последнюю 22.x по диапазону
+      - С CDN при загрузке страницы в браузере
+    explanation: |
+      `workspace:*` значит: пакет из этого же монорепозитория. angular.dev собран с Angular того же коммита и первым пробует каждое изменение фреймворка. Из npm с точной версией приходят только отдельные репозитории — CDK, Material, CLI. Шаг «Карта проекта».
+    step: 01-map
+
+  - question: |
+      В коде angular.dev ровно один `@Input()` — в директиве `SearchItem`. Почему его не перевели на `input()`?
+    options:
+      - CDK читает `disabled` через `Highlightable` как свойство
+      - Директиву `SearchItem` ещё не трогали при переходе на сигналы
+      - '`@Input()` быстрее сигнального входа в длинных списках результатов'
+      - Сигнальные входы не попадают в пререндеренный HTML
+    explanation: |
+      Комментарий в коде: «эти входы требует интерфейс `Highlightable`, перевести их на сигналы пока нельзя». CDK обращается к `item.disabled` как к значению, а сигнальный вход — функция. Старый API остаётся, где его требует контракт чужой библиотеки. Шаг «Карта проекта».
+    step: 01-map
+
+  - question: |
+      Почему в angular.dev работает такой маршрут — без `.then((m) => m.Home)`?
+
+      ```ts
+      {path: '', loadComponent: () => import('../features/home/home.component')}
+      ```
+    options:
+      - 'Класс объявлен как `export default`, роутер сам берёт `default`'
+      - '`loadComponent` берёт первый класс, экспортированный модулем'
+      - Сборщик CLI при сборке сам дописывает `.then` по имени файла
+      - Роутер ищет в модуле класс с декоратором `@Component`
+    explanation: |
+      В `home.component.ts` — `export default class Home`, и роутер разворачивает экспорт по умолчанию сам. С именованным экспортом без `.then` редактор показал ошибку TypeScript, а превью — `NG04014: … The component must be standalone`. Шаг «Маршруты из данных».
+    step: 02-routing
+
+  - question: |
+      Пользователь открыл ссылку `angular.dev/?search=resource`. Что произойдёт?
+    options:
+      - '`MainComponent` получит `resource` во вход, эффект откроет поиск'
+      - '`AppComponent` прочитает `?search=` из `ActivatedRoute` и откроет поиск'
+      - Хостинг переадресует на отдельную страницу поиска
+      - Роутер не найдёт маршрут и покажет «Page Not Found»
+    explanation: |
+      Все страницы — дети маршрута с `MainComponent`. `withComponentInputBinding` кладёт query-параметр `search` в его вход, а эффект открывает диалог с этим запросом. Мы проверили на живом сайте с `?search=linkedSignal`. Шаг «Маршруты из данных».
+    step: 02-routing
+
+  - question: |
+      Резолвер статьи на angular.dev получил ошибку `HttpClient`. Что сделает навигация?
+    options:
+      - '`withNavigationErrorHandler` вернёт `RedirectCommand` на `/404`'
+      - Покажет прошлую версию статьи из кэша передачи HTTP
+      - Навигация отменится, и пользователь останется на прежней странице
+      - Повторит запрос, а после трёх неудач покажет ошибку 500
+    explanation: |
+      Обработчик ошибок навигации возвращает `RedirectCommand(router.parseUrl('/404'))`, адрес `/404` ловит маршрут `'**'`. Комментарий `TODO` признаёт: и 500, и обрыв сети тоже ведут на «Страница не найдена». Шаг «Маршруты из данных».
+    step: 02-routing
+
+  - question: |
+      Четыре компонента сделали `inject(IS_SEARCH_DIALOG_OPEN)`. Сколько разных сигналов они получили?
+
+      ```ts
+      export const IS_SEARCH_DIALOG_OPEN = new InjectionToken('', {
+        factory: () => signal(false),
+      });
+      ```
+    options:
+      - 'Один: токен с фабрикой без `providedIn` — корневой'
+      - 'Четыре: фабрика вызывается при каждом `inject`'
+      - 'Ни одного: без провайдера в конфигурации будет `NG0201`'
+      - 'По одному на маршрут: токен живёт в инжекторе страницы'
+    explanation: |
+      Для токена с фабрикой Angular подставляет `providedIn: options.providedIn || 'root'`: значение создаёт корневой инжектор один раз. Поэтому `providedIn: 'root'` в нашем `BROWSER_STORAGE` можно было не писать. Шаг «Состояние и сервисы».
+    step: 03-state
+
+  - question: |
+      Сервер версий angular.dev ответил `{"error": "maintenance"}` вместо массива. Что покажет меню версий?
+    options:
+      - Локальный список из сборки
+      - Пустое меню без единой версии
+      - Текст ошибки «Invalid version data»
+      - Список, сохранённый при пререндере
+    explanation: |
+      `parse` у `httpResource` бросает, если ответ не массив. Ресурс уходит в ошибку, `hasValue()` становится `false`, и `computed` `versions` отдаёт `localVersions`. Сохранённого при пререндере списка нет: у запроса `transferCache: false`. Шаг «Состояние и сервисы».
+    step: 03-state
+
+  - question: |
+      Зачем `DocViewer` перед вставкой статьи вызывает `pendingTasks.add()`, а после — `removeTask()`?
+    options:
+      - Иначе пререндер мог сохранить страницу до вставки статьи
+      - Иначе эффект не перезапустится при смене `docContent`
+      - Иначе гидратация оставит серверную статью и не вставит её заново
+      - Иначе компоненты, созданные внутри статьи, не получат свои входы
+    explanation: |
+      Сервер сериализует страницу, когда приложение стабильно — нет ожидающих задач. Эффект с `await` для Angular — просто функция, вернувшая промис. Задача говорит прямо: «подожди», и в HTML попадает статья, а не пустой `<main>`. Шаг «Пререндер и @defer».
+    step: 04-prerender
+
+  - question: |
+      Что окажется в пререндеренном HTML на месте этого блока?
+
+      ```html
+      @defer (when isBrowser) {
+        <docs-cookie-popup />
+      }
+      ```
+    options:
+      - Ничего — заглушки нет, а триггеры на сервере не запускаются
+      - Окно о cookie, скрытое стилями до гидратации
+      - Окно о cookie — браузер удалит его при гидратации
+      - 'Ошибку сборки: значение `isBrowser` нельзя вычислить без браузера'
+    explanation: |
+      При серверном рендеринге и пререндере `@defer` показывает `@placeholder` (здесь его нет), а триггеры не запускаются: `shouldTriggerDeferBlock` возвращает `false` при `ngServerMode`. В HTML живого сайта `<docs-cookie-popup>` нет. Шаг «Пререндер и @defer».
+    step: 04-prerender
+
+  - question: |
+      Что ответит хостинг angular.dev на запрос несуществующего адреса `/guide/no-such-page`?
+    options:
+      - 200 и HTML главной; «Page Not Found» нарисует роутер
+      - 404 и заранее пререндеренную страницу «Page Not Found»
+      - 301 на `/404`, где лежит страница ошибки
+      - 200 и оболочку `index.csr.html` без содержимого
+    explanation: |
+      В `firebase.json` правило `"source": "**", "destination": "/index.html"`: без браузера пришли статус 200 и `<title>Home • Angular</title>`. Страницу ошибки показывает приложение уже в браузере — «мягкая 404». Шаг «Пререндер и @defer».
+    step: 04-prerender
+
+  - question: |
+      Почему встроенный редактор angular.dev может сломаться без единого коммита в сайт?
+    options:
+      - Версии туториала — диапазоны без lock-файла, а `npm install` у каждого
+      - WebContainers хранят `node_modules` в браузере, и кэш устаревает
+      - В браузере обновился Node.js, а CLI требует другую версию
+      - Сайт собирается из `main`, где Angular ещё не выпущен
+    explanation: |
+      В `package.json` туториала — `^22.2.0-next`, `package-lock.json` нет. Каждый запуск ставит последние подходящие версии: `ng version` в терминале редактора показал 22.2.3. Новый выпуск зависимости меняет окружение — урок шага 20.2. Шаг «Встроенный редактор».
+    step: 05-editor
+
+  - question: |
+      Зачем angular.dev отдаёт заголовки `Cross-Origin-Opener-Policy` и `Cross-Origin-Embedder-Policy`?
+    options:
+      - WebContainers нужен `SharedArrayBuffer` изолированной страницы
+      - Чтобы чужие сайты не встраивали angular.dev в `iframe`
+      - Чтобы файлы с хешем в имени кэшировались на год
+      - Этого требует гидратация для повтора событий
+    explanation: |
+      README `@webcontainer/api`: технологии нужен `SharedArrayBuffer`, а браузер даёт его только странице, изолированной от чужих источников. На angular.dev `window.crossOriginIsolated` — `true`. Заголовки есть и в `ng serve` (`angular.json`), и на хостинге (`firebase.json`). Шаг «Встроенный редактор».
+    step: 05-editor
+
+  - question: |
+      В `localStorage` под ключом счётчика лежит `"abc"`. Что вернёт метод `AlertManager`?
+
+      ```ts
+      const stored = this.localStorage?.getItem(KEY);
+      if (!stored || Number.isNaN(stored)) {
+        return 0;
+      }
+      return Number(stored);
+      ```
+    options:
+      - '`NaN`: `Number.isNaN` не приводит строку к числу'
+      - '`0`: строка `"abc"` — не число, проверка её поймает'
+      - 'Не скомпилируется: в `Number.isNaN` нельзя передать строку'
+      - '`"abc"`: строка вернётся как есть'
+    explanation: |
+      `Number.isNaN('abc')` — `false` (проверили в Node.js), проверка пропускает строку, а `Number('abc')` — `NaN`. TypeScript не помогает: параметр `Number.isNaN` объявлен как `unknown`. Нужно `Number.isNaN(Number(stored))`. Шаг «Что бы мы сделали иначе».
+    step: 06-review
+
+  - question: |
+      В компоненте OnPush `canRevealAnswer` сначала `signal(false)`, а после `await` поле заменяют на `computed(…)`. Чем это плохо?
+    options:
+      - Шаблон заметит замену, лишь когда компонент проверят по другой причине
+      - '`computed` нельзя создавать после `await` — будет `NG0203`'
+      - Кнопка, которая читает это поле, останется выключенной и после загрузки
+      - TypeScript не даст присвоить `computed` полю типа `Signal<boolean>`
+    explanation: |
+      О замене поля компоненту никто не сообщает. На живом сайте кнопка включается, но держится это на соседях: компонент проверяют по другим поводам. Надёжнее сразу объявить `readonly canRevealAnswer = computed(…)` — тогда шаблон с первой проверки зависит от `loadingStep`. Шаг «Что бы мы сделали иначе».
+    step: 06-review
+
+  - question: |
+      В консоли пустого превью — `NG0200: Circular dependency detected for InjectionToken BROWSER_STORAGE`, хотя цикла в коде нет. Что случилось?
+    options:
+      - Фабрика токена бросила, и в записи инжектора осталась метка `CIRCULAR`
+      - '`AuthStore` и корзина внедряют друг друга через токен'
+      - Токен зарегистрирован в корневом инжекторе дважды
+      - '`inject(PLATFORM_ID)` внутри фабрики создал цикл'
+    explanation: |
+      `R3Injector.hydrate` ставит метку `CIRCULAR` перед вызовом фабрики, а значение — после. Фабрика бросила `SecurityError`, метка осталась, и следующее внедрение приняло её за цикл. Настоящая причина — `SecurityError` в той же консоли (в опыте — последняя строка). Шаг «Практикум: хранилище, которое не падает».
+    step: 07-practice

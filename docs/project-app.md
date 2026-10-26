@@ -195,13 +195,14 @@ interface Game {
 | 18 | NgRx: избранное и корзина на Signal Store (`core/favorites-store.ts` → затем классический Store; `core/cart-store.ts` — сущности `withEntities` с ключом `game.id`, своё расширение `core/with-storage.ts`, сверка с сервером `refresh` на `rxMethod` при открытии корзины — «Сверяем цены и остатки…», событие `checkoutEvents.orderPlaced` очищает корзину), избранное на классическом Store (`GameCardActions`, `favoritesFeature`, эффекты сохранения, журнал действий `core/action-log.ts`), «Вы смотрели» на главной (`core/recent-store.ts`, `signalMethod`) |
 | 19 | Магазин не меняется: помощники для исследования в `debug/` — `view-log.ts` (Alt + щелчок: `LView` элемента), `cd-log.ts` (журнал проверок с причинами), `signal-lab.ts` (лаборатория на примитивах сигналов; в `main.ts` практикума не вызывается). В шаге 4 магазин временно на zone.js. Практикум убирает три «закладки» (`Eager` у карточки, `markForCheck()` по таймеру в шапке, `computed` с новым объектом) — код карточки и шапки на конец главы прежний |
 | 20 | Перенос в проект Angular CLI (кнопка «Скачать», учебный бэкенд — `server/api.mjs` + прокси `ng serve`); папка `debug/` убрана, `main.ts` как у `ng new`; корзина, оформление и вход — ленивые (`loadComponent`, бюджет 500 kB); замечания `ng lint` исправлены (`console.warn` вместо пустых `catch`, `eslint-disable-next-line` у `FieldAria` и звёзд `Rating`); SSR: токен `BROWSER_STORAGE` (`core/browser-storage.ts`) вместо глобального `localStorage`, просмотры страниц только в браузере, `priorityCovers: 5`; журнал запросов — только при `isDevMode()`. Только в проекте ученика: `server.ts` (пересылка `/api`), `app.routes.server.ts`, `provideClientHydration()`, `@defer (… hydrate on viewport)` у «Со скидкой» |
+| 21 | Магазин не меняется, кроме практикума: `core/browser-storage.ts` — `BROWSER_STORAGE` отдаёт обёртку `SafeStorage implements Storage` (каждая операция `localStorage` в `try`/`catch`, как `LOCAL_STORAGE` angular.dev): магазин работает при запрете данных сайтов и переполненном хранилище, корзина и вход тогда живут до перезагрузки |
 
 ## Разбор «настоящего» кода (часть 3)
 
 Кандидат — **angular.dev** (папка `adev/` в репозитории [angular/angular](https://github.com/angular/angular), лицензия MIT): большое приложение на последней версии Angular от авторов фреймворка, со встроенным редактором и туториалами — то есть родственник нашей платформы.
 
-Проверить на этапе подготовки части 3:
+Сделано в главе 21:
 
-- [ ] лицензия и коммит, который берём (`reference/` как в курсе PixiJS: копия только для чтения, не в git, скрипт `npm run reference`);
-- [ ] какие части интересны и читаемы (роутинг, `@defer`, SSR/пререндеринг, встроенный редактор на WebContainers);
-- [ ] запасной кандидат — небольшой открытый проект на Angular 21+ (например, официальные примеры документации).
+- [x] лицензия MIT; коммит `fb7711f` (релиз v22.2.1, 30.09.2026) — `npm run reference` кладёт `adev/` и `LICENSE` в `reference/angular` (не в git), ссылки уроков — на GitHub на тот же коммит;
+- [x] разобраны: карта проекта и сборка (Bazel поверх CLI), маршруты из данных меню, состояние на сервисах с сигналами, пререндер 1 626 страниц и `@defer`, встроенный редактор на WebContainers, ревью с коммитами за месяц после релиза;
+- запасной кандидат не понадобился.

@@ -193,6 +193,7 @@
 
 `npm run validate`:
 
+- `scripts/fetch-reference.mjs` (`npm run reference`) — код angular.dev для главы 21: один коммит `fb7711f` репозитория angular/angular, только `adev/` и `LICENSE`, в `reference/angular` (не в git, ~12 с);
 - `scripts/validate-content.mjs` — структура, frontmatter (YAML), цепочка шагов (шаг хранит только изменения, полный код собирает `shared/step-chain.js`; копии, лишние `start/` и пустые оверлеи — ошибки) и **сборка** полного кода каждого решения и `custom`-старта через `compile-core` (ловит ненайденные `templateUrl`/`styleUrl` и синтаксические ошибки). Полный код выгружает в `.content-check/` (не в git);
 - `tsc -p .content-check/tsconfig.json` — типы полного кода шагов по настоящим `@angular/*` (настройки из `tsconfig.content.json`, как в `ng new`).
 - **План** (этап 5): `ngc` с `strictTemplates` по каждому `solution/`.

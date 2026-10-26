@@ -1,6 +1,6 @@
 # Программа курса
 
-> **Состояние:** у написанных глав (1–19) в таблицах — **фактический** состав шагов: папка шага, что он вводит, с чего начинается (`custom` — своя заготовка поверх результата прошлого шага, `noSolution` — шаг без задания). У остальных — план: он уточняется при написании главы, а после неё таблица заменяется фактической.
+> **Состояние:** у написанных глав (1–21) в таблицах — **фактический** состав шагов: папка шага, что он вводит, с чего начинается (`custom` — своя заготовка поверх результата прошлого шага, `noSolution` — шаг без задания). У остальных — план: он уточняется при написании главы, а после неё таблица заменяется фактической.
 
 Курс состоит из **трёх частей**:
 
@@ -345,16 +345,19 @@
 
 ### Глава 21. Разбор настоящего кода
 
-Цель: прочитать код большого приложения и понять, почему он написан так. Кандидат — angular.dev (см. `project-app.md`).
+Цель: прочитать код большого приложения на Angular и понять, почему он написан так. Читаем angular.dev — папку `adev/` репозитория angular/angular на коммите `fb7711f` (релиз v22.2.1, 30.09.2026; `npm run reference` кладёт копию в `reference/angular/adev`, не в git). Шаги 1–6 без кода: справа магазин главы 20, ссылки — на GitHub на тот же коммит, в конце каждого шага «Проверьте себя» с ответами в подсказке (как глава 15 курса PixiJS). Поведение сайта проверено на живом angular.dev (26.10.2026, сборка `be309d5` ветки `22.2.x`) и опытами на нашем магазине. Практикум переносит в магазин приём сайта — обёртку над `localStorage`.
 
-| # | Шаг | О чём |
+| Шаг | Что вводит | Старт |
 |---|---|---|
-| 21.1 | Карта проекта | Структура, что где лежит |
-| 21.2 | Роутинг и ленивые разделы | |
-| 21.3 | Состояние и сервисы | |
-| 21.4 | Пререндеринг и `@defer` | |
-| 21.5 | Встроенный редактор | Как angular.dev запускает код (WebContainers) — сравнение с нашим превью |
-| 21.6 | Что бы мы сделали иначе | |
+| 01-map | вводный шаг части «чтение чужого кода»; как читать чужой проект; монорепозиторий, `workspace:*`, `@angular/docs` (`shared-docs/`), Bazel + `ng_application` поверх `@angular/build:application`, `angular.json` сайта (`outputMode: static`, `polyfills: []`, COOP/COEP, Karma); `main.ts`, `main.server.ts`, `app.config.server.ts` (`maxResponseBodySize` → `HTTP_FETCH_MAX_RESPONSE_SIZE`), `app.config.ts` (`provideEnvironmentInitializer`, токены библиотеки с классами приложения, нет `provideHttpClient`); скелет и размеры; статистика API (186 `inject()`, 1 `@Input()` ради `Highlightable`, `*ngComponentOutlet`); имена `*.component.ts` и классы без суффикса; сценарий «открыть статью» | custom (= база), noSolution |
+| 02-routing | маршруты из данных меню (`mapNavigationItemsToRoutes`, весь пункт в `data`, резолвер в маршруте); `MainComponent` и `?search=` (`model` из query-параметра); `export default` + `loadComponent` без `.then` — опыт (с именованным экспортом: ошибка TS и `NG04014`); 40 переадресаций и `<meta http-equiv="refresh">` при пререндере; `withNavigationErrorHandler` + `RedirectCommand` → `/404`, `NotFound` с поиском; `AppScroller`, `canceledNavigationResolution: 'computed'`, `onViewTransitionCreated` + `isActive` + `skipTransition` — опыт в каталоге (`AbortError` в режиме разработки); `ReuseTutorialsRouteStrategy`, `ADevTitleStrategy` (`og:title`), `AdevUrlSerializer`; адаптер Navigation API | noSolution |
+| 03-state | 29 `@Service()`, 6 с `autoProvided: false`; закрытый сигнал + `asReadonly` против открытых записываемых; сигнал в токене (`IS_SEARCH_DIALOG_OPEN`, `providedIn` по умолчанию `'root'`); `LOCAL_STORAGE` против `BROWSER_STORAGE` (`SecurityError` при запрете данных сайтов — проверено в Chrome); `Search` = `debounced` + `resource` + `linkedSignal`; `httpResource` с `parse` (опыт: бросил — `error`, `hasValue()` ложно), `transferCache: false`, `cache: 'no-cache'`; кэш промисов `ContentLoader`; копия `Map` в `SearchHistory`; ленивые сервисы `injectAsync` + `runInInjectionContext`; RxJS для событий | noSolution |
+| 04-prerender | 1 626 страниц без `getPrerenderParams`; Markdown → HTML при сборке (проверка якорей и BOM); `fetch` из памяти при пререндере (`@angular/build`); `PendingTasks` в `DocViewer`; `createComponent` + `attachView`; статья в `ng-state` (85 895 из 264 938 байт), запросов при первой загрузке нет; после гидратации `DocViewer` вставляет статью заново (153 узла); `@defer (when isBrowser)` — на сервере триггеры не запускаются; `@defer (when …; prefetch on idle)` + `@if` у поиска; `@angular/aria` вкладки + `@defer (on idle)`; `firebase.json`: кэш, COOP/COEP, `** → /index.html` и «мягкая 404» | noSolution |
+| 05-editor | путь запуска редактора (`Tutorial` → `EmbeddedEditor` → `NodeRuntimeSandbox`: `WebContainer.boot`, `npm install`, `ng serve`, `server-ready`), CodeMirror + `@typescript/vfs`; WebContainers: `SharedArrayBuffer`/`crossOriginIsolated`, серверы StackBlitz, iOS, `AlertManager`, `CommandValidator` (`?sudo=true`); наш запуск 26.10.2026: этапы, `ERR_REQUIRE_CYCLE_MODULE` в `ng serve`, `ng version` — 22.2.3 по `^22.2.0-next` без lock-файла; наша платформа (4 с / ⟳ 0,11–0,18 с); таблица сравнения | noSolution |
+| 06-review | что изменилось за месяц (`e8e15c7` входы вместо `ActivatedRoute`, `41e4845` → `withExperimentalPlatformNavigation`, `b2398ec` откат в Firefox, `04a1eb2` −2 818 строк мёртвого кода, cherry-pick); что перенять (обёртка хранилища, `ErrorHandler` для устаревших чанков — проверено, пропуск переходов, `og:title`, проверки при сборке); что иначе (переприсваивание `canRevealAnswer`, три загрузки в песочнице, `Number.isNaN` у строки, слушатели `server-ready`, все ошибки в 404, мелочи) | noSolution |
+| 07-practice | практикум «Хранилище, которое не падает»: опыты (запрет данных сайтов — пустой экран и `NG0200` вместо `SecurityError`; переполнение — вход не проходит); задание — `SafeStorage implements Storage` в `core/browser-storage.ts`; `check.ts` (корзина сохраняется; с бросающими `getItem`/`setItem`/`removeItem` — корзина, вход, оформление, выход без ошибок); врезка — метка `CIRCULAR` в `R3Injector.hydrate`; «Итоги главы» | custom: `TODO` в `core/browser-storage.ts`; решение — `core/browser-storage.ts` |
+
+Квиз — 15 вопросов.
 
 ### Глава 22. Финальный проект (самостоятельный)
 
