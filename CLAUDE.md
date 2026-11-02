@@ -69,17 +69,17 @@ tools/authoring/      — steps.py (запись только изменений
 ## Команды
 
 - `npm run dev` — платформа на **http://localhost:5180** (5173 и 5174 заняты курсом PixiJS); все проверки требуют его и Chrome, другой адрес — `BASE_URL=http://localhost:5181`
-- `npm run validate` — структура уроков, цепочка start/solution, сборка и типы каждого шага (после любых правок в `content/`)
+- `npm run validate` — структура уроков, цепочка start/solution, сборка каждого шага и `ngc` по полному коду (типы TS и шаблонов, `strictTemplates`; после любых правок в `content/`, ~40 с)
 - `npm run step <…/шаг/solution> [папка]` — полный код шага (в `content/` шаг хранит только изменения)
 - `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, текст, скриншот; `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент со сценарием
-- `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в платформе; `checks/chNN-*.mjs`, `checks/step-checks.mjs`, `aot-chapter.mjs` — проверки главы
+- `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в платформе; `checks/chNN-*.mjs`, `checks/step-checks.mjs` — проверки главы
 - `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — после любых правок в `src/`, `public/`, `shared/`
 
 Остальное (тесты, проект CLI, `ng build`, «Скачать», квиз, форматирование) — в [docs/commands.md](docs/commands.md).
 
 ## Текущий статус
 
-Платформа готова, **курс написан: главы 1–22**, у каждой главы есть квиз (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Осталось — этап 5 (`strictTemplates` в `npm run validate`, проверка шаблонов в редакторе). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед правкой глав прочитайте `docs/authoring-process.md` целиком.
+Платформа готова, **курс написан: главы 1–22**, у каждой главы есть квиз (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Осталось — этап 5: проверка типов шаблонов в редакторе (`strictTemplates` в `npm run validate` уже есть). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед правкой глав прочитайте `docs/authoring-process.md` целиком.
 
 ## Пользователь и тон работы
 

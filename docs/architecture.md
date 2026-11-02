@@ -195,8 +195,7 @@
 
 - `scripts/fetch-reference.mjs` (`npm run reference`) — код angular.dev для главы 21: один коммит `fb7711f` репозитория angular/angular, только `adev/` и `LICENSE`, в `reference/angular` (не в git, ~12 с);
 - `scripts/validate-content.mjs` — структура, frontmatter (YAML), цепочка шагов (шаг хранит только изменения, полный код собирает `shared/step-chain.js`; копии, лишние `start/` и пустые оверлеи — ошибки) и **сборка** полного кода каждого решения и `custom`-старта через `compile-core` (ловит ненайденные `templateUrl`/`styleUrl` и синтаксические ошибки). Полный код выгружает в `.content-check/` (не в git);
-- `tsc -p .content-check/tsconfig.json` — типы полного кода шагов по настоящим `@angular/*` (настройки из `tsconfig.content.json`, как в `ng new`).
-- **План** (этап 5): `ngc` с `strictTemplates` по каждому `solution/`.
+- в конце того же скрипта — `ngc` (API `performCompilation` из `@angular/compiler-cli`, без вывода файлов) по всему `.content-check/` одной программой, ~30 с: типы TS и шаблонов по настоящим `@angular/*` (настройки из `tsconfig.content.json`, как в `ng new`; `strictTemplates` в Angular 22 включён по умолчанию) и расширенная диагностика шаблонов. Диагностика собирается со всех стадий сразу: стандартный сбор после первой ошибки TS шаблоны не проверяет, а ошибка одного шага скрыла бы ошибки остальных. Предупреждение — ошибка валидации, кроме NG8113 (импорт не используется в шаблоне) в старте: там импорты заготовлены для ученика.
 
 ## Кнопка «Скачать» (глава 20)
 
@@ -240,7 +239,6 @@ tools/e2e/
   run-dir.mjs      — шаг в чистом превью: консоль, сеть, адрес, текст, скриншот
   run-chapter.mjs  — все шаги главы в интерфейсе с «Решением»
   exp.mjs          — эксперимент со сценарием
-  aot-chapter.mjs  — ngc --strictTemplates по полному коду каждого шага главы
   cli-overlay.mjs  — код шага поверх проекта ng new (раскладка архива «Скачать»)
   cli-browse.mjs   — приложение проекта CLI в Chrome: консоль, запросы, текст, сценарий, --js-off
   checks/download.mjs     — кнопка «Скачать»: раскладка архива и совпадение с кодом шага

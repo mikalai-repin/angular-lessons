@@ -94,7 +94,7 @@
 - ✅ Вкладка «Шаблон»: код, который JIT сгенерировал для классов ученика (перехват `JitEvaluator.evaluateCode` в `preview-runtime.js`, Prettier + Shiki в `src/preview/Inspector.tsx`), по классу — `ɵcmp`/`ɵdir`/`ɵpipe`/`ɵprov` и `ɵfac`; кнопка ▴ разворачивает нижнюю панель
 - ✅ Вкладка «Дерево»: компоненты на странице (по DOM, `ng.getComponent`), поля экземпляра — вид сигнала (`signal`, `computed`, `input`, `model`, `linkedSignal`) и значение без вызова; опрос раз в секунду, наведение подсвечивает хост
 - ✅ zone.js 0.16.3 в превью (`import 'zone.js'` в коде шага; import map + типы Monaco) — шаг 19.4
-- ⬜ Проверка шаблонов `ngc --strictTemplates` в `npm run validate`
+- ✅ Проверка шаблонов `ngc --strictTemplates` в `npm run validate` (02.11.2026): вместо `tsc` валидатор собирает `.content-check/` через `performCompilation` с настройками `ng new` (`tsconfig.content.json`), диагностика со всех стадий; решения и все `custom`-старты (и 22.2, 22.3), предупреждения — ошибки, кроме NG8113 в стартах (17.4, 17.8: импорты для ученика). Проверено подложенными ошибками: TS, поле в шаблоне, NG8113 в решении. `tools/e2e/aot-chapter.mjs` удалён. `validate` — ~40 с вместо ~22 с.
 - ⬜ (по возможности) проверка типов шаблонов в редакторе
 
 ## Этап 6. Глубже: главы 19–22 — ✅

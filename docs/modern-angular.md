@@ -32,7 +32,7 @@ EOF
 
 Превью компилирует шаблоны в JIT, а настоящая сборка и `ng test` — в AOT. JIT многое пропускает молча:
 
-- ошибки `@let` (NG8015–NG8017), литеральные типы `readonly`-полей (TS2367), необязательные поля в арифметике (TS2532), `@default never;`, опечатки в полях шаблона — всё это ловит только `ngc --strictTemplates` (`tools/e2e/aot-chapter.mjs <глава>`);
+- ошибки `@let` (NG8015–NG8017), литеральные типы `readonly`-полей (TS2367), необязательные поля в арифметике (TS2532), `@default never;`, опечатки в полях шаблона — всё это ловит только `ngc --strictTemplates` (`npm run validate`);
 - неизвестный элемент или свойство: в JIT это `NG0304`/`NG0303` в консоли во время работы, в AOT — `NG8001`/`NG8002` при сборке;
 - у `@defer` в JIT функция загрузки — `null`, поэтому превью изображает чанки через `ɵDEFER_BLOCK_DEPENDENCY_INTERCEPTOR` (см. `architecture.md`);
 - у сигналов в JIT нет `debugName`: в AOT его добавляет `signalMetadataTransform`.

@@ -11,7 +11,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc",
-    "validate": "node scripts/validate-content.mjs && tsc -p .content-check/tsconfig.json",
+    "validate": "node scripts/validate-content.mjs",
     "step": "node scripts/step-files.mjs",
     "covers": "node scripts/build-covers.mjs",
     "reference": "node scripts/fetch-reference.mjs",

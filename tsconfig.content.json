@@ -1,8 +1,9 @@
 {
-  // Настройки проверки типов кода уроков — как в tsconfig.json, который создаёт `ng new` в Angular 22.
+  // Настройки проверки кода уроков — как в tsconfig.json, который создаёт `ng new` в Angular 22.
   // Проверяется не content/ (там шаги хранят только изменения), а полный код шагов, который npm run validate
-  // выгружает в .content-check/ (.content-check/tsconfig.json наследует эти настройки). Шаги с brokenStart
-  // (намеренно сломанный старт) валидатор туда не выгружает.
+  // выгружает в .content-check/ (.content-check/tsconfig.json наследует эти настройки) и собирает ngc: типы TS
+  // и шаблонов. strictTemplates в Angular 22 включён по умолчанию, расширенная диагностика — предупреждения.
+  // Шаги с brokenStart (намеренно сломанный старт) валидатор туда не выгружает.
   "compilerOptions": {
     "target": "ES2022",
     "module": "preserve",
@@ -18,5 +19,10 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "types": []
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true
   }
 }

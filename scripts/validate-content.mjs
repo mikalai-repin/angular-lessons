@@ -1,12 +1,12 @@
 // Проверка контента курса: структура шагов, цепочка start/solution (шаг хранит только изменения — см.
 // shared/step-chain.js) и сборка кода шага тем же модулем, что и превью (ловит ненайденные templateUrl/styleUrl
-// и синтаксические ошибки). Полный код каждого старта и решения выгружает в .content-check/ — там типы проверяет
-// `tsc -p .content-check/tsconfig.json` (второй шаг npm run validate).
+// и синтаксические ошибки). Полный код каждого старта и решения выгружает в .content-check/ и собирает там ngc
+// (AOT, без вывода файлов): типы TS и шаблонов (strictTemplates), расширенная диагностика шаблонов.
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import ts from 'typescript';
 import { parse as parseYaml } from 'yaml';
-import { angularJitApplicationTransform } from '@angular/compiler-cli';
+import { angularJitApplicationTransform, performCompilation, readConfiguration } from '@angular/compiler-cli';
 import { compileFiles } from '../shared/compile-core.js';
 import { filesHash, isDir, readResult, resolveChapterDir, writeFiles } from './step-files.mjs';
 
@@ -155,7 +155,7 @@ function checkQuiz(chapterDir, chapterPath, stepDirs) {
   }
 }
 
-// Проверка типов полного кода шагов: настройки — из tsconfig.content.json
+// Проверка полного кода шагов ngc: настройки — из tsconfig.content.json
 writeFileSync(
   join(checkDir, 'tsconfig.json'),
   JSON.stringify(
@@ -167,6 +167,36 @@ writeFileSync(
     2,
   ) + '\n',
 );
+
+checkAot();
+
+// ngc по всему .content-check/ разом (~30 с): ошибки TS и шаблонов, предупреждения расширенной диагностики.
+// Предупреждение — тоже ошибка, кроме NG8113 (импорт не используется в шаблоне) в старте: там импорты
+// заготовлены для кода, который напишет ученик.
+function checkAot() {
+  const config = readConfiguration(join(checkDir, 'tsconfig.json'));
+  // Все стадии сразу: стандартный сбор диагностики после первой ошибки TS не проверяет шаблоны, а здесь в одной
+  // программе все шаги — ошибка в одном скрыла бы ошибки шаблонов в остальных
+  const gatherDiagnostics = (program) => {
+    const options = [...program.getTsOptionDiagnostics(), ...program.getNgOptionDiagnostics()];
+    if (options.length) return options;
+    return [
+      ...program.getTsSyntacticDiagnostics(),
+      ...program.getTsSemanticDiagnostics(),
+      ...program.getNgStructuralDiagnostics(),
+      ...program.getNgSemanticDiagnostics(),
+    ];
+  };
+  const { diagnostics } = performCompilation({ rootNames: config.rootNames, options: config.options, gatherDiagnostics });
+  for (const d of [...config.errors, ...diagnostics]) {
+    const path = d.file ? relative(checkDir, d.file.fileName) : '';
+    if (d.category === ts.DiagnosticCategory.Warning && d.code === -998113 && path.split('/')[2] === 'start') continue;
+    const at = d.file && d.start !== undefined ? d.file.getLineAndCharacterOfPosition(d.start) : undefined;
+    const code = String(d.code).startsWith('-99') ? `NG${String(d.code).slice(3)}` : `TS${d.code}`;
+    const message = ts.flattenDiagnosticMessageText(d.messageText, '\n');
+    errors.push(`${path}${at ? `:${at.line + 1}:${at.character + 1}` : ''}: ${code} ${message}`);
+  }
+}
 
 for (const error of errors) console.error(`✗ ${error}`);
 console.log(`Проверено шагов: ${stepCount}. Ошибок: ${errors.length}.`);

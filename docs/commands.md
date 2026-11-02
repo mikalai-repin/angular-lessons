@@ -3,7 +3,7 @@
 Полный список. Самые частые — в `CLAUDE.md`.
 
 - `npm run dev` — платформа на **http://localhost:5180** (5173 и 5174 заняты курсом PixiJS)
-- `npm run validate` — структура уроков, цепочка start/solution, сборка каждого шага и типы кода (после любых правок в `content/`)
+- `npm run validate` — структура уроков, цепочка start/solution, сборка каждого шага и `ngc` по полному коду всех шагов: типы TS и шаблонов (`strictTemplates`), расширенная диагностика; предупреждение — ошибка, кроме NG8113 в старте (после любых правок в `content/`, ~40 с)
 - `npm run step <…/шаг/solution> [папка]` — выгрузить полный код шага (в `content/` шаг хранит только изменения) в `tools/e2e/out/step/`
 - `npm run build` — проверка типов платформы и продакшен-сборка
 - `npx prettier --check .` — форматирование всего кода (`prettier.config.mjs`: код уроков — как кнопка «Формат», настройки в `shared/lesson-prettier.json`; Markdown не форматируется)
@@ -16,5 +16,5 @@
 - `node tools/e2e/ng-build.mjs <папка шага> [--jit] [--dev]` — код шага в настоящей сборке `ng build` (тот же проект CLI), размеры файлов
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»
 - `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент из текста урока со своим сценарием действий
-- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/download.mjs [адрес шага]` — кнопка «Скачать» (после правок `src/app/download.ts`, `shared/cli-project.js`, `cli-project/`); `checks/chNN-*.mjs` — проверки глав 2–15, 17–19, 21, 22 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `tools/e2e/aot-chapter.mjs <глава>` — `ngc --strictTemplates` по полному коду каждого шага главы; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`); `checks/test-runner.mjs` — отчёт тестов на шагах главы 16, переключатель «Приложение / Тесты», «Проверить» с тестами (после правок раннера и `preview-runtime.js`)
+- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/download.mjs [адрес шага]` — кнопка «Скачать» (после правок `src/app/download.ts`, `shared/cli-project.js`, `cli-project/`); `checks/chNN-*.mjs` — проверки глав 2–15, 17–19, 21, 22 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`); `checks/test-runner.mjs` — отчёт тестов на шагах главы 16, переключатель «Приложение / Тесты», «Проверить» с тестами (после правок раннера и `preview-runtime.js`)
 - Все проверки требуют запущенного `npm run dev` и Chrome (`CHROME_PATH`, по умолчанию путь macOS). Другой адрес — `BASE_URL=http://localhost:5181`
