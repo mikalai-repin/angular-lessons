@@ -74,6 +74,7 @@ tools/authoring/      — steps.py (запись только изменений
 - `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, текст, скриншот; `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент со сценарием
 - `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в платформе; `checks/chNN-*.mjs`, `checks/step-checks.mjs` — проверки главы
 - `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — после любых правок в `src/`, `public/`, `shared/`
+- `node tools/e2e/run-all.mjs [часть имени…]` — все проверки курса по очереди со сводкой (перед коммитом крупной правки и после обновления пакетов)
 
 Остальное (тесты, проект CLI, `ng build`, «Скачать», квиз, форматирование) — в [docs/commands.md](docs/commands.md).
 

@@ -22,7 +22,7 @@ api: [toObservable, debounceTime, takeUntilDestroyed]
 ::: hint Подсказка 1: откуда взять поток
 Комментарий уже хранится в сигнале `comment`, а «подождать паузу» умеет `debounceTime`. Мост из сигнала в поток — `toObservable(this.comment)`. Каждое изменение комментария станет значением потока.
 
-Начальное значение сигнала — из `localStorage`: `localStorage.getItem(DRAFT_KEY) ?? ''`.
+Ключ и паузу удобно вынести в константы над классом: `const DRAFT_KEY = 'hod-konem:checkout-comment';` и `const SAVE_DELAY = 500;`. Начальное значение сигнала — из `localStorage`: `localStorage.getItem(DRAFT_KEY) ?? ''`.
 :::
 
 ::: hint Подсказка 2: цепочка

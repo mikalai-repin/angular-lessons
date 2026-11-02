@@ -212,6 +212,8 @@ expect(
   c.length === 6 && c.every((i) => i.lazy && (i.src ? i.loaded : i.below)),
   'шаг 7: обложки на экране загружены, остальные без src',
 );
+// Кнопка может ещё не получить размеры после перерисовки: щёлкать, когда видна
+await frame().waitForSelector('app-load-more button', { visible: true, timeout: 5000 });
 await frame().click('app-load-more button');
 await wait(600);
 c = await covers();

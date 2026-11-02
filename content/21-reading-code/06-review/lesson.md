@@ -19,7 +19,7 @@ api: [git log, cherry-pick, withExperimentalPlatformNavigation, ErrorHandler, р
 | [`b2398ec`](https://github.com/angular/angular/commit/b2398ecf30cbea8661a35f2740457144f05bbae8), 23.10 | интеграция с Navigation API отключена в Firefox |
 | [`3bf3106`](https://github.com/angular/angular/commit/3bf31067c08e2ba64ed504d4b7b4ac12eb152289), [`268d6ba`](https://github.com/angular/angular/commit/268d6ba12c22f8d4f62cf5ab63daddfeaff6521c) | `@empty` у `@for` вместо отдельной проверки на пустой список |
 
-В конце каждого сообщения — «(cherry picked from commit …)»: изменение сначала попадает в основную ветку `main`, а потом переносится в ветку выпуска `22.2.x`. Так устроен выпуск у самого Angular, и так же устроены многие большие проекты.
+В конце каждого сообщения — «(cherry picked from commit …)»: изменение сначала попадает в основную ветку `main`, а потом переносится в ветку выпуска `22.2.x`. Так устроен выпуск у самого Angular, и так же устроены многие большие проекты. Поэтому даты в таблице — даты авторства: cherry-pick их сохраняет, и у изменения, перенесённого в `22.2.x` уже после нашего коммита, дата может оказаться раньше 30 сентября.
 
 ### Подписка → входы
 
@@ -42,11 +42,11 @@ constructor() {
 }
 ```
 
-Входы получили не только результат резолвера, но и поля пункта меню — `tutorialData`, `path`, `label`: `mapNavigationItemsToRoutes` кладёт весь пункт в `data` маршрута (шаг 2), а `withComponentInputBinding` отдаёт `data` во входы по именам. `documentContent` из записываемого сигнала стал `computed`. А `setTutorialData` вызывается в `untracked` (шаг 3.6): внутри он пишет в сигналы и читает их, и без `untracked` эффект подписался бы на всё, что прочитал этот метод.
+Входы получили не только результат резолвера, но и поля пункта меню — `tutorialData`, `path`, `label`: `mapNavigationItemsToRoutes` кладёт весь пункт в `data` маршрута (шаг 2), а `withComponentInputBinding` отдаёт `data` во входы по именам. `documentContent` из изменяемого сигнала стал `computed`. А `setTutorialData` вызывается в `untracked` (шаг 3.6): внутри он пишет в сигналы и читает их, и без `untracked` эффект подписался бы на всё, что прочитал этот метод.
 
 ### Самописный код → возможность фреймворка → откат в Firefox
 
-Адаптер Navigation API из шага 2 прожил на сайте до 29 сентября. Коммит `41e4845` удалил 54 строки и добавил одну возможность роутера:
+Адаптер Navigation API из шага 2 прожил в ветке выпуска недолго. Коммит `41e4845` удалил 54 строки и добавил одну возможность роутера:
 
 ```ts adev/src/app/routing/router_providers.ts (после b2398ec)
 const isPlatformNavigationSupported =
@@ -126,7 +126,7 @@ return Number(countStoredInLocalStorage);
 
 **«Мягкая 404»** — шаг 4: хостинг отвечает 200 на любой адрес.
 
-**Мелочи.** Два стиля состояния в одной папке (открытые записываемые сигналы рядом с `asReadonly`, шаг 3). `ThemeManager` вызывает глобальный `window.matchMedia`, хотя в проекте есть токен `WINDOW` (работает, потому что вызов под `isPlatformBrowser`). В навигации туториала `<a [routerLink]><button>…</button></a>` — по спецификации HTML внутри ссылки не должно быть интерактивного содержимого.
+**Мелочи.** Два стиля состояния в одной папке (открытые изменяемые сигналы рядом с `asReadonly`, шаг 3). `ThemeManager` вызывает глобальный `window.matchMedia`, хотя в проекте есть токен `WINDOW` (работает, потому что вызов под `isPlatformBrowser`). В навигации туториала `<a [routerLink]><button>…</button></a>` — по спецификации HTML внутри ссылки не должно быть интерактивного содержимого.
 
 ## Что у нас вышло не хуже
 

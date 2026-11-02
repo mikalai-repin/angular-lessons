@@ -21,7 +21,20 @@ protected readonly reviews = httpResource<Review[]>(
 );
 ```
 
-Тип `Review` добавлен в `core/models.ts`. Второй аргумент `httpResource` — настройки. **`defaultValue`** — что возвращает `value()`, пока ответа нет. С ним тип `value()` — `Review[]`, а не `Review[] | undefined`, и к списку можно дописывать без проверок. От исключения при ошибке `defaultValue` не спасает: по исходнику Angular `value()` ресурса с ошибкой всё равно бросает его. Поэтому шаблон, как каталог в прошлом шаге, сначала проверяет `reviews.status() === 'error'`, потом `isLoading()` — «Загружаем отзывы…», и только затем выводит список.
+Тип отзыва — в `core/models.ts`, рядом с `Game`:
+
+```ts core/models.ts
+export interface Review {
+  id: number;
+  gameId: number;
+  author: string;
+  rating: number; // от 1 до 5
+  text: string;
+  date: string; // '2026-09-01'
+}
+```
+
+Второй аргумент `httpResource` — настройки. **`defaultValue`** — что возвращает `value()`, пока ответа нет. С ним тип `value()` — `Review[]`, а не `Review[] | undefined`, и к списку можно дописывать без проверок. От исключения при ошибке `defaultValue` не спасает: по исходнику Angular `value()` ресурса с ошибкой всё равно бросает его. Поэтому шаблон, как каталог в прошлом шаге, сначала проверяет `reviews.status() === 'error'`, потом `isLoading()` — «Загружаем отзывы…», и только затем выводит список.
 
 ## Отправка
 
@@ -36,6 +49,18 @@ this.http.post<Review>(`/api/games/${this.id()}/reviews`, { rating, text })
 ## Оптимистичное обновление
 
 Можно отправить запрос и ждать ответа, а потом перезагрузить список. Но тогда после нажатия «Отправить» покупатель 300 мс смотрит на прежний список и гадает, сработала ли кнопка. Лучше наоборот: показать отзыв **сразу**, а запрос отправить следом. Если сервер ответит ошибкой — убрать отзыв и сообщить об этом. Такой приём называют **оптимистичным обновлением** (optimistic update): мы рассчитываем, что запрос удастся, а к неудаче готовы.
+
+Странице понадобятся `HttpClient` и три новых поля:
+
+```ts game/game-page.ts
+// Оценка нового отзыва и сообщение, если отправить не удалось
+protected readonly newRating = signal(5);
+protected readonly reviewError = signal('');
+// id черновиков отзывов: отрицательные, чтобы не совпасть с настоящими (их сервер выдаёт с 1)
+private nextDraftId = -1;
+
+private readonly http = inject(HttpClient);
+```
 
 ```ts game/game-page.ts {8,16,21,27,34}
 protected addReview(textBox: HTMLTextAreaElement) {
@@ -96,7 +121,7 @@ protected addReview(textBox: HTMLTextAreaElement) {
 ::: task
 1. Добавьте тип `Review` в `core/models.ts` и ресурс `reviews` с `defaultValue: []` на странице игры.
 2. Во вкладке «Отзывы» выведите ошибку загрузки, «Загружаем отзывы…» и список: оценка, автор, дата или «отправляем…», текст. Пустой список — «Отзывов пока нет. Будьте первым!».
-3. Под списком — форма: `<app-rating>`, `<textarea #reviewText>` и кнопка «Отправить», которая вызывает `addReview(reviewText)`.
+3. Под списком — форма: `<app-rating>`, `<textarea #reviewText>` и кнопка «Отправить», которая вызывает `addReview(reviewText)`. Оформление списка и формы — в `game-page.css`, на ваш вкус.
 4. Напишите `addReview` с оптимистичным обновлением и откатом при ошибке.
 :::
 

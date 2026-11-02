@@ -36,7 +36,7 @@ protected readonly loginForm = new FormGroup({
 
 Главное отличие — **где живёт значение**. В Signal Forms значение лежит в вашем сигнале-модели, а форма — надстройка над ним. В реактивной форме значение хранит сам **контрол** — объект `FormControl`. Группа контролов — `FormGroup`, список — `FormArray`. Значение всей формы собирается из контролов: `loginForm.value`, `loginForm.getRawValue()`.
 
-`nonNullable: true` — тоже наследие: без него `reset()` записывает в контрол `null`, и тип значения — `string | null`.
+`nonNullable: true` — наследие старых версий: без него `reset()` записывает в контрол `null`, и тип значения — `string | null`.
 
 Правила — функции из класса `Validators`: `required`, `email`, `minLength(4)`, `pattern(…)`. Свои правила — функции, которые получают контрол и возвращают объект ошибок или `null`.
 

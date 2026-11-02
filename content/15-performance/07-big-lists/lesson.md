@@ -108,7 +108,7 @@ import {
 } from '@angular/cdk/scrolling';
 
 @Component({
-  selector: 'app-games-table',
+  selector: 'app-games-list',
   imports: [
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf,
@@ -126,7 +126,7 @@ import {
     .row { height: 40px; }
   `,
 })
-export class GamesTable {
+export class GamesList {
   readonly games = input.required<Game[]>();
   // trackBy — то же, что track в @for: по чему узнавать строку
   protected readonly byId = (index: number, game: Game) => game.id;

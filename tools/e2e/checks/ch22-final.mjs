@@ -10,8 +10,9 @@ import { join, relative, resolve } from 'node:path';
 import { toProjectFiles } from '../../../shared/cli-project.js';
 import { CONTENT, OUT, clean, openCourse, readDir, wait } from '../lib.mjs';
 
-const { page, expect, frame, title, showSolution, nextStep, checkConsoleClean, finish } =
-  await openCourse('/final-project/choose-project');
+const { page, expect, frame, title, showSolution, nextStep, checkConsoleClean, finish } = await openCourse(
+  '/final-project/choose-project',
+);
 const chapter = `${CONTENT}/22-final-project`;
 
 const appText = async () =>

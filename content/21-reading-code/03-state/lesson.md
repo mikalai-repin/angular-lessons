@@ -18,7 +18,7 @@ api: ['@Service()', 'autoProvided: false', InjectionToken, LOCAL_STORAGE, resour
 | `SplitResizerHandler` | `providers` компонента `Tutorial` | разделитель «текст / редактор» одной страницы |
 | `ReferenceScrollHandler` | `providers` страницы справочника API | прокрутка одной страницы |
 
-Это те же два приёма, что у нас: `AdminGames` с `autoProvided: false` (шаг 8.4) в `providers` маршрута админки (шаг 17.5) и сервис уровня компонента (шаг 8.6). `autoProvided: false` защищает от ошибки: забыли подключить — `NG0201` сразу, а не тихий общий экземпляр на всё приложение.
+Это те же два приёма, что у нас: `autoProvided: false` (шаг 8.4) у `AdminGames` в `providers` маршрута админки (шаг 17.5) и сервис уровня компонента (шаг 8.6). `autoProvided: false` защищает от ошибки: забыли подключить — `NG0201` сразу, а не тихий общий экземпляр на всё приложение.
 
 ## Закрытый сигнал, открытое чтение
 
@@ -44,7 +44,7 @@ export class NodeRuntimeState {
 
 Это наш `CartStore` из главы 9: записывает только сервис, остальные читают через `asReadonly()` (шаг 3.2), а правило «ошибка — значит и шаг загрузки ERROR» живёт в одном методе.
 
-Рядом — [`EmbeddedTutorialManager`](https://github.com/angular/angular/blob/fb7711f/adev/src/app/editor/embedded-tutorial-manager.service.ts#L22-L43) с другим стилем: `readonly tutorialFiles = signal(…)`, `readonly openFiles = signal(…)` — десяток открытых записываемых сигналов. `readonly` защищает поле от замены, но не сигнал от записи: любой, кто внедрил сервис, может вызвать `tutorialFiles.set(…)`. В одном проекте, даже в одной папке `editor/`, два стиля. Это обычное дело для кода, который пишут несколько лет разные люди, — вернёмся к этому в шаге 6.
+Рядом — [`EmbeddedTutorialManager`](https://github.com/angular/angular/blob/fb7711f/adev/src/app/editor/embedded-tutorial-manager.service.ts#L22-L43) с другим стилем: `readonly tutorialFiles = signal(…)`, `readonly openFiles = signal(…)` — десяток открытых изменяемых сигналов. `readonly` защищает поле от замены, но не сигнал от записи: любой, кто внедрил сервис, может вызвать `tutorialFiles.set(…)`. В одном проекте, даже в одной папке `editor/`, два стиля. Это обычное дело для кода, который пишут несколько лет разные люди, — вернёмся к этому в шаге 6.
 
 ## Сигнал в токене
 

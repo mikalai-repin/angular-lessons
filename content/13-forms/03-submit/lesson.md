@@ -42,6 +42,21 @@ Enter в поле отправляет форму — это поведение 
 
 Действие при отправке задают в **настройках формы** — третьем аргументе `form` (второй — схема):
 
+Странице понадобятся `HttpClient`, сигнал для имени и тип ответа сервера:
+
+```ts login/login.ts
+// Ответ сервера на вход: токен и пользователь
+interface LoginResponse {
+  token: string;
+  user: { name: string; email: string; role: string };
+}
+
+// в классе Login
+private readonly http = inject(HttpClient);
+// Имя пользователя после удачного входа
+protected readonly userName = signal('');
+```
+
 ```ts login/login.ts {7-10,13-31}
 protected readonly loginForm = form(
   this.model,

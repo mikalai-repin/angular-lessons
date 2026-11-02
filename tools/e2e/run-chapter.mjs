@@ -22,6 +22,7 @@ page.on('pageerror', (e) => pageErrors.push(e.message));
 
 await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0' });
 await page.evaluate(() => localStorage.clear());
+let failed = 0;
 
 for (const step of steps) {
   const url = `${BASE_URL}/${strip(chapterDir)}/${strip(step)}`;
@@ -43,7 +44,10 @@ for (const step of steps) {
   console.log(`\n# ${step} — ${title}${page.url() !== url ? ` (переадресация на ${page.url()})` : ''}`);
   for (const line of lines) console.log('  ' + line.slice(0, 300));
   if (broken) console.log('  !! битых ссылок step:', broken);
+  if (broken || title.startsWith('!!') || page.url() !== url) failed++;
 }
 console.log('\nОшибки страницы:', pageErrors);
 console.log(`Скриншоты: ${OUT}`);
 await browser.close();
+// Ошибки в консоли превью кодом выхода не считаются: многие шаги показывают их нарочно
+process.exit(failed || pageErrors.length ? 1 : 0);

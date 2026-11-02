@@ -163,6 +163,10 @@ AggregateError [ECONNREFUSED]:
 
 DevTools работает только со сборкой для разработки — той, что даёт `ng serve`. Он держится на том же отладочном API, что наши помощники главы 19, а продакшен-сборка его вырезает. На собранном для продакшена сайте расширение скажет «We detected an application built with production configuration».
 
+::: tip Redux DevTools
+В шаге 18.8 мы оставили на потом расширение **Redux DevTools** — в настоящем проекте его можно попробовать. Поставьте пакет `npm install --save-exact @ngrx/store-devtools@22.0.1`, добавьте в `providers` в `app.config.ts` строку `provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() })` (`provideStoreDevtools` — из `@ngrx/store-devtools`, `isDevMode` — из `@angular/core`) и установите расширение Redux DevTools в браузер. В его вкладке — те же действия, что в нашем журнале: `[Favorites Storage] Restored` при запуске и `[Game Card] Favorite Toggled` на каждое сердечко, а у каждого — состояние избранного до и после.
+:::
+
 ::: tip
 Отлаживать код можно и без расширения: `ng serve` собирает с картами исходников (`sourceMap` в конфигурации `development`), поэтому во вкладке Sources браузера — ваши `.ts`-файлы, и точки останова ставятся прямо в них.
 :::

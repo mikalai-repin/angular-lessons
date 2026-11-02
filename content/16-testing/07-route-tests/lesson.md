@@ -84,7 +84,22 @@ expect(harness.routeNativeElement?.textContent).toContain('Заказ №7');
 
 `httpResource` страницы заказов отправил запрос, пока страница отрисовывалась, — к концу `navigateByUrl` он уже в очереди. Отвечаем — ресурс получил значение, страница запланировала обновление. **`harness.fixture`** — фикстура корневого компонента обвязки: её `whenStable()` дожидается отрисовки, как в тесте карточки.
 
-Перед этим тест входит: помощник отвечает на `/api/login` за сервер, как в прошлом шаге. Без входа гард не пустил бы на заказы.
+Перед этим тест входит сам — как помощник `logIn` в тестах интерцептора из прошлого шага, только прямо в тесте. Без входа гард не пустил бы на заказы:
+
+```ts app.routes.spec.ts
+const done = TestBed.inject(AuthStore).logIn({
+  email: 'user@example.com',
+  password: 'user',
+});
+server.expectOne('/api/login').flush({
+  token: 't1',
+  refreshToken: 'r1',
+  user: { id: 1, email: 'user@example.com', name: 'Пользователь', role: 'user' },
+});
+await done;
+```
+
+Токен `t1` пригодится в проверке заголовка: запрос заказов должен уйти с `Bearer t1`.
 
 ::: task
 Допишите тесты маршрутов:

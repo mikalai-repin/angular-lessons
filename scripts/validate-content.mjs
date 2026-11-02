@@ -187,7 +187,11 @@ function checkAot() {
       ...program.getNgSemanticDiagnostics(),
     ];
   };
-  const { diagnostics } = performCompilation({ rootNames: config.rootNames, options: config.options, gatherDiagnostics });
+  const { diagnostics } = performCompilation({
+    rootNames: config.rootNames,
+    options: config.options,
+    gatherDiagnostics,
+  });
   for (const d of [...config.errors, ...diagnostics]) {
     const path = d.file ? relative(checkDir, d.file.fileName) : '';
     if (d.category === ts.DiagnosticCategory.Warning && d.code === -998113 && path.split('/')[2] === 'start') continue;

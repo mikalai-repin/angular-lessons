@@ -34,7 +34,7 @@ NgRx — не часть Angular, а отдельный проект со сво
 
 ## Хранилище из частей
 
-Откройте `core/favorites-store.ts`. Сервис устроен так, как мы договорились в главе 9: закрытый записываемый сигнал, открытое чтение через `asReadonly()`, производное `count`, методы, которые меняют состояние, и эффект, который пишет его в `localStorage`.
+Откройте `core/favorites-store.ts`. Сервис устроен так, как мы договорились в главе 9: закрытый изменяемый сигнал, открытое чтение через `asReadonly()`, производное `count`, методы, которые меняют состояние, и эффект, который пишет его в `localStorage`.
 
 Signal Store делает то же, но не классом, а **из частей** (store features) — функций `with…`, которые передают в `signalStore`:
 
@@ -115,7 +115,7 @@ is not assignable to parameter of type 'WritableStateSource<{ ids: number[]; }>'
   Type 'Signal<number[]>' is missing the following properties from type 'WritableSignal<number[]>': set, update, …
 ```
 
-Снаружи у хранилища сигналы **только для чтения**, а `patchState` нужен источник с записываемыми. Внутри `withMethods` и `withHooks` `store` — записываемый. Это настройка `protectedState`: по умолчанию `true`, а `signalStore({ protectedState: false }, …)` открыло бы состояние для `patchState` откуда угодно. Документация NgRx советует оставлять как есть. Уберите `clearFavorites` и импорт.
+Снаружи у хранилища сигналы **только для чтения**, а `patchState` нужен источник с изменяемыми. Внутри `withMethods` и `withHooks` `store` — изменяемый. Это настройка `protectedState`: по умолчанию `true`, а `signalStore({ protectedState: false }, …)` открыло бы состояние для `patchState` откуда угодно. Документация NgRx советует оставлять как есть. Уберите `clearFavorites` и импорт.
 
 ## Эксперименты
 

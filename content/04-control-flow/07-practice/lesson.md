@@ -25,7 +25,7 @@ api: ['@for', '@empty', computed]
 :::
 
 ::: hint Подсказка 3: флажок и список в шаблоне
-Ссылки на элементы из главы 2 работают и здесь: `<input #inStock type="checkbox" (change)="inStockOnly.set(inStock.checked)" />`. Для `<select #sort>` — `(change)` и `sort.value`. Значение списка — строка, а сигнал ждёт `SortKey`. Приведение типа `as` в шаблоне писать нельзя, поэтому сделайте метод `changeSort(value: string)`, который приводит тип и записывает в сигнал.
+Ссылки на элементы из главы 2 работают и здесь: `<input #inStock type="checkbox" (change)="inStockOnly.set(inStock.checked)" />`. Для `<select #sort>` — `(change)` и `sort.value`. Значение списка — строка, а сигнал ждёт `SortKey`. Приведение типа TypeScript (`value as SortKey`) в выражениях шаблона не поддерживается — это не то же, что `as` в `@if`, поэтому сделайте метод `changeSort(value: string)`, который приводит тип и записывает в сигнал.
 :::
 
 ::: hint Подсказка 4: почему сброс не очищает поле

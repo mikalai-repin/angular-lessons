@@ -132,7 +132,7 @@ export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = (page) =>
 
 ## Как в настоящем проекте
 
-Тест для `Confirmation` в превью пройдёт, а в `ng test` с jsdom — нет: `TypeError: this.dialog(...).nativeElement.showModal is not a function`. В jsdom у `<dialog>` нет `showModal`. Такие тесты запускают в настоящем браузере — `ng test --browsers` (глава 16, шаг про `ng test`).
+Если написать тест для `Confirmation`, в превью он пройдёт, а в `ng test` с jsdom — нет: `TypeError: this.dialog(...).nativeElement.showModal is not a function`. В jsdom у `<dialog>` нет `showModal`. Такие тесты запускают в настоящем браузере — `ng test --browsers` (глава 16, шаг про `ng test`).
 
 Своё окно на двадцать строк — хорошо для понимания. В больших проектах обычно берут готовое: в Angular CDK есть `Dialog` (`@angular/cdk/dialog`). В превью CDK нет, поэтому только для чтения:
 

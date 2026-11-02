@@ -12,23 +12,23 @@
 | component | компонент | |
 | template | шаблон | |
 | selector | селектор | `app-root` |
-| host element | хост-элемент | элемент, на котором живёт компонент |
+| host element | хост-элемент, коротко — хост | элемент, на котором живёт компонент: `<app-game-card>` |
 | decorator | декоратор | `@Component` |
 | metadata | метаданные | объект в декораторе |
 | standalone component | standalone-компонент | обычно просто «компонент»: других в курсе нет |
 | bootstrap | запуск приложения | `bootstrapApplication` |
 | application config | конфигурация приложения | `app.config.ts` |
-| provider | провайдер | |
+| provider | провайдер | `{ provide, useClass/useValue/useFactory/useExisting }`; с английским — в главе 1 |
 | compiler | компилятор | |
 | AOT / JIT | AOT / JIT (компиляция заранее / во время выполнения) | расшифровка при первом упоминании |
-| dev mode | режим разработки | |
+| dev mode / production mode | режим разработки / режим продакшена | `ngDevMode` |
 | entry point | точка входа | `main.ts` |
 | application reference | ссылка на приложение (`ApplicationRef`) | результат `bootstrapApplication` |
 | error handler | обработчик ошибок (`ErrorHandler`) | пометка `ERROR` в консоли |
 | global styles | глобальные стили | `styles.css` |
 | component styles | стили компонента | `styleUrl`, действуют только на шаблон компонента |
-| instruction | инструкция | вызов в скомпилированном шаблоне: `ɵɵdomElementStart`, `ɵɵtext` |
-| creation / update mode | режим создания / режим обновления | блоки `rf & 1` и `rf & 2` функции шаблона |
+| instruction | инструкция | функция Angular, которую вызывает код шаблона: `ɵɵelementStart`, `ɵɵdomElementStart`, `ɵɵtext` |
+| creation / update block | блок создания / блок обновления | `rf & 1` / `rf & 2` функции шаблона; в главе 1 при знакомстве — «режим создания / обновления» |
 | private API (ɵ) | внутреннее API | имена с префиксом `ɵ`, в коде приложения не используются |
 
 ## Шаблоны
@@ -91,16 +91,21 @@
 | data flow | поток данных | «данные вниз — входами, события вверх — выходами» |
 | view query | запрос к представлению | `viewChild()`, `viewChildren()` — элементы и компоненты своего шаблона |
 | content query | запрос к содержимому | `contentChild()`, `contentChildren()` — то, что родитель вложил в компонент |
-| host element | хост-элемент | элемент, на котором «живёт» компонент: `<app-game-card>` |
-| view | представление | |
+| view | представление | с английским — в главе 2 |
+| template function | функция шаблона | `rf & 1` / `rf & 2`, глава 1 |
+| field initializer | инициализатор поля | граница контекста внедрения |
+| signal graph | граф сигналов | глава 3, под капотом — 19 |
+| snapshot | снимок | `ActivatedRouteSnapshot`; «снимок игры» в позиции корзины |
+| overlay | слой поверх страницы (overlay) | окно CDK, глава 17 |
 | view tree | дерево представлений | |
 | component tree | дерево компонентов | |
 | lifecycle | жизненный цикл | создание → проверки → уничтожение |
 | lifecycle hook | хук жизненного цикла | `ngOnInit`, `ngOnChanges`, `ngOnDestroy` |
 | render | отрисовка, рендер | |
-| after-render callback | колбэк после отрисовки | `afterNextRender`, `afterEveryRender`, `afterRenderEffect` |
-| render phase | фаза (колбэка после отрисовки) | `earlyRead`, `write`, `mixedReadWrite`, `read` |
-| destroy callback | колбэк уничтожения | `DestroyRef.onDestroy` |
+| after-render callback | функция после отрисовки (after render) | `afterNextRender`, `afterEveryRender`, `afterRenderEffect` |
+| render phase | фаза (функции после отрисовки) | `earlyRead`, `write`, `mixedReadWrite`, `read` |
+| destroy callback | функция, переданная в `onDestroy()` | `DestroyRef.onDestroy`; само действие — уборка |
+| cleanup | уборка | что освобождает ресурсы: `DestroyRef`, `onCleanup` эффекта (в 3.5 — «очистка эффекта»), `takeUntilDestroyed` |
 | modal dialog | модальное окно | `<dialog>` + `showModal()` |
 | dynamic component | динамический компонент, компонент из кода | `createComponent`, `ViewContainerRef.createComponent` (глава 17) |
 | host view | хост-представление | `ComponentRef.hostView`: его включают в обнаружение изменений `ApplicationRef.attachView` |
@@ -160,7 +165,6 @@
 | dependency | зависимость | объект, который компонент получает через DI |
 | service | сервис | класс с `@Service()` / `@Injectable` |
 | injector | инжектор | |
-| provider | провайдер | `{ provide, useClass/useValue/useFactory/useExisting }` |
 | token | токен | ключ, по которому DI ищет зависимость: класс или `InjectionToken` |
 | inject function | inject-функция | своя функция, которая вызывает `inject()` (`injectNow`) |
 | lazy service | ленивый сервис | `injectAsync` |
@@ -336,7 +340,13 @@
 | build | сборка | |
 | bundle | бандл | |
 | tree-shaking | удаление неиспользуемого кода (tree-shaking) | |
-| SSR | серверный рендеринг (SSR) | |
+| SSR | серверный рендеринг (SSR) | расшифровка — в главе 1; в главе 20 в паре с CSR — «рендеринг на сервере» |
+| CSR | рендеринг на клиенте (client-side rendering) | глава 20 |
+| builder | сборщик (builder) | цель CLI в `angular.json`: `@angular/build:application`, `:unit-test` |
+| bundler | сборщик | инструмент, который собирает модули в файлы: esbuild, Vite |
+| schematic | схема (schematic) | генератор CLI: `ng generate`, `ng add`; не путать со схемой формы |
+| HMR | замена модулей на лету (HMR) | `ng serve` |
+| SPA | одностраничное приложение (single-page application) | |
 | hydration | гидратация | |
 | prerendering | пререндеринг | |
 
@@ -344,8 +354,6 @@
 
 | English | Русский | Комментарий |
 |---|---|---|
-| instruction | инструкция | функция Angular, которую вызывает код шаблона: `ɵɵelementStart`, `ɵɵconditional` |
-| creation / update block | блок создания / блок обновления | `rf & 1` / `rf & 2` функции шаблона |
 | component definition | определение компонента | `ɵcmp` — результат `ɵɵdefineComponent` |
 | factory | фабрика | `ɵfac`: создаёт экземпляр класса |
 | DomOnly mode | режим «только DOM» (`DomOnly`) | инструкции `domElementStart`, `domListener`: без сопоставления директив |
@@ -366,10 +374,11 @@
 | version (of a node) | версия (узла) | растёт, только когда значение изменилось |
 | epoch | эпоха | глобальный счётчик записей в сигналы |
 | signal primitives | примитивы сигналов | `@angular/core/primitives/signals` |
+| template type checking | проверка шаблонов | `strictTemplates`; в главе 20 — «строгие шаблоны» |
+| extended diagnostics | расширенная диагностика | предупреждения `NG81xx` |
 | type-check block | блок проверки типов (TCB) | TypeScript-функция, в которую ngtsc переводит шаблон |
 | compilation locality | локальность компиляции | компилятору нужен только сам компонент и его `imports` |
 | partial compilation | частичная компиляция | библиотеки: `ɵɵngDeclareComponent`, доводит сборщик проекта |
-| dev mode / production mode | режим разработки / режим продакшена | `ngDevMode` |
 
 ## Чтение чужого кода (глава 21)
 

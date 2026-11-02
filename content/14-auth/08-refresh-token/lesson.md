@@ -61,7 +61,10 @@ private refreshing: Observable<string> | null = null;
 
 refresh(): Observable<string> {
   const refreshToken = localStorage.getItem(REFRESH_KEY);
-  // …нет refresh-токена — throwError…
+  if (!refreshToken) {
+    // Не HttpErrorResponse: интерцептор поймёт это как «обновить нечем» и выйдет
+    return throwError(() => new Error('Нет refresh-токена'));
+  }
   this.refreshing ??= this.http
     .post<Tokens>('/api/refresh', { refreshToken }, { context: skipAuth() })
     .pipe(
