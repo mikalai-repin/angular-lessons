@@ -1,0 +1,75 @@
+<h1>Сравнение</h1>
+@let games = compare.games();
+@if (games.length === 0) {
+  <p class="muted">
+    Нечего сравнивать. Нажмите «Сравнить» на карточках игр в
+    <a routerLink="/catalog">каталоге</a>.
+  </p>
+} @else {
+  <!-- Таблица шире экрана — прокручивается сама, а не вся страница -->
+  <div class="table-scroll">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <td></td>
+          @for (game of games; track game.id) {
+            <th scope="col">
+              <a [routerLink]="['/games', game.id]">{{
+                game.title
+              }}</a>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Цена</th>
+          @for (game of games; track game.id) {
+            <td [class.best]="game.price === best()?.price">
+              {{ game.price | price }}
+            </td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">Игроки</th>
+          @for (game of games; track game.id) {
+            <td>{{ game.players | players }}</td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">Время</th>
+          @for (game of games; track game.id) {
+            <td>{{ game.playTime | duration }}</td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">Возраст</th>
+          @for (game of games; track game.id) {
+            <td>{{ game.age }}+</td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">Рейтинг</th>
+          @for (game of games; track game.id) {
+            <td [class.best]="game.rating === best()?.rating">
+              {{ game.rating | number }}
+            </td>
+          }
+        </tr>
+        <tr>
+          <td></td>
+          @for (game of games; track game.id) {
+            <td>
+              <button
+                class="link-button"
+                (click)="compare.remove(game)"
+              >
+                Убрать
+              </button>
+            </td>
+          }
+        </tr>
+      </tbody>
+    </table>
+  </div>
+}

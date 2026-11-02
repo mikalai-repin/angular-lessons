@@ -1,0 +1,29 @@
+<h1>Список желаний</h1>
+@if (ids().length === 0) {
+  <p class="muted">
+    Список пуст. Загляните в
+    <a routerLink="/catalog">каталог</a>.
+  </p>
+} @else if (games.isLoading()) {
+  <p class="muted">Загружаем…</p>
+} @else if (games.error()) {
+  <p class="error-message">
+    Не удалось загрузить список.
+    <button class="link-button" (click)="games.reload()">
+      Повторить
+    </button>
+  </p>
+} @else if (games.value(); as games) {
+  <div class="grid">
+    @for (game of games; track game.id) {
+      <app-game-card
+        [game]="game"
+        [priority]="$index < priorityCovers"
+      />
+    } @empty {
+      <p class="muted">
+        Список пуст: этих игр больше нет в каталоге.
+      </p>
+    }
+  </div>
+}
