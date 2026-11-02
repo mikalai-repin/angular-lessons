@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { quizPath, stepPath, type Step } from '../content/course';
+import { quizPath, stepPath, type LoadedStep, type Step } from '../content/course';
 import { renderMarkdown } from './markdown';
 
 interface Props {
-  step: Step;
+  step: LoadedStep;
   prev?: Step;
   /** Куда ведёт «Далее»: следующий шаг или квиз главы (src/content/course.ts, nextPath) */
   nextPath?: string;

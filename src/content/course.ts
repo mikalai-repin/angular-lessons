@@ -1,6 +1,6 @@
-import { parse as parseYaml } from 'yaml';
-import { parseLesson as parseLessonText, resolveChapter, stepResult } from '../../shared/step-chain.js';
+import { resolveChapter } from '../../shared/step-chain.js';
 import type { ChainMeta, FileMap } from '../../shared/step-chain.js';
+import courseIndex, { sources } from 'virtual:course';
 
 /** Набор файлов шага: имя файла → исходный код */
 export type { FileMap };
@@ -42,6 +42,11 @@ export interface Step {
   /** Номер шага внутри главы, с нуля */
   index: number;
   meta: StepMeta;
+  chapter: Chapter;
+}
+
+/** Шаг вместе с содержимым — оно приходит с чанком главы (loadChapter) */
+export interface LoadedStep extends Step {
   body: string;
   start: FileMap;
   solution: FileMap;
@@ -49,7 +54,6 @@ export interface Step {
   fileOrder: string[];
   /** Проверка шага — исходник check.ts (docs/lesson-format.md), если она есть */
   check?: string;
-  chapter: Chapter;
 }
 
 export interface Chapter {
@@ -60,7 +64,12 @@ export interface Chapter {
   description: string;
   part: number;
   steps: Step[];
-  /** Квиз по главе (quiz.yaml в папке главы); глава пройдена, когда квиз сдан */
+  /** Есть ли у главы квиз (quiz.yaml в папке главы); глава пройдена, когда квиз сдан */
+  hasQuiz: boolean;
+}
+
+export interface ChapterContent {
+  steps: LoadedStep[];
   quiz?: Quiz;
 }
 
@@ -85,47 +94,23 @@ export function quizPassScore(total: number): number {
   return Math.ceil(total * QUIZ_PASS_RATE);
 }
 
+export interface Part {
+  title: string;
+  description: string;
+}
+
 export interface Course {
   title: string;
   angularVersion: string;
+  /** Части курса по порядку; chapter.part — номер части с единицы */
+  parts: Part[];
   chapters: Chapter[];
 }
 
-// Vite собирает content/ в бандл на этапе сборки
-const raw: Record<string, string> = import.meta.glob<string>('/content/**/*', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
+// Уроки собирает плагин scripts/vite-course-content.mjs: оглавление (названия глав, frontmatter шагов) — в бандле
+// страницы, всё остальное — отдельный чанк на каждую главу (src/env.d.ts — типы модулей плагина)
 
 const stripOrder = (dir: string) => dir.replace(/^\d+-/, '');
-
-function readJson<T>(path: string): T {
-  const text = raw[path];
-  if (text === undefined) throw new Error(`[content] не найден файл ${path}`);
-  return JSON.parse(text) as T;
-}
-
-function parseLesson(path: string): { meta: StepMeta; body: string } {
-  const text = raw[path];
-  if (text === undefined) throw new Error(`[content] не найден файл ${path}`);
-  let lesson;
-  try {
-    lesson = parseLessonText(text);
-  } catch (error) {
-    throw new Error(`[content] ошибка YAML во frontmatter ${path}: ${(error as Error).message}`);
-  }
-  if (!lesson) throw new Error(`[content] нет frontmatter в ${path}`);
-  return { meta: lesson.meta as unknown as StepMeta, body: lesson.body };
-}
-
-function collectFiles(prefix: string): FileMap {
-  const files: FileMap = {};
-  for (const [path, text] of Object.entries(raw)) {
-    if (path.startsWith(prefix)) files[path.slice(prefix.length)] = text;
-  }
-  return files;
-}
 
 const EXTENSION_ORDER = ['ts', 'html', 'css'];
 
@@ -153,81 +138,67 @@ function orderFiles(meta: StepMeta, files: FileMap): string[] {
 }
 
 function loadCourse(): Course {
-  const courseJson = readJson<{ title: string; angularVersion: string; chapters: string[] }>('/content/course.json');
-  // Результаты уже собранных шагов ('глава/шаг' → код): из них берётся base первого шага следующих глав
-  const results = new Map<string, FileMap>();
-  const resultOf = (ref: string): FileMap => {
-    const files = results.get(ref);
-    if (!files) throw new Error(`[content] base ${ref}: нет такого шага в предыдущих главах`);
-    return files;
-  };
-
-  const loadChapter = (chapterDir: string, chapterIndex: number): Chapter => {
-    const info = readJson<{ title: string; description: string; part: number }>(`/content/${chapterDir}/chapter.json`);
+  const chapters = courseIndex.chapters.map((info, chapterIndex): Chapter => {
     const chapter: Chapter = {
-      dir: chapterDir,
-      slug: stripOrder(chapterDir),
+      dir: info.dir,
+      slug: stripOrder(info.dir),
       index: chapterIndex,
       title: info.title,
       description: info.description,
       part: info.part,
+      hasQuiz: info.hasQuiz,
       steps: [],
     };
-
-    const stepDirs = new Set<string>();
-    const prefix = `/content/${chapterDir}/`;
-    for (const path of Object.keys(raw)) {
-      if (!path.startsWith(prefix)) continue;
-      const rest = path.slice(prefix.length).split('/');
-      if (rest.length > 1) stepDirs.add(rest[0]);
-    }
-
-    // Шаг хранит только изменения: start/ — поверх результата предыдущего шага (startFrom: custom; у первого
-    // шага главы — поверх base из прошлой главы), solution/ — поверх старта. Полный код собирает
-    // shared/step-chain.js (тот же модуль, что у валидатора)
-    const lessons = [...stepDirs].sort().map((stepDir) => {
-      const base = `${prefix}${stepDir}/`;
-      return {
-        stepDir,
-        ...parseLesson(`${base}lesson.md`),
-        own: { start: collectFiles(`${base}start/`), solution: collectFiles(`${base}solution/`) },
-      };
-    });
-    const resolved = resolveChapter(
-      lessons.map(({ meta, own }) => ({ meta, ...own })),
-      resultOf,
-    );
-    lessons.forEach(({ stepDir, meta }, index) =>
-      results.set(`${chapterDir}/${stepDir}`, stepResult(meta, resolved[index])),
-    );
-    const quizPath = `${prefix}quiz.yaml`;
-    if (raw[quizPath] !== undefined) chapter.quiz = parseYaml(raw[quizPath]) as Quiz;
-
-    chapter.steps = lessons.map(({ stepDir, meta, body }, index): Step => {
-      const { start, solution } = resolved[index];
-      return {
-        id: `${chapter.slug}/${stripOrder(stepDir)}`,
-        dir: `${chapterDir}/${stepDir}`,
-        slug: stripOrder(stepDir),
-        index,
-        meta,
-        body,
-        start,
-        solution,
-        fileOrder: orderFiles(meta, { ...solution, ...start }),
-        check: raw[`${prefix}${stepDir}/check.ts`],
-        chapter,
-      };
-    });
-
+    chapter.steps = info.steps.map(({ dir, meta }, index) => ({
+      id: `${chapter.slug}/${stripOrder(dir)}`,
+      dir: `${info.dir}/${dir}`,
+      slug: stripOrder(dir),
+      index,
+      meta,
+      chapter,
+    }));
     return chapter;
-  };
-
-  const chapters = courseJson.chapters.map((dir, index) => loadChapter(dir, index));
-  return { title: courseJson.title, angularVersion: courseJson.angularVersion, chapters };
+  });
+  return { title: courseIndex.title, angularVersion: courseIndex.angularVersion, parts: courseIndex.parts, chapters };
 }
 
 export const course = loadCourse();
+
+const loaded = new Map<Chapter, Promise<ChapterContent>>();
+
+/**
+ * Содержимое главы: тексты, полный код каждого шага, проверки, квиз. Промис один на главу — его можно отдавать
+ * в `use()`. Шаг хранит только изменения: start/ — поверх результата предыдущего шага (startFrom: custom; у первого
+ * шага главы — поверх base из прошлой главы), solution/ — поверх старта. Полный код собирает shared/step-chain.js
+ * (тот же модуль, что у валидатора)
+ */
+export function loadChapter(chapter: Chapter): Promise<ChapterContent> {
+  let promise = loaded.get(chapter);
+  if (!promise) {
+    promise = sources[chapter.dir]().then(({ default: source }) => {
+      const resolved = resolveChapter(
+        chapter.steps.map((step, index) => ({ meta: step.meta, ...source.steps[index] })),
+        () => source.base ?? {},
+      );
+      const steps = chapter.steps.map((step, index): LoadedStep => {
+        const { start, solution } = resolved[index];
+        return {
+          ...step,
+          body: source.steps[index].body,
+          start,
+          solution,
+          fileOrder: orderFiles(step.meta, { ...solution, ...start }),
+          check: source.steps[index].check,
+        };
+      });
+      return { steps, quiz: source.quiz };
+    });
+    // Не загрузилось (сеть, новая версия на сервере) — следующий заход загрузит заново
+    promise.catch(() => loaded.delete(chapter));
+    loaded.set(chapter, promise);
+  }
+  return promise;
+}
 
 /** Все шаги курса подряд — для кнопок «Назад/Далее» через границы глав */
 export const allSteps: Step[] = course.chapters.flatMap((chapter) => chapter.steps);
@@ -238,7 +209,7 @@ export function findStep(chapterSlug?: string, stepSlug?: string): Step | undefi
 
 /** Соседние шаги для «Назад / Далее» */
 export function neighbours(step: Step): { prev?: Step; next?: Step } {
-  const index = allSteps.indexOf(step);
+  const index = allSteps.findIndex((other) => other.id === step.id);
   return { prev: allSteps[index - 1], next: allSteps[index + 1] };
 }
 
@@ -257,7 +228,7 @@ export function findChapter(slug?: string): Chapter | undefined {
 /** Куда ведёт «Далее» с шага: после последнего шага главы — на квиз главы, иначе — на следующий шаг */
 export function nextPath(step: Step): string | undefined {
   const isLast = step.index === step.chapter.steps.length - 1;
-  if (isLast && step.chapter.quiz) return quizPath(step.chapter);
+  if (isLast && step.chapter.hasQuiz) return quizPath(step.chapter);
   const { next } = neighbours(step);
   return next && stepPath(next);
 }

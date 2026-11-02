@@ -51,13 +51,13 @@
 | Сборка платформы | Vite 8 + TypeScript 6.0 | Как в курсе PixiJS. TypeScript 7 нельзя — см. «Версии» |
 | UI платформы | React 19 | Готовый код из курса PixiJS |
 | Роутинг платформы | `react-router`, URL вида `/:chapter/:step` | |
-| Редактор | Monaco Editor 0.57 | TS language service (встроенный TS **5.9**) с типами `@angular/*` и `rxjs`; языки `html` и `css` со своими воркерами |
+| Редактор | Monaco Editor 0.57 | TS language service (встроенный TS **5.9**) с типами `@angular/*` и `rxjs`; языки `html` и `css` со своими воркерами. В продакшен-сборке подсветка только `css`, `html`, `javascript`, `typescript` (плагин `monaco-languages` в `vite.config.ts`; в dev Monaco собран целиком) |
 | Компиляция TS → JS | Веб-воркер `src/compiler/compile.worker.ts`: TypeScript 6.0 + `angularJitApplicationTransform` | TS-воркер Monaco не умеет применять трансформы; без трансформа не работают `input()`, `output()`, `model()`, `viewChild()` |
 | Шаблоны → код | JIT-компилятор `@angular/compiler` в iframe превью | |
 | Форматирование | Prettier 3.9.9: `typescript` для `.ts`, **`angular`** (плагин `html`) для `.html`, `css` (плагин `postcss`); настройки — `shared/lesson-prettier.json`, общие с файлами уроков; встроенные форматтеры Monaco для HTML/CSS выключены | Код уроков на диске в том же формате: «Формат» его не меняет (`checks/platform.mjs`) |
 | Markdown уроков | `markdown-it` + контейнеры + Shiki: блоки `ts` подсвечиваются грамматикой **`angular-ts`**, `html` — **`angular-html`** | Подсвечиваются `@if`, привязки, шаблоны в декораторах |
 | Прогресс | `localStorage`, ключ `angular-course:v1` (и выбранные тема и палитра) | |
-| Загрузка | Страница шага (`StepPage`: Monaco, TypeScript Monaco, Prettier, Shiki) — ленивый чанк: начальный бандл ~2 МБ вместо ~8,8 МБ, шапка и оглавление появляются сразу | |
+| Загрузка | Начальный бандл — React, оглавление курса и начальный экран (`HomePage`): 406 КБ, 114 КБ gzip. Ленивые чанки: страница шага (`StepPage`: Monaco, Prettier, Shiki; 351 КБ gzip + Monaco 698 КБ gzip), содержимое главы (38–127 КБ gzip), типы библиотек для Monaco (`library-types`, 589 КБ gzip — грузятся после появления редактора) | Замеры продакшен-сборки 02.11.2026; до разбиения начальный бандл был 4,7 МБ (1,15 МБ gzip): весь `content/` |
 
 ## Версии
 
@@ -104,7 +104,7 @@
 
 Запускается перед `dev` и `build` (`predev`, `prebuild`), <1 с:
 
-- `public/vendor/angular/<пакет>/*.mjs` (+ `.map`) — `fesm2022` пакетов Angular как есть (они ссылаются на соседние чанки относительными путями);
+- `public/vendor/angular/<пакет>/*.mjs` (+ `.map`) — `fesm2022` пакетов Angular как есть (они ссылаются на соседние чанки относительными путями). Карты `.map` (11 из 19 МБ) — только для dev: из `dist/vendor` их удаляет плагин `drop-vendor-maps` в `vite.config.ts`;
 - `public/vendor/ngrx/<пакет>/*.mjs` — то же для пакетов NgRx (`NGRX_PACKAGES`, глава 18): раскладка `fesm2022` + `exports` такая же, как у Angular, — копирует одна функция `copyPackage`. Типы для редактора — те же пять пакетов в `src/editor/monaco.ts` (заглушки подпутей строит общий код);
 - `public/vendor/angular/common/locales/{ru,en}.mjs` — локали для пайпов (глава 7);
 - `public/vendor/rxjs.mjs` — RxJS одним файлом (esbuild);
@@ -191,7 +191,14 @@
 
 ## Загрузка контента и валидатор
 
-`src/content/course.ts`: `import.meta.glob('/content/**/*', { query: '?raw', eager: true })`. Файлы шага — с подпапками. Полный код старта и решения каждого шага собирает `shared/step-chain.js` (шаг хранит только изменения, см. `lesson-format.md`).
+Уроки в бандл собирает плагин `scripts/vite-course-content.mjs` (он читает `content/` в Node функциями `scripts/step-files.mjs`, YAML разбирает там же). Два вида модулей:
+
+- `virtual:course` — `course.json`, `chapter.json` и frontmatter всех шагов, входит в начальный бандл. Из него `src/content/course.ts` строит `course`, `allSteps`, адреса шагов, оглавление и начальный экран — синхронно, как раньше;
+- `virtual:course-chapter/<папка главы>` — тексты уроков, собственные файлы `start/` и `solution/` шагов (только изменения), `check.ts`, квиз и полный код базы первого шага. Отдельный чанк на главу; `loadChapter(chapter)` загружает его один раз и собирает полный код старта и решения каждого шага через `shared/step-chain.js` (шаг хранит только изменения, см. `lesson-format.md`). `StepPage` и `QuizPage` берут его через `use()` под `Suspense` из `App.tsx`.
+
+Типы модулей — в `src/env.d.ts`. В dev плагин следит за `content/`: любая правка сбрасывает модули курса (база первого шага зависит от прошлых глав) и перезагружает страницу.
+
+Начальный экран `/` (`src/app/HomePage.tsx`) — о курсе, «Продолжить» (последний открытый шаг) или «Начать с первого шага», главы по частям (`parts` в `course.json`) с прогрессом. Карточка главы ведёт на первый непройденный шаг, потом — на квиз.
 
 `npm run validate`:
 

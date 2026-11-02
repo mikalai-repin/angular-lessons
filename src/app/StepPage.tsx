@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { use, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Group, Panel, Separator, usePanelRef, type PanelImperativeHandle } from 'react-resizable-panels';
 import { Navigate, useParams } from 'react-router';
-import { findStep, neighbours, nextPath, type FileMap, type Step } from '../content/course';
+import { findStep, loadChapter, neighbours, nextPath, type FileMap, type LoadedStep } from '../content/course';
 import { CodeEditor } from '../editor/CodeEditor';
 import { fileNameError, normalizeFileName, orderFiles } from '../editor/files';
 import { compileStep } from '../compiler';
@@ -34,15 +34,17 @@ export function StepPage() {
   const params = useParams();
   const step = findStep(params.chapter, params.step);
   if (!step) return <Navigate to="/" replace />;
+  // Содержимое главы — отдельный чанк; пока он грузится, показывается Suspense из App
+  const loaded = use(loadChapter(step.chapter)).steps[step.index];
   // key: при смене шага всё состояние рабочей области создаётся заново
-  return <StepWorkspace key={step.id} step={step} />;
+  return <StepWorkspace key={step.id} step={loaded} />;
 }
 
 /**
  * Стартовые файлы шага: код из base, а где его нет — из старта; deleted — файлы, которые ученик удалил
  * или переименовал. Файлы, которые есть только в решении, ученик создаёт сам — на старте их нет
  */
-function startFiles(step: Step, base: FileMap = {}, deleted: string[] = []): FileMap {
+function startFiles(step: LoadedStep, base: FileMap = {}, deleted: string[] = []): FileMap {
   const files: FileMap = {};
   for (const name of step.fileOrder) {
     if (name in step.start && !deleted.includes(name)) files[name] = base[name] ?? step.start[name];
@@ -51,17 +53,17 @@ function startFiles(step: Step, base: FileMap = {}, deleted: string[] = []): Fil
 }
 
 /** Сохранённый код ученика, дополненный файлами, которые появились в старте шага позже, и созданными им файлами */
-function initialFiles(step: Step): FileMap {
+function initialFiles(step: LoadedStep): FileMap {
   const saved = progress.getCode(step.id) ?? {};
   return { ...startFiles(step, saved, progress.getDeleted(step.id)), ...saved };
 }
 
 /** Удалённые файлы старта: те, которых нет в коде ученика */
-const deletedOf = (step: Step, files: FileMap) => Object.keys(step.start).filter((name) => !(name in files));
+const deletedOf = (step: LoadedStep, files: FileMap) => Object.keys(step.start).filter((name) => !(name in files));
 
 let runCounter = 0;
 
-function StepWorkspace({ step }: { step: Step }) {
+function StepWorkspace({ step }: { step: LoadedStep }) {
   const isNarrow = useMediaQuery('(max-width: 900px)');
   const [files] = useState(() => {
     const initial = initialFiles(step);

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
+import { use, useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import {
   course,
   findChapter,
   findStepByDir,
+  loadChapter,
   quizPassScore,
   stepPath,
   QUIZ_PASS_RATE,
@@ -17,9 +18,11 @@ import { Loader } from '../app/Loader';
 export function QuizPage() {
   const params = useParams();
   const chapter = findChapter(params.chapter);
-  if (!chapter?.quiz) return <Navigate to="/" replace />;
+  if (!chapter?.hasQuiz) return <Navigate to="/" replace />;
+  const { quiz } = use(loadChapter(chapter));
+  if (!quiz) return <Navigate to="/" replace />;
   // key: при смене главы попытка начинается заново
-  return <ChapterQuiz key={chapter.slug} chapter={chapter} quiz={chapter.quiz} />;
+  return <ChapterQuiz key={chapter.slug} chapter={chapter} quiz={quiz} />;
 }
 
 /** Вопрос, переведённый в HTML; options[0] — правильный вариант, как в quiz.yaml */

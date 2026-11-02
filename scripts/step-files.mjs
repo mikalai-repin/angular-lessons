@@ -2,8 +2,8 @@
 // (только у startFrom: custom; у первого шага главы — поверх результата шага прошлой главы из `base`),
 // solution/ — поверх старта, удаления — во frontmatter. Собирает шаги
 // shared/step-chain.js — тот же модуль, что у платформы (src/content/course.ts).
-// Используют валидатор (scripts/validate-content.mjs), браузерные проверки (tools/e2e/lib.mjs) и генераторы глав
-// (tools/authoring/steps.py → step_dir).
+// Используют валидатор (scripts/validate-content.mjs), браузерные проверки (tools/e2e/lib.mjs), плагин контента
+// платформы (scripts/vite-course-content.mjs) и генераторы глав (tools/authoring/steps.py → step_dir).
 //
 // Выгрузить полный код шага в папку, чтобы посмотреть или прочитать его целиком:
 //   npm run step content/06-lifecycle/05-content-children/solution [папка=tools/e2e/out/step]
@@ -51,6 +51,11 @@ export function chapterSteps(chapterPath) {
 
 // Главы, собранные за этот запуск: глава 8 собирает главу 7 ради базы, та — главу 6 и так далее
 const chapterCache = new Map();
+
+/** Забыть собранные главы — после правки файлов в content/ (плагин контента в dev, scripts/vite-course-content.mjs) */
+export function clearChapterCache() {
+  chapterCache.clear();
+}
 
 /** Полный код всех шагов главы: [{ path, meta, metaError?, own: { start, solution }, base, start, solution }] */
 export function resolveChapterDir(chapterPath) {

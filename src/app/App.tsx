@@ -1,20 +1,15 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router';
-import { allSteps, course, quizPath, stepPath } from '../content/course';
+import { course, quizPath, stepPath } from '../content/course';
 import { progress } from '../progress/storage';
 import { Appearance } from './Appearance';
 import { DialogHost } from './Dialog';
+import { HomePage } from './HomePage';
 import { AngularLogo, Loader } from './Loader';
-// Страница шага тянет Monaco, TypeScript-воркер и Prettier — грузим её отдельным чанком: шапка и оглавление
-// появляются сразу
+// Страница шага тянет Monaco, TypeScript-воркер и Prettier — грузим её отдельным чанком: шапка, оглавление
+// и начальный экран появляются сразу
 const StepPage = lazy(() => import('./StepPage').then((module) => ({ default: module.StepPage })));
 const QuizPage = lazy(() => import('../quiz/QuizPage').then((module) => ({ default: module.QuizPage })));
-
-function Home() {
-  const last = allSteps.find((step) => step.id === progress.getLastStep()) ?? allSteps[0];
-  if (!last) return <p className="empty-course">В курсе пока нет глав.</p>;
-  return <Navigate to={stepPath(last)} replace />;
-}
 
 function TableOfContents() {
   const location = useLocation();
@@ -46,7 +41,7 @@ function TableOfContents() {
                   </Link>
                 </li>
               ))}
-              {chapter.quiz && (
+              {chapter.hasQuiz && (
                 <li className="toc-quiz">
                   <Link
                     to={quizPath(chapter)}
@@ -80,7 +75,7 @@ export function App() {
         </header>
         <main className="app-main">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<HomePage />} />
             {/* Статический сегмент quiz сильнее :step — шаг с папкой NN-quiz сюда не попадёт */}
             <Route
               path="/:chapter/quiz"
