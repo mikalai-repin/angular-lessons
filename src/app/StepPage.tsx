@@ -3,6 +3,7 @@ import { Group, Panel, Separator, usePanelRef, type PanelImperativeHandle } from
 import { Navigate, useParams } from 'react-router';
 import { findStep, neighbours, nextPath, type FileMap, type Step } from '../content/course';
 import { CodeEditor } from '../editor/CodeEditor';
+import { fileNameError, normalizeFileName, orderFiles } from '../editor/files';
 import { compileStep } from '../compiler';
 import {
   collectDiagnostics,
@@ -36,13 +37,26 @@ export function StepPage() {
   return <StepWorkspace key={step.id} step={step} />;
 }
 
-/** Сохранённый код ученика, дополненный файлами, которые появились в шаге позже */
-function initialFiles(step: Step): FileMap {
-  const saved = progress.getCode(step.id);
+/**
+ * Все файлы шага: код из base, а где он есть — из стартового кода. Файлы шага, которых нет в base и start
+ * (только в решении), ученик видит уже готовыми; deleted — файлы, которые ученик удалил или переименовал
+ */
+function stepFiles(step: Step, base: FileMap = {}, deleted: string[] = []): FileMap {
   const files: FileMap = {};
-  for (const name of step.fileOrder) files[name] = saved?.[name] ?? step.start[name] ?? step.solution[name] ?? '';
+  for (const name of step.fileOrder) {
+    if (!deleted.includes(name)) files[name] = base[name] ?? step.start[name] ?? step.solution[name] ?? '';
+  }
   return files;
 }
+
+/** Сохранённый код ученика, дополненный файлами, которые появились в шаге позже, и созданными им файлами */
+function initialFiles(step: Step): FileMap {
+  const saved = progress.getCode(step.id) ?? {};
+  return { ...stepFiles(step, saved, progress.getDeleted(step.id)), ...saved };
+}
+
+/** Удалённые файлы шага: те, которых нет в коде ученика */
+const deletedOf = (step: Step, files: FileMap) => step.fileOrder.filter((name) => !(name in files));
 
 let runCounter = 0;
 
@@ -56,7 +70,13 @@ function StepWorkspace({ step }: { step: Step }) {
     return initial;
   });
   const filesRef = useRef(files);
-  const [active, setActive] = useState(() => step.meta.focus ?? step.fileOrder[0]);
+  /** Вкладки: файлы шага без удалённых и файлы, созданные учеником */
+  const [fileList, setFileList] = useState(() => orderFiles(step.fileOrder, files));
+  const fileListRef = useRef(fileList);
+  const [active, setActive] = useState(() => {
+    const focus = step.meta.focus;
+    return focus && fileList.includes(focus) ? focus : fileList[0];
+  });
   const [run, setRun] = useState<PreviewRun | null>(null);
   const [autorun, setAutorun] = useState(progress.getAutorun);
   const [hasBackup, setHasBackup] = useState(() => Boolean(progress.getBackup(step.id)));
@@ -67,7 +87,7 @@ function StepWorkspace({ step }: { step: Step }) {
   /** Что показывает превью: приложение или тесты. Frontmatter preview: tests — тесты при входе и при проверке */
   const defaultMode: PreviewMode = step.meta.preview === 'tests' ? 'tests' : 'app';
   const modeRef = useRef<PreviewMode>(defaultMode);
-  const hasTests = defaultMode === 'tests' || step.fileOrder.some((file) => file.endsWith('.spec.ts'));
+  const hasTests = defaultMode === 'tests' || fileList.some((file) => file.endsWith('.spec.ts'));
   const panes = useCollapsiblePanes(!isNarrow, () => runCode());
 
   const timers = useRef<{ save?: number; autorun?: number }>({});
@@ -82,14 +102,15 @@ function StepWorkspace({ step }: { step: Step }) {
       setCheck(withCheck ? 'running' : null);
       if (withCheck) modeRef.current = defaultMode;
       const mode = modeRef.current;
+      const list = fileListRef.current;
       // Код компилирует воркер (TypeScript 6 + JIT-трансформ Angular), ошибки типов даёт TS-воркер Monaco
       const [compiled, diagnostics, checkCode] = await Promise.all([
-        compileStep(readModels(step.id, step.fileOrder), { tests: mode === 'tests' }).catch((error: Error) => ({
+        compileStep(readModels(step.id, list), { tests: mode === 'tests' }).catch((error: Error) => ({
           files: {},
           styles: [],
           errors: [`Компилятор не запустился: ${error.message}`],
         })),
-        collectDiagnostics(step.id, step.fileOrder),
+        collectDiagnostics(step.id, list),
         withCheck && step.check
           ? compileStep({ 'check.ts': step.check }).then((result) => result.files['check.js'])
           : undefined,
@@ -131,7 +152,7 @@ function StepWorkspace({ step }: { step: Step }) {
     progress.setLastStep(step.id);
     runCode();
     // Подчёркивания, посчитанные, пока воркер ещё не знал всех файлов шага, пересчитываем
-    refreshDiagnostics(step.id, step.fileOrder);
+    refreshDiagnostics(step.id, fileListRef.current);
     const pending = timers.current;
     return () => {
       window.clearTimeout(pending.autorun);
@@ -146,7 +167,10 @@ function StepWorkspace({ step }: { step: Step }) {
       filesRef.current = { ...filesRef.current, [file]: code };
 
       window.clearTimeout(timers.current.save);
-      timers.current.save = window.setTimeout(() => progress.setCode(step.id, filesRef.current), SAVE_DELAY);
+      timers.current.save = window.setTimeout(
+        () => progress.setCode(step.id, filesRef.current, deletedOf(step, filesRef.current)),
+        SAVE_DELAY,
+      );
 
       if (autorun) {
         window.clearTimeout(timers.current.autorun);
@@ -156,18 +180,76 @@ function StepWorkspace({ step }: { step: Step }) {
     [step, autorun, runCode],
   );
 
-  /** Подменяет код во всех вкладках (сброс, решение, возврат своего кода) */
-  function replaceFiles(nextFiles: FileMap) {
-    const merged = { ...filesRef.current, ...nextFiles };
-    filesRef.current = merged;
-    syncModels(step.id, merged);
-    progress.setCode(step.id, merged);
+  /**
+   * Подменяет набор файлов и их код (сброс, решение, возврат своего кода, создание, переименование и удаление файла).
+   * nextActive — какой файл открыть; если открытого файла больше нет, открывается соседний
+   */
+  function replaceFiles(nextFiles: FileMap, nextActive?: string) {
+    window.clearTimeout(timers.current.save);
+    const previous = fileListRef.current;
+    const list = orderFiles(step.fileOrder, nextFiles);
+    filesRef.current = nextFiles;
+    fileListRef.current = list;
+    syncModels(step.id, nextFiles);
+    progress.setCode(step.id, nextFiles, deletedOf(step, nextFiles));
+    setFileList(list);
+    setActive((current) => {
+      if (nextActive && list.includes(nextActive)) return nextActive;
+      if (list.includes(current)) return current;
+      const index = Math.max(previous.indexOf(current), 0);
+      return list[Math.min(index, list.length - 1)];
+    });
+    // Новый .ts-файл воркер TypeScript должен узнать до проверки соседей, которые его импортируют
+    refreshDiagnostics(step.id, list);
     runCode();
+  }
+
+  function onCreateFile() {
+    const folder = active.slice(0, active.lastIndexOf('/') + 1);
+    const answer = window.prompt('Новый файл — путь от src/app/, расширение .ts, .html или .css:', folder);
+    if (answer === null) return;
+    const name = normalizeFileName(answer);
+    const error = fileNameError(name, fileListRef.current);
+    if (error) {
+      window.alert(error);
+      return;
+    }
+    replaceFiles({ ...filesRef.current, [name]: '' }, name);
+  }
+
+  function onRenameFile(file: string) {
+    const answer = window.prompt(`Новое имя для «${file}»:`, file);
+    if (answer === null) return;
+    const name = normalizeFileName(answer);
+    if (name === file) return;
+    const error = fileNameError(
+      name,
+      fileListRef.current.filter((other) => other !== file),
+    );
+    if (error) {
+      window.alert(error);
+      return;
+    }
+    // Импорты и templateUrl в других файлах не меняем — как и IDE без рефакторинга, их правит ученик
+    const next: FileMap = {};
+    for (const [other, code] of Object.entries(filesRef.current)) next[other === file ? name : other] = code;
+    replaceFiles(next, name);
+  }
+
+  function onDeleteFile(file: string) {
+    if (fileListRef.current.length === 1) {
+      window.alert('Последний файл шага удалить нельзя.');
+      return;
+    }
+    if (!window.confirm(`Удалить файл «${file}»? Вернуть файлы шага можно кнопкой «Сброс».`)) return;
+    const rest = { ...filesRef.current };
+    delete rest[file];
+    replaceFiles(rest);
   }
 
   function onReset() {
     if (!window.confirm('Вернуть стартовый код шага? Ваши изменения пропадут.')) return;
-    replaceFiles(step.start);
+    replaceFiles(stepFiles(step));
     progress.clearCode(step.id);
     setHasBackup(false);
   }
@@ -176,11 +258,14 @@ function StepWorkspace({ step }: { step: Step }) {
     if (!window.confirm('Показать решение? Ваш код сохранится, его можно будет вернуть.')) return;
     progress.setBackup(step.id, filesRef.current);
     setHasBackup(true);
-    replaceFiles(step.solution);
+    // Решение — это файлы шага: созданные учеником файлы убираются (они остаются в сохранённом коде ученика),
+    // удалённые возвращаются; файлы, которых решение не меняет, остаются как у ученика
+    replaceFiles(stepFiles(step, { ...filesRef.current, ...step.solution }));
   }
 
   function onRestoreBackup() {
     const backup = progress.getBackup(step.id);
+    // В копии — все файлы ученика, включая созданные; удалённых в ней нет
     if (backup) replaceFiles(backup);
     progress.setBackup(step.id, undefined);
     setHasBackup(false);
@@ -220,10 +305,13 @@ function StepWorkspace({ step }: { step: Step }) {
     <div className="code-column">
       <CodeEditor
         stepId={step.id}
-        files={step.fileOrder}
+        files={fileList}
         active={active}
         readonly={step.meta.readonly ?? []}
         onSelect={setActive}
+        onCreateFile={onCreateFile}
+        onRenameFile={onRenameFile}
+        onDeleteFile={onDeleteFile}
         onChange={onChange}
         onRun={() => runCode()}
         actions={!isNarrow && panes.collapseButton('code', '«')}

@@ -239,8 +239,13 @@ function languageOf(file: string) {
   return undefined;
 }
 
-/** Создаёт (или обновляет) модели всех файлов шага */
+/** Создаёт (или обновляет) модели всех файлов шага; модели файлов, которых больше нет (удалён, переименован), удаляет */
 export function syncModels(stepId: string, files: FileMap) {
+  const prefix = stepPrefix(stepId);
+  for (const model of monaco.editor.getModels()) {
+    const uri = model.uri.toString(true);
+    if (uri.startsWith(prefix) && !(uri.slice(prefix.length) in files)) model.dispose();
+  }
   for (const [file, code] of Object.entries(files)) {
     const uri = modelUri(stepId, file);
     const existing = monaco.editor.getModel(uri);

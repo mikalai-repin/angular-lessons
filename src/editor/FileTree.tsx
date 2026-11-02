@@ -5,6 +5,9 @@ interface Props {
   active: string;
   readonly: string[];
   onSelect: (file: string) => void;
+  onCreate: () => void;
+  onRename: (file: string) => void;
+  onDelete: (file: string) => void;
 }
 
 interface Folder {
@@ -43,7 +46,7 @@ function FileIcon({ file }: { file: string }) {
 }
 
 /** Дерево файлов шага: папки как в проекте Angular CLI, клик открывает файл во вкладке */
-export function FileTree({ files, active, readonly, onSelect }: Props) {
+export function FileTree({ files, active, readonly, onSelect, onCreate, onRename, onDelete }: Props) {
   const tree = useMemo(() => buildTree(files), [files]);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
@@ -79,7 +82,7 @@ export function FileTree({ files, active, readonly, onSelect }: Props) {
           );
         })}
         {folder.files.map((file) => (
-          <li key={file}>
+          <li key={file} className="tree-item">
             <button
               className={file === active ? 'tree-row tree-file active' : 'tree-row tree-file'}
               style={{ paddingLeft: 8 + depth * 14 + 12 }}
@@ -94,6 +97,7 @@ export function FileTree({ files, active, readonly, onSelect }: Props) {
                 </span>
               )}
             </button>
+            {!readonly.includes(file) && <FileActions file={file} onRename={onRename} onDelete={onDelete} />}
           </li>
         ))}
       </>
@@ -103,6 +107,41 @@ export function FileTree({ files, active, readonly, onSelect }: Props) {
   return (
     <nav className="file-tree" aria-label="Файлы шага">
       <ul>{renderFolder(tree, 0)}</ul>
+      <button className="tree-row tree-add" onClick={onCreate}>
+        + Новый файл
+      </button>
     </nav>
+  );
+}
+
+/** Переименовать и удалить файл: у активной вкладки и у строки дерева */
+export function FileActions({
+  file,
+  onRename,
+  onDelete,
+}: {
+  file: string;
+  onRename: (file: string) => void;
+  onDelete: (file: string) => void;
+}) {
+  return (
+    <span className="file-actions">
+      <button
+        className="file-action"
+        title="Переименовать"
+        aria-label={`Переименовать ${file}`}
+        onClick={() => onRename(file)}
+      >
+        ✎
+      </button>
+      <button
+        className="file-action"
+        title="Удалить файл"
+        aria-label={`Удалить ${file}`}
+        onClick={() => onDelete(file)}
+      >
+        ×
+      </button>
+    </span>
   );
 }

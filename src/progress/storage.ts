@@ -3,8 +3,10 @@ import type { FileMap } from '../content/course';
 const KEY = 'angular-course:v1';
 
 interface StepProgress {
-  /** Текущий код ученика */
+  /** Текущий код ученика: все файлы, включая созданные им */
   code?: FileMap;
+  /** Файлы шага, которые ученик удалил или переименовал: без этого списка они вернулись бы из кода шага */
+  deleted?: string[];
   /** Код ученика до нажатия «Решение» — чтобы его можно было вернуть */
   backup?: FileMap;
   done?: boolean;
@@ -62,8 +64,10 @@ function updateStep(stepId: string, patch: Partial<StepProgress>) {
 
 export const progress = {
   getCode: (stepId: string) => state.steps[stepId]?.code,
-  setCode: (stepId: string, code: FileMap) => updateStep(stepId, { code }),
-  clearCode: (stepId: string) => updateStep(stepId, { code: undefined, backup: undefined }),
+  setCode: (stepId: string, code: FileMap, deleted: string[] = []) =>
+    updateStep(stepId, { code, deleted: deleted.length ? deleted : undefined }),
+  clearCode: (stepId: string) => updateStep(stepId, { code: undefined, deleted: undefined, backup: undefined }),
+  getDeleted: (stepId: string) => state.steps[stepId]?.deleted ?? [],
 
   getBackup: (stepId: string) => state.steps[stepId]?.backup,
   setBackup: (stepId: string, backup: FileMap | undefined) => updateStep(stepId, { backup }),

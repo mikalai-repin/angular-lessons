@@ -1,10 +1,21 @@
 // Проверка интерфейса платформы на демо-магазине шага 1.1: ошибки TypeScript, сборки и Angular в консоли,
-// схлопывание повторов, адресная строка, заголовок вкладки, вкладка «Сеть», ошибка 500 из переключателя.
+// схлопывание повторов, адресная строка, заголовок вкладки, вкладка «Сеть», ошибка 500 из переключателя,
+// создание, переименование и удаление файлов в редакторе.
 // node tools/e2e/checks/platform.mjs
-import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+import { mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { BASE_URL, CONTENT, openCourse, OUT, PROGRESS_KEY, readDir, wait } from '../lib.mjs';
 
-const { page, expect, runWithCode, finish } = await openCourse('/first-app/what-is-angular');
+/** Ответы на window.prompt по очереди (имена новых файлов); confirm и alert принимаются */
+const promptAnswers = [];
+const dialogs = [];
+const { page, expect, runWithCode, finish } = await openCourse('/first-app/what-is-angular', {
+  onDialog: (dialog) => {
+    dialogs.push(`${dialog.type()}: ${dialog.message()}`);
+    return dialog.type() === 'prompt' ? dialog.accept(promptAnswers.shift() ?? '') : dialog.accept();
+  },
+});
 
 // Код ученика с ошибками подкладываем в сохранённый прогресс — так же, как его сохранил бы редактор
 const files = readDir(`${CONTENT}/01-first-app/01-what-is-angular/start`);
@@ -227,6 +238,143 @@ for (const [route, dir, names] of formatCases) {
     const text = saved?.[name] ?? original[name];
     expect(text === original[name], `«Формат» не меняет ${dir}/${name}`);
   }
+}
+
+// Файлы в редакторе: создать, подключить, переименовать, удалить файл шага; «Скачать» и «Сброс» видят новый набор
+{
+  const route = 'first-app/what-is-angular';
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(`${BASE_URL}/${route}`, { waitUntil: 'networkidle0' });
+  await wait(2500);
+  const tabs = () => page.$$eval('.tabs .tab', (els) => els.map((e) => e.textContent.replace('🔒', '').trim()));
+  const activeTab = () => page.$eval('.tabs .tab.active', (e) => e.textContent.trim());
+  const saved = () =>
+    page.evaluate((key, route) => JSON.parse(localStorage.getItem(key) ?? '{}').steps?.[route], PROGRESS_KEY, route);
+  const clickTab = (name) =>
+    page.$$eval('.tabs .tab', (els, name) => els.find((e) => e.textContent.trim() === name)?.click(), name);
+  const stepTabs = await tabs();
+
+  // Неподходящее имя: файл не создаётся, ученик видит причину
+  promptAnswers.push('catalog/bad name.js');
+  await page.click('.tab-add');
+  await wait(300);
+  expect(dialogs.at(-1)?.startsWith('alert: Имя «catalog/bad name.js» не подходит'), 'неподходящее имя файла — alert');
+  expect((await tabs()).length === stepTabs.length, 'файл с неподходящим именем не создан');
+
+  await clickTab('catalog/catalog.ts');
+  await wait(300);
+  promptAnswers.push('catalog/hello.ts');
+  await page.click('.tab-add');
+  await wait(500);
+  expect(dialogs.at(-1)?.startsWith('prompt: Новый файл'), 'имя нового файла — prompt');
+  let list = await tabs();
+  expect(
+    list.includes('catalog/hello.ts') && (await activeTab()) === 'catalog/hello.ts',
+    'новый файл открыт во вкладке',
+  );
+  expect(
+    list.indexOf('catalog/hello.ts') ===
+      list.findLastIndex((t) => t.startsWith('catalog/') && t !== 'catalog/hello.ts') + 1,
+    `новая вкладка — после файлов своей папки (${list.join(', ')})`,
+  );
+  await page.click('.editor-host');
+  await page.keyboard.type("console.log('hello-from-new-file');");
+  await clickTab('main.ts');
+  await wait(300);
+  await page.click('.editor-host');
+  await page.keyboard.down('Meta');
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.up('Meta');
+  await page.keyboard.type("import './catalog/hello';");
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Enter');
+  await page.click('.toolbar .button.primary');
+  await wait(3000);
+  const consoleText = () => page.$$eval('.console-line', (els) => els.map((e) => e.textContent).join('\n'));
+  expect((await consoleText()).includes('hello-from-new-file'), 'новый файл компилируется и выполняется');
+  expect((await saved())?.code?.['catalog/hello.ts']?.includes('hello-from-new-file'), 'новый файл сохранён');
+
+  // После перезагрузки новый файл на месте
+  await page.reload({ waitUntil: 'networkidle0' });
+  await wait(3000);
+  expect((await tabs()).includes('catalog/hello.ts'), 'после перезагрузки новый файл на месте');
+  expect((await consoleText()).includes('hello-from-new-file'), 'после перезагрузки новый файл выполняется');
+
+  // «Скачать»: новый файл в архиве, в src/app/
+  const downloadDir = join(OUT, 'download-new-file');
+  rmSync(downloadDir, { recursive: true, force: true });
+  mkdirSync(downloadDir, { recursive: true });
+  const session = await page.createCDPSession();
+  await session.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadDir });
+  await page.$$eval('.toolbar .button', (els) => els.find((e) => e.textContent === 'Скачать')?.click());
+  let zip;
+  for (let i = 0; i < 40 && !zip; i++) {
+    await wait(250);
+    zip = readdirSync(downloadDir).find((name) => name.endsWith('.zip'));
+  }
+  const zipList = zip ? execSync(`unzip -l "${join(downloadDir, zip)}"`, { encoding: 'utf8' }) : '';
+  expect(zipList.includes('/src/app/catalog/hello.ts'), 'новый файл в архиве «Скачать» — src/app/catalog/hello.ts');
+
+  // Переименование: двойной щелчок по вкладке; импорт в main.ts ученик правит сам
+  await clickTab('catalog/hello.ts');
+  await wait(300);
+  promptAnswers.push('catalog/greeting.ts');
+  await page.$$eval('.tabs .tab', (els) =>
+    els
+      .find((e) => e.textContent.trim() === 'catalog/hello.ts')
+      ?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })),
+  );
+  await wait(1000);
+  list = await tabs();
+  expect(
+    list.includes('catalog/greeting.ts') &&
+      !list.includes('catalog/hello.ts') &&
+      (await activeTab()) === 'catalog/greeting.ts',
+    'файл переименован, вкладка открыта',
+  );
+  let progress = await saved();
+  expect(
+    progress?.code?.['catalog/greeting.ts']?.includes('hello-from-new-file') && !('catalog/hello.ts' in progress.code),
+    'переименование сохранено вместе с кодом',
+  );
+
+  // Удаление файла шага кнопкой у активной вкладки: сборка его больше не находит
+  await clickTab('app.css');
+  await wait(300);
+  await page.click('.tab-group.active .file-action[title="Удалить файл"]');
+  await wait(3000);
+  expect(dialogs.at(-1)?.startsWith('confirm: Удалить файл «app.css»'), 'удаление спрашивает подтверждение');
+  expect(!(await tabs()).includes('app.css'), 'файл шага удалён');
+  expect((await consoleText()).includes('не найден файл «./app.css»'), 'сборка не находит удалённый файл');
+  await page.reload({ waitUntil: 'networkidle0' });
+  await wait(3000);
+  expect(!(await tabs()).includes('app.css'), 'после перезагрузки удалённый файл шага не возвращается');
+  await page.screenshot({ path: `${OUT}/platform-files.png` });
+
+  // «Сброс»: файлы шага как в начале
+  await page.$$eval('.toolbar .button', (els) => els.find((e) => e.textContent === 'Сброс')?.click());
+  await wait(3000);
+  list = await tabs();
+  expect(JSON.stringify(list) === JSON.stringify(stepTabs), '«Сброс» возвращает файлы шага');
+  progress = await saved();
+  expect(!progress?.code && !progress?.deleted, '«Сброс» очищает сохранённый код и список удалённых');
+  expect(!(await consoleText()).includes('не найден файл'), 'после «Сброса» сборка без ошибок');
+
+  // «Решение» (шаг 3.8): ровно файлы шага; «Вернуть мой код» — снова набор ученика
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(`${BASE_URL}/signals/practice`, { waitUntil: 'networkidle0' });
+  await wait(2500);
+  const practiceTabs = await tabs();
+  promptAnswers.push('notes.ts');
+  await page.click('.tab-add');
+  await wait(500);
+  await page.$$eval('.lesson-footer .button', (els) => els.find((e) => e.textContent === 'Решение')?.click());
+  await wait(1500);
+  list = await tabs();
+  expect(JSON.stringify(list) === JSON.stringify(practiceTabs), `«Решение» — ровно файлы шага (${list.join(', ')})`);
+  await page.$$eval('.lesson-footer .button', (els) => els.find((e) => e.textContent.includes('Вернуть'))?.click());
+  await wait(1500);
+  expect((await tabs()).includes('notes.ts'), '«Вернуть мой код» возвращает созданный файл');
 }
 
 await finish();

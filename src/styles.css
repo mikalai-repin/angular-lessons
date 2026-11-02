@@ -804,6 +804,52 @@ button {
   font-size: 11px;
 }
 
+/* Вкладка с кнопками «переименовать» и «удалить» (они есть только у активной) */
+.tab-group {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.tab-group.active {
+  border-bottom: 2px solid var(--accent);
+}
+
+.tab-group.active .tab {
+  border-bottom: 0;
+  padding-right: 4px;
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.file-action {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.file-action:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.editor-header .tab-add {
+  align-self: center;
+  margin: 0 2px;
+  font-size: 18px;
+}
+
 .editor-host {
   flex: 1;
   min-width: 0;
@@ -910,6 +956,35 @@ button {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
+}
+
+/* Строка файла: кнопки «переименовать» и «удалить» видны при наведении и у активного файла */
+.tree-item {
+  position: relative;
+}
+
+.tree-item .file-actions {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  visibility: hidden;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+
+.tree-item:hover .file-actions,
+.tree-item:focus-within .file-actions {
+  visibility: visible;
+}
+
+.tree-item:hover .tree-file {
+  padding-right: 48px;
+}
+
+.tree-add {
+  margin-top: 6px;
+  color: var(--text-muted);
 }
 
 .file-icon {

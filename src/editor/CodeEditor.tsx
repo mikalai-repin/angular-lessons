@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { progress } from '../progress/storage';
-import { FileTree } from './FileTree';
+import { FileActions, FileTree } from './FileTree';
 import { fileOfModel, formatEditor, modelUri, monaco } from './monaco';
 
 /** На узком экране дерево файлов всплывает поверх кода и закрывается после выбора файла */
@@ -12,13 +12,28 @@ interface Props {
   active: string;
   readonly: string[];
   onSelect: (file: string) => void;
+  onCreateFile: () => void;
+  onRenameFile: (file: string) => void;
+  onDeleteFile: (file: string) => void;
   onChange: (file: string, code: string) => void;
   onRun: () => void;
   /** Кнопки в конце полосы вкладок (свернуть панель) */
   actions?: ReactNode;
 }
 
-export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange, onRun, actions }: Props) {
+export function CodeEditor({
+  stepId,
+  files,
+  active,
+  readonly,
+  onSelect,
+  onCreateFile,
+  onRenameFile,
+  onDeleteFile,
+  onChange,
+  onRun,
+  actions,
+}: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   // Колбэки меняются каждый рендер — храним последние в ref, чтобы не пересоздавать подписки
@@ -57,7 +72,8 @@ export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange
     if (!editor || !model || editor.getModel() === model) return;
     editor.setModel(model);
     editor.updateOptions({ readOnly: readonly.includes(active) });
-  }, [stepId, active, readonly]);
+    // Модель файла могла смениться при том же имени: файл удалили и создали заново
+  }, [stepId, active, readonly, files]);
 
   // Файлов в шаге может быть больше, чем помещается в полосу вкладок: активную прокручиваем в видимую область.
   // Ещё раз — когда полоса меняет размер: на узком экране панель кода при входе на шаг скрыта (нулевая ширина)
@@ -66,7 +82,7 @@ export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange
     const tabs = tabsRef.current;
     if (!tabs) return;
     const reveal = () => {
-      const tab = tabs.querySelector<HTMLElement>('.tab.active');
+      const tab = tabs.querySelector<HTMLElement>('.tab-group.active');
       if (!tab || tabs.clientWidth === 0) return;
       if (tab.offsetLeft < tabs.scrollLeft) tabs.scrollLeft = tab.offsetLeft;
       else if (tab.offsetLeft + tab.offsetWidth > tabs.scrollLeft + tabs.clientWidth) {
@@ -77,7 +93,7 @@ export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange
     const observer = new ResizeObserver(reveal);
     observer.observe(tabs);
     return () => observer.disconnect();
-  }, [active]);
+  }, [active, files]);
 
   const [showTree, setShowTree] = useState(() => progress.getFileTree() && !window.matchMedia(NARROW).matches);
 
@@ -106,26 +122,44 @@ export function CodeEditor({ stepId, files, active, readonly, onSelect, onChange
         </button>
         <div className="tabs" role="tablist" ref={tabsRef}>
           {files.map((file) => (
-            <button
-              key={file}
-              role="tab"
-              aria-selected={file === active}
-              className={file === active ? 'tab active' : 'tab'}
-              onClick={() => onSelect(file)}
-            >
-              <TabLabel file={file} />
-              {readonly.includes(file) && (
-                <span className="tab-lock" title="Только для чтения">
-                  🔒
-                </span>
+            <span key={file} className={file === active ? 'tab-group active' : 'tab-group'}>
+              <button
+                role="tab"
+                aria-selected={file === active}
+                className={file === active ? 'tab active' : 'tab'}
+                onClick={() => onSelect(file)}
+                onDoubleClick={() => !readonly.includes(file) && onRenameFile(file)}
+              >
+                <TabLabel file={file} />
+                {readonly.includes(file) && (
+                  <span className="tab-lock" title="Только для чтения">
+                    🔒
+                  </span>
+                )}
+              </button>
+              {file === active && !readonly.includes(file) && (
+                <FileActions file={file} onRename={onRenameFile} onDelete={onDeleteFile} />
               )}
-            </button>
+            </span>
           ))}
         </div>
+        <button className="icon-button tab-add" title="Новый файл" aria-label="Новый файл" onClick={onCreateFile}>
+          +
+        </button>
         {actions}
       </div>
       <div className="editor-body">
-        {showTree && <FileTree files={files} active={active} readonly={readonly} onSelect={selectFromTree} />}
+        {showTree && (
+          <FileTree
+            files={files}
+            active={active}
+            readonly={readonly}
+            onSelect={selectFromTree}
+            onCreate={onCreateFile}
+            onRename={onRenameFile}
+            onDelete={onDeleteFile}
+          />
+        )}
         <div className="editor-host" ref={hostRef} />
       </div>
     </div>
