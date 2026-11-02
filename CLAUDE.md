@@ -13,19 +13,23 @@
 
 Следствие: основы JS/TS и веба не объясняем; всё, что касается Angular (шаблоны, компилятор, сигналы, DI, роутинг, формы, обнаружение изменений), объясняем подробно, с нуля.
 
-## Документация проекта (читать перед работой)
+## Документация проекта
+
+Читайте по задаче, а не всё подряд. Для новой главы — `authoring-process.md`, `writing-guide.md`, `modern-angular.md` и `roadmap.md`; для правок платформы — `architecture.md`; остальное — когда понадобится.
 
 | Файл | Что внутри |
 |---|---|
-| [docs/course-plan.md](docs/course-plan.md) | Программа курса: части, главы, шаги (у написанных глав — фактические), какие API в каком шаге |
+| [docs/course-plan.md](docs/course-plan.md) | Программа курса: части, главы, план главы 22, карта API (шаги написанных глав — `archive/steps.md`) |
 | [docs/project-app.md](docs/project-app.md) | Сквозной проект «Ход конём»: экраны, данные, учебный бэкенд, какая глава что добавляет |
-| [docs/modern-angular.md](docs/modern-angular.md) | **Что верно для Angular 22**: проверенные факты, значения по умолчанию, устаревшие и запрещённые паттерны |
+| [docs/modern-angular.md](docs/modern-angular.md) | **Что верно для Angular 22**: значения по умолчанию, JIT против AOT, запрещённые паттерны (полные факты — `archive/verified-facts.md`) |
 | [docs/architecture.md](docs/architecture.md) | Архитектура платформы: редактор, компиляция в браузере, превью, учебный бэкенд, проверки |
 | [docs/lesson-format.md](docs/lesson-format.md) | Формат урока на диске: папки, frontmatter, start/solution, проверки |
 | [docs/writing-guide.md](docs/writing-guide.md) | Как писать тексты уроков: тон, структура шага, правила для кода |
 | [docs/glossary.md](docs/glossary.md) | Единый русско-английский словарь терминов |
 | [docs/roadmap.md](docs/roadmap.md) | Этапы работы, **текущий статус** и следующий шаг |
 | [docs/authoring-process.md](docs/authoring-process.md) | **Как писать главу**: процесс, обязательные проверки, ловушки |
+| [docs/commands.md](docs/commands.md) | Все команды и проверки |
+| [docs/archive/](docs/archive/) | Справочники: все проверенные факты, ловушки, ошибки черновиков, шаги глав, технический долг. **Не читать целиком** — искать по слову (`grep -n`); что где — в начале `authoring-process.md` |
 
 ## Ключевые решения
 
@@ -64,22 +68,14 @@ tools/authoring/      — steps.py (запись только изменений
 
 ## Команды
 
-- `npm run dev` — платформа на **http://localhost:5180** (5173 и 5174 заняты курсом PixiJS)
-- `npm run validate` — структура уроков, цепочка start/solution, сборка каждого шага и типы кода (после любых правок в `content/`)
-- `npm run step <…/шаг/solution> [папка]` — выгрузить полный код шага (в `content/` шаг хранит только изменения) в `tools/e2e/out/step/`
-- `npm run build` — проверка типов платформы и продакшен-сборка
-- `npx prettier --check .` — форматирование всего кода (`prettier.config.mjs`: код уроков — как кнопка «Формат», настройки в `shared/lesson-prettier.json`; Markdown не форматируется)
-- `python3 tools/authoring/format-content.py [глава…]` — пересобрать код шагов из `content/`: все главы после изменения `shared/lesson-prettier.json`, одну — после правки последнего шага прошлой главы (новый `baseHash`)
-- `npm run reference` — скачать код angular.dev (папка `adev/` на коммите `fb7711f`, релиз v22.2.1) в `reference/angular` для главы 21
-- `npm run covers` — пересоздать SVG-обложки после изменения `public/backend/data/games.json`
-- `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, адрес, текст страницы, скриншот в `tools/e2e/out/`
-- `node tools/e2e/run-tests.mjs <папка шага> [--with <папка>]` — тесты шага (*.spec.ts) в чистом превью; `node tools/e2e/ng-test.mjs <папка шага> [--browser]` — те же тесты в настоящем `ng test` (проект Angular CLI в `tools/e2e/out/cli`, Node 24 через nvm, пакеты NgRx — версий курса)
-- `node tools/e2e/cli-overlay.mjs <папка шага> <проект> [--keep-app]` — код шага поверх проекта `ng new` (как архив «Скачать»); `node tools/e2e/cli-browse.mjs <адрес> [сценарий] [--js-off]` — приложение проекта CLI (`ng serve`, сервер SSR, статика) в Chrome; проект главы 20 для опытов — `tools/e2e/out/ch20/hod-konem` (Node 24 через nvm)
-- `node tools/e2e/ng-build.mjs <папка шага> [--jit] [--dev]` — код шага в настоящей сборке `ng build` (тот же проект CLI), размеры файлов
-- `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в интерфейсе платформы с «Решением»
-- `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент из текста урока со своим сценарием действий
-- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — проверки платформы на демо-магазине шага 1.1 (после любых правок в `src/`, `public/`, `shared/`); `checks/download.mjs [адрес шага]` — кнопка «Скачать» (после правок `src/app/download.ts`, `shared/cli-project.js`, `cli-project/`); `checks/chNN-*.mjs` — проверки глав 2–15, 17–19, 21 (`ch14-auth.mjs` идёт ~2 минуты: ждёт истечения токенов); `tools/e2e/aot-chapter.mjs <глава>` — `ngc --strictTemplates` по полному коду каждого шага главы; `checks/step-checks.mjs [глава…]` — проверки практикумов `check.ts` (старт не проходит, решение проходит); `checks/quiz.mjs` — квиз главы: перемешивание, зачёт 85 %, прогресс, оглавление (после правок в `src/quiz/`); `checks/test-runner.mjs` — отчёт тестов на шагах главы 16, переключатель «Приложение / Тесты», «Проверить» с тестами (после правок раннера и `preview-runtime.js`)
-- Все проверки требуют запущенного `npm run dev` и Chrome (`CHROME_PATH`, по умолчанию путь macOS). Другой адрес — `BASE_URL=http://localhost:5181`
+- `npm run dev` — платформа на **http://localhost:5180** (5173 и 5174 заняты курсом PixiJS); все проверки требуют его и Chrome, другой адрес — `BASE_URL=http://localhost:5181`
+- `npm run validate` — структура уроков, цепочка start/solution, сборка и типы каждого шага (после любых правок в `content/`)
+- `npm run step <…/шаг/solution> [папка]` — полный код шага (в `content/` шаг хранит только изменения)
+- `node tools/e2e/run-dir.mjs <папка шага> [адрес] [мс]` — код шага в чистом превью: консоль, запросы, текст, скриншот; `node tools/e2e/exp.mjs <папка> <сценарий.mjs> [адрес]` — эксперимент со сценарием
+- `node tools/e2e/run-chapter.mjs <папка главы>` — все шаги главы в платформе; `checks/chNN-*.mjs`, `checks/step-checks.mjs`, `aot-chapter.mjs` — проверки главы
+- `node tools/e2e/checks/platform.mjs` и `checks/preview.mjs` — после любых правок в `src/`, `public/`, `shared/`
+
+Остальное (тесты, проект CLI, `ng build`, «Скачать», квиз, форматирование) — в [docs/commands.md](docs/commands.md).
 
 ## Текущий статус
 
@@ -93,7 +89,7 @@ tools/authoring/      — steps.py (запись только изменений
 
 ## Как работать над уроками
 
-1. Найти шаг в `docs/course-plan.md`, проверить, какие API и понятия он вводит и что уже известно ученику из предыдущих шагов.
+1. Найти шаг в `docs/course-plan.md` (план) или `docs/archive/steps.md` (написанные главы), проверить, какие API и понятия он вводит и что уже известно ученику из предыдущих шагов.
 2. Писать по `docs/writing-guide.md`; термины — строго по `docs/glossary.md` (новый термин сначала добавить в словарь).
 3. **Шаг хранит только изменения**: `solution/` и `start/` (только у `startFrom: custom`) — файлы, которые шаг добавил или изменил, у первого шага главы — поверх `base` из прошлой главы. Не копируйте папки шагов напрямую — полный код даёт `npm run step`. Правила — `docs/lesson-format.md`, генератор главы — `docs/authoring-process.md`.
 4. Решение каждого шага должно запускаться без ошибок и давать видимый результат. После правок — `npm run validate`.
