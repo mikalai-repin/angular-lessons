@@ -4,7 +4,7 @@ import { Navigate, useParams } from 'react-router';
 import { findStep, loadChapter, neighbours, nextPath, type FileMap, type LoadedStep } from '../content/course';
 import { CodeEditor } from '../editor/CodeEditor';
 import { fileNameError, normalizeFileName, orderFiles } from '../editor/files';
-import { compileStep } from '../compiler';
+import { checkTemplates, compileStep, type TemplateDiagnostic } from '../compiler';
 import {
   collectDiagnostics,
   disposeModels,
@@ -12,6 +12,7 @@ import {
   formatEditor,
   readModels,
   refreshDiagnostics,
+  setTemplateMarkers,
   syncModels,
 } from '../editor/monaco';
 import { LessonPanel } from '../lesson/LessonPanel';
@@ -62,6 +63,7 @@ function initialFiles(step: LoadedStep): FileMap {
 const deletedOf = (step: LoadedStep, files: FileMap) => Object.keys(step.start).filter((name) => !(name in files));
 
 let runCounter = 0;
+let templateCheckCounter = 0;
 
 function StepWorkspace({ step }: { step: LoadedStep }) {
   const isNarrow = useMediaQuery('(max-width: 900px)');
@@ -97,6 +99,25 @@ function StepWorkspace({ step }: { step: LoadedStep }) {
 
   const { prev } = neighbours(step);
 
+  /**
+   * Проверка шаблонов компилятором AOT: подчёркивания в редакторе и список для консоли превью. Ответ на устаревший
+   * запрос (код успели поменять) подчёркивания не трогает. Проверка не запустилась — подчёркиваний просто нет
+   */
+  const runTemplateCheck = useCallback(
+    async (files: FileMap, list: string[]): Promise<TemplateDiagnostic[]> => {
+      // До главы 20 превью, как и в текстах уроков, шаблоны не проверяет: это делает только JIT при запуске
+      if (!step.chapter.templateCheck) return [];
+      const id = ++templateCheckCounter;
+      const result = await checkTemplates(files).catch((error: Error) => {
+        console.warn('Проверка шаблонов не запустилась:', error);
+        return [];
+      });
+      if (id === templateCheckCounter) setTemplateMarkers(step.id, list, result);
+      return result;
+    },
+    [step],
+  );
+
   /** withCheck: после запуска — проверка шага (check.ts); проверка — всегда в режиме шага (preview из frontmatter) */
   const runCode = useCallback(
     async (withCheck = false) => {
@@ -106,14 +127,17 @@ function StepWorkspace({ step }: { step: LoadedStep }) {
       if (withCheck) modeRef.current = defaultMode;
       const mode = modeRef.current;
       const list = fileListRef.current;
-      // Код компилирует воркер (TypeScript 6 + JIT-трансформ Angular), ошибки типов даёт TS-воркер Monaco
-      const [compiled, diagnostics, checkCode] = await Promise.all([
-        compileStep(readModels(step.id, list), { tests: mode === 'tests' }).catch((error: Error) => ({
+      const files = readModels(step.id, list);
+      // Код компилирует воркер (TypeScript 6 + JIT-трансформ Angular), ошибки типов даёт TS-воркер Monaco,
+      // шаблоны проверяет тот же воркер компиляции компилятором AOT
+      const [compiled, diagnostics, templateDiagnostics, checkCode] = await Promise.all([
+        compileStep(files, { tests: mode === 'tests' }).catch((error: Error) => ({
           files: {},
           styles: [],
           errors: [`Компилятор не запустился: ${error.message}`],
         })),
         collectDiagnostics(step.id, list),
+        runTemplateCheck(files, list),
         withCheck && step.check
           ? compileStep({ 'check.ts': step.check }).then((result) => result.files['check.js'])
           : undefined,
@@ -126,6 +150,7 @@ function StepWorkspace({ step }: { step: LoadedStep }) {
         styles: compiled.styles,
         buildErrors: compiled.errors,
         diagnostics,
+        templateDiagnostics,
         entry: 'main.js',
         id,
         check: checkCode,
@@ -175,12 +200,14 @@ function StepWorkspace({ step }: { step: LoadedStep }) {
         SAVE_DELAY,
       );
 
-      if (autorun) {
-        window.clearTimeout(timers.current.autorun);
-        timers.current.autorun = window.setTimeout(() => runCode(), AUTORUN_DELAY);
-      }
+      window.clearTimeout(timers.current.autorun);
+      // Без автозапуска подчёркивания шаблонов всё равно обновляются после паузы в наборе
+      timers.current.autorun = window.setTimeout(
+        () => (autorun ? runCode() : runTemplateCheck(readModels(step.id, fileListRef.current), fileListRef.current)),
+        AUTORUN_DELAY,
+      );
     },
-    [step, autorun, runCode],
+    [step, autorun, runCode, runTemplateCheck],
   );
 
   /**

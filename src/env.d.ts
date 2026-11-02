@@ -18,6 +18,7 @@ declare module 'virtual:course' {
       description: string;
       part: number;
       hasQuiz: boolean;
+      templateCheck?: boolean;
       steps: { dir: string; meta: StepMeta }[];
     }[];
   };

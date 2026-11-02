@@ -90,15 +90,24 @@
 
 **Ошибки типов** даёт TS-воркер Monaco (`collectDiagnostics` в `src/editor/monaco.ts`) параллельно с компиляцией; они в консоли с меткой `TS` и **не блокируют запуск**.
 
-`StepPage.runCode`: `Promise.all([compileStep(readModels(...)), collectDiagnostics(...)])`; результат устаревшего запуска отбрасывается (если за время компиляции начался следующий).
+`StepPage.runCode`: `Promise.all([compileStep(readModels(...)), collectDiagnostics(...), runTemplateCheck(...)])`; результат устаревшего запуска отбрасывается (если за время компиляции начался следующий).
+
+### Проверка шаблонов AOT (с главы 20)
+
+**`shared/template-check.js`** (+ `.d.ts`) — `createTemplateChecker(ts, { NgtscProgram, setFileSystem }, libraries)`: компилятор AOT `ngtsc` поверх файлов в памяти. Файлы шага лежат в `/app/`, типы библиотек — в `/node_modules/`; для `ngtsc` — своя файловая система (`MemoryFileSystem`, интерфейс `FileSystem` из `@angular/compiler-cli`), для TypeScript — свой `CompilerHost`. Настройки — как в `tsconfig.content.json` (`strictTemplates` и остальное, что даёт `ng new`). Наружу идёт только диагностика Angular — `getNgStructuralDiagnostics` + `getNgSemanticDiagnostics`: ошибки типов в шаблонах (`TS2339` с местом в `.html`), `NG8001`/`NG8002`, расширенная диагностика `NG81xx`, ошибки метаданных `@Component`. Обычные ошибки TypeScript показывает Monaco, поэтому дублей нет. Разобранные `.d.ts` и прошлая программа переиспользуются: магазин главы 21 (146 файлов) — первая проверка ~0,5 с, следующие ~0,2 с.
+
+- Воркер — тот же `compile.worker.ts`, сообщение `check-templates` (клиент — `checkTemplates(files)` в `src/compiler/index.ts`). `ts-angular.mjs` экспортирует ещё `NgtscProgram` и `setFileSystem` (+0,6 МБ, +0,15 МБ gzip); `process.hrtime` для трекера производительности `ngtsc` даёт `scripts/process-stub.mjs` (esbuild `inject` — только внутри бандла). Типы — `/vendor/template-types.json` (385 файлов: `.d.ts` пакетов Angular, NgRx, RxJS, Standard Schema и `lib.*.d.ts` для ES2022 и DOM; 5,3 МБ, 0,9 МБ gzip), грузится при первой проверке.
+- Включается флагом главы `templateCheck` в `chapter.json` (главы 20–22). Тексты глав 1–19 построены на том, что превью ошибок шаблонов не видит («превью ничего не заметит, а `ng build`…»), поэтому там проверки нет; вводит её подсказка в шаге 20.4.
+- `StepPage.runTemplateCheck` — при запуске (вместе с компиляцией), а без автозапуска — через `AUTORUN_DELAY` после правки. Результат — маркеры владельца `angular` в Monaco (`setTemplateMarkers`, источник «Angular») и строки с меткой **AOT** в консоли превью. Ответ на устаревший запрос маркеры не трогает.
+- Проверка — `checks/platform.mjs`: на шаге 1.1 строк AOT нет, на 20.4 опечатка `titel` даёт `TS2551` с меткой AOT. На стартах и решениях всех шагов замечания AOT есть только у 1.6 (намеренно сломанный старт, глава без проверки) и `NG8113` у стартов 17.4 и 17.8.
 
 ### Почему не WebContainers и не AOT в браузере
 
 | Вариант | Плюсы | Минусы | Решение |
 |---|---|---|---|
-| **JIT в браузере** (выбран) | Быстро (десятки мс), офлайн, переиспользуется превью PixiJS | Нет проверки типов в шаблонах; ошибки шаблонов — во время выполнения; нет SSR, CLI, `ng test` | Основной путь. Недостающее — в части 3 на машине ученика |
+| **JIT в браузере** (выбран) | Быстро (десятки мс), офлайн, переиспользуется превью PixiJS | Нет проверки типов в шаблонах (с главы 20 её даёт проверка AOT в воркере); ошибки шаблонов — во время выполнения; нет SSR, CLI, `ng test` | Основной путь. Недостающее — в части 3 на машине ученика |
 | WebContainers (как angular.dev) | Настоящий `ng serve` | Холодный старт десятки секунд; COOP/COEP; лицензия; CLI 22 требует Node 22+ | Не используем |
-| AOT (`ngtsc`) в воркере | Ошибки шаблонов как в CLI | Тяжелее; нужна виртуальная ФС с `.d.ts` | **План** — только для проверки шаблонов (этап 5) |
+| AOT (`ngtsc`) в воркере | Ошибки шаблонов как в CLI | +0,15 МБ gzip к компилятору и 0,9 МБ типов; своя ФС в памяти | Только для **проверки** шаблонов, с главы 20 (см. выше); запуск остаётся JIT |
 
 ## Vendor: `scripts/copy-vendor.mjs`
 
@@ -108,7 +117,8 @@
 - `public/vendor/ngrx/<пакет>/*.mjs` — то же для пакетов NgRx (`NGRX_PACKAGES`, глава 18): раскладка `fesm2022` + `exports` такая же, как у Angular, — копирует одна функция `copyPackage`. Типы для редактора — те же пять пакетов в `src/editor/monaco.ts` (заглушки подпутей строит общий код);
 - `public/vendor/angular/common/locales/{ru,en}.mjs` — локали для пайпов (глава 7);
 - `public/vendor/rxjs.mjs` — RxJS одним файлом (esbuild);
-- `public/vendor/ts-angular.mjs` — TypeScript 6 + трансформ для воркера: esbuild, `platform: browser`, модули Node (`fs`, `path`, `module`, `url`, `os`, `crypto`, `process`, `util`) заменены заглушкой `scripts/node-stub.mjs`. ~4 МБ (1,2 МБ gzip). Пересобирается только при смене версий TypeScript/compiler-cli (метка `ts-angular.stamp.json`);
+- `public/vendor/ts-angular.mjs` — TypeScript 6 + трансформ и `ngtsc` (`NgtscProgram`, `setFileSystem`) для воркера: esbuild, `platform: browser`, модули Node (`fs`, `path`, `module`, `url`, `os`, `crypto`, `process`, `util`) заменены заглушкой `scripts/node-stub.mjs`, глобальный `process` — `scripts/process-stub.mjs`. ~4,8 МБ (1,35 МБ gzip). Пересобирается только при смене версий TypeScript/compiler-cli или поля `bundle` (метка `ts-angular.stamp.json`);
+- `public/vendor/template-types.json` — типы для проверки шаблонов (`shared/template-check.js`);
 - `public/vendor/zone.mjs` — `zone.js/fesm2015/zone.js` (0.16.3) и запись `zone.js` в import map: глава 19 подключает зону строкой `import 'zone.js'` в `main.ts`; без импорта файл не грузится. Типы для редактора — `zone.d.ts` и `lib/*.d.ts` в `src/editor/monaco.ts`;
 - `public/vendor/es-module-lexer.js`;
 - **`public/preview.html`** — из `scripts/preview.template.html` с import map. Карта строится по полю `exports` в `package.json` пакетов (39 записей, из них 12 — NgRx): новые подпути при обновлении Angular попадут в неё сами. `rxjs/operators` указывает на тот же `rxjs.mjs` (в RxJS 7 операторы экспортируются и из корня).

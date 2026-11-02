@@ -1531,7 +1531,8 @@ button {
   background: var(--warning-soft);
 }
 
-.console-ts {
+.console-ts,
+.console-aot {
   color: var(--warning);
 }
 
@@ -1554,6 +1555,11 @@ button {
 
 .console-build .console-badge {
   background: var(--error);
+}
+
+/* Замечания компилятора AOT (проверка шаблонов, src/compiler) — цветом щита Angular */
+.console-aot .console-badge {
+  background: #dd0031;
 }
 
 .console-line a {

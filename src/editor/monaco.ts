@@ -3,6 +3,7 @@ import EditorWorker from 'monaco-editor/editor/editor.worker.js?worker';
 import CssWorker from 'monaco-editor/language/css/css.worker.js?worker';
 import HtmlWorker from 'monaco-editor/language/html/html.worker.js?worker';
 import TsWorker from 'monaco-editor/language/typescript/ts.worker.js?worker';
+import type { TemplateDiagnostic } from '../compiler';
 import type { FileMap } from '../content/course';
 import { angularHtmlLanguage, defineCourseThemes } from './angular-html';
 import lessonPrettier from '../../shared/lesson-prettier.json';
@@ -258,12 +259,19 @@ export async function collectDiagnostics(stepId: string, files: string[]): Promi
     const uri = modelUri(stepId, file);
     const model = monaco.editor.getModel(uri);
     if (!model) continue;
-    const worker = await getWorker(uri);
     const name = uri.toString();
-    const [syntactic, semantic] = await Promise.all([
-      worker.getSyntacticDiagnostics(name),
-      worker.getSemanticDiagnostics(name),
-    ]);
+    let syntactic, semantic;
+    try {
+      const worker = await getWorker(uri);
+      [syntactic, semantic] = await Promise.all([
+        worker.getSyntacticDiagnostics(name),
+        worker.getSemanticDiagnostics(name),
+      ]);
+    } catch (error) {
+      // Пока ждали воркер, ученик ушёл на другой шаг и модель удалена — её ошибки уже никому не нужны
+      if (model.isDisposed()) continue;
+      throw error;
+    }
     for (const diagnostic of [...syntactic, ...semantic]) {
       const position = model.getPositionAt(diagnostic.start ?? 0);
       result.push({
@@ -277,6 +285,30 @@ export async function collectDiagnostics(stepId: string, files: string[]): Promi
     }
   }
   return result;
+}
+
+/**
+ * Замечания компилятора AOT к шаблонам (src/compiler, checkTemplates) — подчёркивания с источником «Angular»
+ * в моделях шага. Свой владелец маркеров ('angular'): ошибки TypeScript от воркера Monaco они не трогают
+ */
+export function setTemplateMarkers(stepId: string, files: string[], diagnostics: TemplateDiagnostic[]) {
+  for (const file of files) {
+    const model = monaco.editor.getModel(modelUri(stepId, file));
+    if (!model) continue;
+    const markers = diagnostics
+      .filter((d) => d.file === file)
+      .map((d) => ({
+        severity: d.severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+        startLineNumber: d.line,
+        startColumn: d.column,
+        endLineNumber: d.endLine,
+        endColumn: Math.max(d.endColumn, d.column + 1),
+        message: d.message,
+        code: d.code,
+        source: 'Angular',
+      }));
+    monaco.editor.setModelMarkers(model, 'angular', markers);
+  }
 }
 
 /** Форматирует файл, открытый в редакторе. Без редактора берёт первый на странице (кнопка «Формат») */

@@ -2,14 +2,15 @@
 //   public/vendor/angular/<пакет>/  — ESM-файлы пакетов Angular (fesm2022) как есть;
 //   public/vendor/ngrx/<пакет>/     — то же для пакетов NgRx (глава 18);
 //   public/vendor/rxjs.mjs          — RxJS одним файлом (в пакете сотни модулей);
-//   public/vendor/ts-angular.mjs    — TypeScript + JIT-трансформ из @angular/compiler-cli для воркера компиляции;
+//   public/vendor/ts-angular.mjs    — TypeScript + JIT-трансформ и ngtsc из @angular/compiler-cli для воркера компиляции;
+//   public/vendor/template-types.json — .d.ts для проверки шаблонов в этом воркере (shared/template-check.js);
 //   public/vendor/vitest.mjs        — API Vitest для тестов в превью (vendor-src/vitest.mjs + @vitest/expect, chai, @vitest/spy);
 //   public/vendor/zone.mjs          — zone.js для шага о нём (глава 19);
 //   public/vendor/es-module-lexer.js;
 //   public/preview.html             — из scripts/preview.template.html с import map, построенной по полю
 //                                     `exports` пакетов: при обновлении Angular новые подпути попадут в карту сами.
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSync } from 'esbuild';
 
@@ -96,16 +97,22 @@ copyFileSync(resolve(root, 'node_modules/es-module-lexer/dist/lexer.js'), resolv
 const versions = {
   typescript: readJson('node_modules/typescript/package.json').version,
   compilerCli: readJson('node_modules/@angular/compiler-cli/package.json').version,
+  // Что входит в сборку: поменялся состав экспорта — поднять номер
+  bundle: 2,
 };
 const stampPath = resolve(out, 'ts-angular.stamp.json');
 const stamp = existsSync(stampPath) ? readFileSync(stampPath, 'utf8') : '';
 if (stamp !== JSON.stringify(versions) || !existsSync(resolve(out, 'ts-angular.mjs'))) {
-  // compiler-cli рассчитан на Node: модули Node, которые ему не нужны для трансформа, заменяем заглушкой
+  // compiler-cli рассчитан на Node: модули Node, которые ему не нужны для трансформа и проверки шаблонов (файлы
+  // ngtsc читает через свою файловую систему в памяти), заменяем заглушкой
   const stub = resolve(root, 'scripts/node-stub.mjs');
   buildSync({
     stdin: {
-      contents:
-        "import ts from 'typescript';\nimport { angularJitApplicationTransform } from '@angular/compiler-cli';\nexport { ts, angularJitApplicationTransform };",
+      contents: [
+        "import ts from 'typescript';",
+        "import { angularJitApplicationTransform, NgtscProgram, setFileSystem } from '@angular/compiler-cli';",
+        'export { ts, angularJitApplicationTransform, NgtscProgram, setFileSystem };',
+      ].join('\n'),
       resolveDir: root,
     },
     bundle: true,
@@ -113,6 +120,7 @@ if (stamp !== JSON.stringify(versions) || !existsSync(resolve(out, 'ts-angular.m
     platform: 'browser',
     minify: true,
     alias: Object.fromEntries(['fs', 'path', 'module', 'url', 'os', 'crypto', 'process', 'util'].map((m) => [m, stub])),
+    inject: [resolve(root, 'scripts/process-stub.mjs')],
     outfile: resolve(out, 'ts-angular.mjs'),
     logLevel: 'error',
   });
@@ -121,6 +129,36 @@ if (stamp !== JSON.stringify(versions) || !existsSync(resolve(out, 'ts-angular.m
     `[vendor] собран ts-angular.mjs (TypeScript ${versions.typescript}, compiler-cli ${versions.compilerCli})`,
   );
 }
+
+// Типы для проверки шаблонов в воркере (shared/template-check.js): .d.ts и package.json пакетов, которые может
+// импортировать код ученика, и lib.*.d.ts TypeScript для es2022 и DOM. Путь — от node_modules/
+const TEMPLATE_TYPE_PACKAGES = [
+  ...ANGULAR_PACKAGES.filter((name) => name !== 'compiler').map((name) => `@angular/${name}`),
+  ...NGRX_PACKAGES.map((name) => `@ngrx/${name}`),
+  'rxjs',
+  '@standard-schema/spec',
+];
+const templateTypes = {};
+const addTypes = (dir, keep) => {
+  for (const entry of readdirSync(resolve(root, 'node_modules', dir), { recursive: true, withFileTypes: true })) {
+    const path = relative(resolve(root, 'node_modules'), join(entry.parentPath, entry.name));
+    if (entry.isFile() && keep(path)) templateTypes[path] = readFileSync(resolve(root, 'node_modules', path), 'utf8');
+  }
+};
+for (const name of TEMPLATE_TYPE_PACKAGES) {
+  addTypes(name, (path) => {
+    if (path.includes('/node_modules/')) return false;
+    if (path === `${name}/package.json`) return true;
+    // Локали — только те, что есть в превью (LOCALES); у rxjs — только dist/types
+    if (path.startsWith('@angular/common/locales/')) return LOCALES.some((locale) => path.endsWith(`/${locale}.d.ts`));
+    if (name === 'rxjs' && !path.startsWith('rxjs/dist/types/')) return false;
+    return path.endsWith('.d.ts');
+  });
+}
+addTypes('typescript/lib', (path) =>
+  /\/lib\.(es5|es20(1[5-9]|2[0-2])(\.\w+)*|dom(\.\w+)*|decorators(\.\w+)*)\.d\.ts$/.test(path),
+);
+writeFileSync(resolve(out, 'template-types.json'), JSON.stringify(templateTypes));
 
 const template = readFileSync(resolve(root, 'scripts/preview.template.html'), 'utf8');
 const importMapJson = JSON.stringify({ imports: importMap }, null, 2).replace(/\n/g, '\n    ');

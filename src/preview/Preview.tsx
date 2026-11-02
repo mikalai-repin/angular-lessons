@@ -1,13 +1,14 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { BackendConfig, FileMap } from '../content/course';
 import { Loader } from '../app/Loader';
+import type { TemplateDiagnostic } from '../compiler';
 import type { Diagnostic } from '../editor/monaco';
 import { TemplatePanel, TreePanel, type TemplateItem, type TreeNode } from './Inspector';
 import { TestReport, TestSummary, applyTestEvent, emptyTestRun, type TestEvent } from './TestReport';
 
 export interface ConsoleEntry {
   id: number;
-  level: 'log' | 'info' | 'warn' | 'error' | 'debug' | 'ts' | 'build';
+  level: 'log' | 'info' | 'warn' | 'error' | 'debug' | 'ts' | 'aot' | 'build';
   text: string;
   /** Сколько раз подряд пришло то же сообщение (Angular повторяет ошибку для каждого элемента @for) */
   count: number;
@@ -36,6 +37,8 @@ export interface PreviewRun {
   id: number;
   /** Ошибки TypeScript: показываем их в консоли, но код всё равно запускаем */
   diagnostics: Diagnostic[];
+  /** Замечания компилятора AOT к шаблонам (как в `ng build`): тоже только показываем */
+  templateDiagnostics: TemplateDiagnostic[];
   /** Ошибки сборки: не найден файл шаблона, синтаксис */
   buildErrors: string[];
   /** Проверка шага (скомпилированный check.ts): приложение запускается с начального адреса шага, затем проверка */
@@ -153,6 +156,12 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
         id: nextEntryId++,
         level: 'ts' as const,
         text: `${d.file}:${d.line}:${d.column} — ${d.message}`,
+        count: 1,
+      })),
+      ...run.templateDiagnostics.map((d) => ({
+        id: nextEntryId++,
+        level: 'aot' as const,
+        text: `${d.file}:${d.line}:${d.column} — ${d.code}: ${d.message}`,
         count: 1,
       })),
     ]);
@@ -448,6 +457,11 @@ export function Preview({ run, initialUrl, backend, actions, onCheckResult, onMo
                 <pre key={entry.id} className={`console-line console-${entry.level}`}>
                   {entry.count > 1 && <span className="console-count">{entry.count}</span>}
                   {entry.level === 'ts' && <span className="console-badge">TS</span>}
+                  {entry.level === 'aot' && (
+                    <span className="console-badge" title="Проверка шаблонов компилятором AOT — как в ng build">
+                      AOT
+                    </span>
+                  )}
                   {entry.level === 'build' && <span className="console-badge">Сборка</span>}
                   {linkify(entry.text)}
                 </pre>

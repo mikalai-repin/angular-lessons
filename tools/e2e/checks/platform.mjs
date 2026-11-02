@@ -1,6 +1,6 @@
 // Проверка интерфейса платформы на демо-магазине шага 1.1: ошибки TypeScript, сборки и Angular в консоли,
 // схлопывание повторов, адресная строка, заголовок вкладки, вкладка «Сеть», ошибка 500 из переключателя,
-// создание, переименование и удаление файлов в редакторе.
+// создание, переименование и удаление файлов в редакторе; проверка шаблонов AOT с главы 20 (на шаге 20.4).
 // node tools/e2e/checks/platform.mjs
 import { execSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
@@ -46,6 +46,8 @@ expect(
   ),
   'код NG0303 — ссылка на angular.dev/errors',
 );
+// Неизвестный элемент `app-game-crad` AOT отметил бы как NG8001, но до главы 20 шаблоны проверяет только JIT
+expect(!consoleLines.some((l) => l.cls.includes('console-aot')), 'до главы 20 проверки шаблонов AOT нет');
 await page.screenshot({ path: `${OUT}/platform-errors.png` });
 
 // Тот же шаг без ошибок: адресная строка и сеть
@@ -388,6 +390,20 @@ for (const [route, dir, names] of formatCases) {
   await page.$$eval('.lesson-footer .button', (els) => els.find((e) => e.textContent.includes('Вернуть'))?.click());
   await wait(1500);
   expect((await tabs()).includes('notes.ts'), '«Вернуть мой код» возвращает созданный файл');
+}
+
+// Проверка шаблонов компилятором AOT (chapter.json: templateCheck) — опечатка из опыта 19.6 на шаге 20.4
+{
+  const strict = readDir(`${CONTENT}/20-real-project/04-strict-templates/start`);
+  const card = 'shared/game-card/game-card.html';
+  strict[card] = strict[card].replace('game().title', 'game().titel');
+  await runWithCode('real-project/strict-templates', strict, 6000);
+  consoleLines = await lines();
+  expect(
+    has('console-aot', `${card}:`) && has('console-aot', "TS2551: Property 'titel' does not exist on type 'Game'"),
+    'AOT: опечатка в шаблоне — строка с меткой AOT в консоли превью',
+  );
+  expect(!consoleLines.some((l) => l.cls.includes('console-ts')), 'AOT: ошибка шаблона не дублируется меткой TS');
 }
 
 await finish();

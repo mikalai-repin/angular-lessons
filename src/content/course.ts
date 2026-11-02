@@ -66,6 +66,8 @@ export interface Chapter {
   steps: Step[];
   /** Есть ли у главы квиз (quiz.yaml в папке главы); глава пройдена, когда квиз сдан */
   hasQuiz: boolean;
+  /** Проверять ли шаблоны компилятором AOT в редакторе (`templateCheck` в chapter.json; с главы 20) */
+  templateCheck: boolean;
 }
 
 export interface ChapterContent {
@@ -147,6 +149,7 @@ function loadCourse(): Course {
       description: info.description,
       part: info.part,
       hasQuiz: info.hasQuiz,
+      templateCheck: Boolean(info.templateCheck),
       steps: [],
     };
     chapter.steps = info.steps.map(({ dir, meta }, index) => ({
