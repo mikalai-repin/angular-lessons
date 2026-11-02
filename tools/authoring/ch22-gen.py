@@ -1216,10 +1216,17 @@ S3 = edit(
     ),
 )
 
+# ---------- 22.4 Вариант В: своё приложение ----------
+# Делается в проекте Angular CLI, в превью кода нет. Старт — снова магазин главы 21 без образцов А и Б:
+# «Скачать» на этом шаге даёт чистый магазин.
+
+S4 = S1
+
 steps = {
     '01-choose-project': {'start': S1},
     '02-compare-wishlist': {'start': S2_START, 'solution': S2},
     '03-gift-box': {'start': S3_START, 'solution': S3},
+    '04-own-app': {'start': S4},
 }
 
 
