@@ -109,7 +109,7 @@ export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = (page) =>
 1. Допишите `Confirmation.ask` по четырём шагам: создать (`createComponent` с `inputBinding` и `outputBinding`), положить хост-элемент в `body`, `attachView`, после ответа — `resolve` и `destroy`.
 2. В `AdminGames` — `remove(game)`: `DELETE /api/games/:id` и запись в журнал.
 3. В таблице — колонка «Удалить» (заголовок `visually-hidden` «Действия», кнопка `.link-button` с `aria-label`) и метод `remove`: спросить, удалить, перезагрузить ресурс. Не забудьте `colspan="4"` у «Ничего не найдено».
-4. В `admin/admin-guards.ts` — `HasUnsavedChanges` и `unsavedChangesGuard`. У `GameEdit` — `hasUnsavedChanges()` и `reset()` после сохранения; у маршрута `:id` — `canDeactivate`.
+4. Создайте `admin/admin-guards.ts` с `HasUnsavedChanges` и `unsavedChangesGuard`. У `GameEdit` — `hasUnsavedChanges()` и `reset()` после сохранения; у маршрута `:id` — `canDeactivate`.
 :::
 
 ## Что получилось

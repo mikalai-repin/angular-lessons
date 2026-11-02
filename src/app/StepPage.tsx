@@ -38,25 +38,25 @@ export function StepPage() {
 }
 
 /**
- * Все файлы шага: код из base, а где он есть — из стартового кода. Файлы шага, которых нет в base и start
- * (только в решении), ученик видит уже готовыми; deleted — файлы, которые ученик удалил или переименовал
+ * Стартовые файлы шага: код из base, а где его нет — из старта; deleted — файлы, которые ученик удалил
+ * или переименовал. Файлы, которые есть только в решении, ученик создаёт сам — на старте их нет
  */
-function stepFiles(step: Step, base: FileMap = {}, deleted: string[] = []): FileMap {
+function startFiles(step: Step, base: FileMap = {}, deleted: string[] = []): FileMap {
   const files: FileMap = {};
   for (const name of step.fileOrder) {
-    if (!deleted.includes(name)) files[name] = base[name] ?? step.start[name] ?? step.solution[name] ?? '';
+    if (name in step.start && !deleted.includes(name)) files[name] = base[name] ?? step.start[name];
   }
   return files;
 }
 
-/** Сохранённый код ученика, дополненный файлами, которые появились в шаге позже, и созданными им файлами */
+/** Сохранённый код ученика, дополненный файлами, которые появились в старте шага позже, и созданными им файлами */
 function initialFiles(step: Step): FileMap {
   const saved = progress.getCode(step.id) ?? {};
-  return { ...stepFiles(step, saved, progress.getDeleted(step.id)), ...saved };
+  return { ...startFiles(step, saved, progress.getDeleted(step.id)), ...saved };
 }
 
-/** Удалённые файлы шага: те, которых нет в коде ученика */
-const deletedOf = (step: Step, files: FileMap) => step.fileOrder.filter((name) => !(name in files));
+/** Удалённые файлы старта: те, которых нет в коде ученика */
+const deletedOf = (step: Step, files: FileMap) => Object.keys(step.start).filter((name) => !(name in files));
 
 let runCounter = 0;
 
@@ -249,7 +249,7 @@ function StepWorkspace({ step }: { step: Step }) {
 
   function onReset() {
     if (!window.confirm('Вернуть стартовый код шага? Ваши изменения пропадут.')) return;
-    replaceFiles(stepFiles(step));
+    replaceFiles(startFiles(step));
     progress.clearCode(step.id);
     setHasBackup(false);
   }
@@ -258,9 +258,8 @@ function StepWorkspace({ step }: { step: Step }) {
     if (!window.confirm('Показать решение? Ваш код сохранится, его можно будет вернуть.')) return;
     progress.setBackup(step.id, filesRef.current);
     setHasBackup(true);
-    // Решение — это файлы шага: созданные учеником файлы убираются (они остаются в сохранённом коде ученика),
-    // удалённые возвращаются; файлы, которых решение не меняет, остаются как у ученика
-    replaceFiles(stepFiles(step, { ...filesRef.current, ...step.solution }));
+    // Решение — ровно его файлы: созданные учеником убираются (они остаются в копии его кода), удалённые возвращаются
+    replaceFiles({ ...step.solution });
   }
 
   function onRestoreBackup() {

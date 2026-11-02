@@ -1,7 +1,7 @@
 ---
 title: 'Вариант Б: подарочный набор'
 startFrom: custom
-removedInStart: [compare/compare-page.css, compare/compare-page.html, compare/compare-page.ts, core/compare-store.ts, wishlist/wishlist-page.html, wishlist/wishlist-page.ts]
+removedInStart: [compare/compare-page.css, compare/compare-page.html, compare/compare-page.ts, core/compare-store.ts, core/games-by-ids.ts, wishlist/wishlist-page.html, wishlist/wishlist-page.ts]
 focus: gift/gift-store.ts
 url: /gift
 api: [мастер, форма в сервисе, гарды шагов, Signal Forms, POST /api/orders]

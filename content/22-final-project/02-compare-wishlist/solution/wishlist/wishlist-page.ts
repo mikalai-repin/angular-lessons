@@ -1,19 +1,7 @@
 import { Component, inject, input } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import {
-  HttpClient,
-  HttpErrorResponse,
-} from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import {
-  Observable,
-  catchError,
-  forkJoin,
-  map,
-  of,
-  throwError,
-} from 'rxjs';
-import { Game } from '../core/models';
+import { GamesByIds } from '../core/games-by-ids';
 import { SHOP_CONFIG } from '../core/shop-config';
 import { GameCard } from '../shared/game-card/game-card';
 
@@ -30,34 +18,18 @@ export class WishlistPage {
   readonly ids = input<number[], string | undefined>([], {
     transform: toIds,
   });
-  private readonly http = inject(HttpClient);
+  private readonly gamesByIds = inject(GamesByIds);
   protected readonly priorityCovers =
     inject(SHOP_CONFIG).priorityCovers;
 
-  // Игры по списку id — как в FavoritesPage: запрос на каждую, пропавшие из каталога (404) — пропускаем
+  // Игры по списку id — тем же сервисом, что и избранное
   protected readonly games = rxResource({
     params: () => {
       const ids = this.ids();
       return ids.length > 0 ? ids : undefined;
     },
-    stream: ({ params }) =>
-      forkJoin(params.map((id) => this.loadGame(id))).pipe(
-        map((games) => games.filter((game) => game !== null)),
-      ),
+    stream: ({ params }) => this.gamesByIds.load(params),
   });
-
-  private loadGame(id: number): Observable<Game | null> {
-    return this.http
-      .get<Game>(`/api/games/${id}`)
-      .pipe(
-        catchError((error: unknown) =>
-          error instanceof HttpErrorResponse &&
-          error.status === 404
-            ? of(null)
-            : throwError(() => error),
-        ),
-      );
-  }
 }
 
 // '3,7,abc,3' → [3, 7]
