@@ -1,0 +1,22 @@
+/* Шаги мастера в строку: «1. Игры  2. Упаковка  3. Оформление» */
+.steps {
+  display: flex;
+  gap: 24px;
+  margin: 0 0 12px;
+  padding: 0 0 0 18px;
+  border-bottom: 1px solid #d2d2d7;
+  font-size: 14px;
+}
+
+.steps a {
+  display: inline-block;
+  padding: 6px 0;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+/* Текущий шаг: класс active ставит routerLinkActive */
+.steps a.active {
+  border-bottom: 2px solid var(--brand);
+  color: var(--text);
+}

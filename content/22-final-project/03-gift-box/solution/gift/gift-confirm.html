@@ -1,0 +1,59 @@
+@if (orderId(); as id) {
+  <h2>Набор №{{ id }} оформлен</h2>
+  <p>Спасибо! Соберём набор и свяжемся с вами.</p>
+  <a routerLink="/gift">Собрать ещё один</a>
+} @else {
+  @let box = gift.form;
+  <a class="back-link" routerLink="/gift/design">← Назад</a>
+  <ul>
+    @for (game of gift.games(); track game.id) {
+      <li>{{ game.title }} — {{ game.price | price }}</li>
+    }
+  </ul>
+  <p>
+    Упаковка: {{ gift.wrapping().title }}<br />
+    Кому: {{ box.design.recipient().value() }}
+  </p>
+  @if (box.design.message().value(); as message) {
+    <blockquote class="muted">{{ message }}</blockquote>
+  }
+  <p>
+    Итого: <b>{{ gift.total() | price }}</b>
+  </p>
+  <!-- FormRoot отменяет отправку браузером; отправляет send() -->
+  <form [formRoot]="box" (submit)="send()">
+    <label class="field">
+      Имя
+      <input
+        autocomplete="name"
+        [formField]="box.contacts.name"
+      />
+      <app-field-errors [field]="box.contacts.name" />
+    </label>
+    <label class="field">
+      Телефон
+      <input
+        type="tel"
+        autocomplete="tel"
+        placeholder="+7 900 123-45-67"
+        [formField]="box.contacts.phone"
+      />
+      <app-field-errors [field]="box.contacts.phone" />
+    </label>
+    <label class="field">
+      E-mail
+      <input
+        type="email"
+        autocomplete="email"
+        [formField]="box.contacts.email"
+      />
+      <app-field-errors [field]="box.contacts.email" />
+    </label>
+    @for (error of box().errors(); track error.kind) {
+      <p class="error-message">{{ error.message }}</p>
+    }
+    <button class="button" [disabled]="box().submitting()">
+      {{ box().submitting() ? 'Оформляем…' : 'Оформить набор' }}
+    </button>
+  </form>
+}

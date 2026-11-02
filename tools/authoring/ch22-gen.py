@@ -509,9 +509,717 @@ S2 = edit(
     ),
 )
 
+# ---------- 22.3 Вариант Б: подарочный набор ----------
+# Старт — снова магазин главы 21 (решение А сюда не попадает) и заготовки файлов мастера.
+# Образец: модель и форма набора — в сервисе GiftStore (шаги — разные страницы, набор один),
+# правила — схема giftSchema (minLength/maxLength у массива игр, contactsSchema из оформления),
+# шаги — дочерние маршруты /gift/games, /gift/design, /gift/confirm с гардами по валидности частей формы,
+# «Далее» — markAsTouched части и переход, если она валидна; оформление — submit() всей формы и POST /api/orders
+
+S3_START = put(
+    S1,
+    **{
+        'gift/gift-schema.ts': """// Подарочный набор: типы данных и правила формы мастера
+// TODO: модель набора — игры (шаг 1), упаковка и открытка (шаг 2), контакты покупателя (шаг 3)
+// TODO: схема правил: от 2 до 4 игр, «Кому» обязательно, открытка — не длиннее 200 символов
+""",
+        'gift/gift-store.ts': """import { Service } from '@angular/core';
+
+// Набор, который собирают в мастере. Шаги мастера — разные страницы, а набор один
+@Service()
+export class GiftStore {
+  // TODO: модель набора и форма; сумма набора; положить и убрать игру; оформить набор
+}
+""",
+        'gift/gift-guards.ts': """// Гарды шагов мастера: на шаг дальше — только когда готовы предыдущие
+// TODO: /gift/design — только с выбранными играми, /gift/confirm — ещё и с заполненной упаковкой и открыткой
+""",
+        'gift/gift.routes.ts': """import { Routes } from '@angular/router';
+
+// Маршруты мастера: /gift/games, /gift/design, /gift/confirm. Путь '' — относительно /gift
+export const giftRoutes: Routes = [
+  // TODO: страница-рамка мастера и три шага — дочерние маршруты; /gift ведёт на первый шаг
+];
+""",
+        'gift/gift-layout.ts': """import { Component } from '@angular/core';
+
+// Рамка мастера: заголовок, список шагов и место для страницы шага
+@Component({
+  selector: 'app-gift-layout',
+  templateUrl: './gift-layout.html',
+  styleUrl: './gift-layout.css',
+})
+export class GiftLayout {}
+""",
+        'gift/gift-layout.html': """<!-- TODO: заголовок «Подарочный набор», шаги мастера и <router-outlet /> -->
+""",
+        'gift/gift-layout.css': """/* TODO: стили списка шагов */
+""",
+        'gift/gift-games.ts': """import { Component } from '@angular/core';
+
+// Шаг 1, /gift/games: игры для набора
+@Component({
+  selector: 'app-gift-games',
+  templateUrl: './gift-games.html',
+  styleUrl: './gift-games.css',
+})
+export class GiftGames {
+  // TODO: игры каталога; «Далее» — на шаг 2, если в наборе от 2 до 4 игр
+}
+""",
+        'gift/gift-games.html': """<!-- TODO: список игр с кнопками pick, ошибка количества, «Далее» -->
+""",
+        'gift/gift-games.css': """/* TODO: стили списка игр */
+""",
+        'gift/gift-design.ts': """import { Component } from '@angular/core';
+
+// Шаг 2, /gift/design: упаковка и открытка
+@Component({
+  selector: 'app-gift-design',
+  templateUrl: './gift-design.html',
+})
+export class GiftDesign {
+  // TODO: поля упаковки и открытки; «Далее» — на шаг 3, если они заполнены верно
+}
+""",
+        'gift/gift-design.html': """<!-- TODO: упаковка (три варианта), «Кому», «Текст открытки», «Назад» и «Далее» -->
+""",
+        'gift/gift-confirm.ts': """import { Component } from '@angular/core';
+
+// Шаг 3, /gift/confirm: что в наборе, контакты покупателя и оформление
+@Component({
+  selector: 'app-gift-confirm',
+  templateUrl: './gift-confirm.html',
+})
+export class GiftConfirm {
+  // TODO: контакты; «Оформить набор» — заказ на сервер; номер заказа или ошибка сервера
+}
+""",
+        'gift/gift-confirm.html': """<!-- TODO: состав набора, «Итого», контакты, «Назад», «Оформить набор»; после заказа — «Набор №… оформлен» -->
+""",
+    },
+)
+
+S3 = put(
+    S1,
+    **{
+        'gift/gift-schema.ts': """import {
+  apply,
+  maxLength,
+  minLength,
+  required,
+  schema,
+} from '@angular/forms/signals';
+import {
+  Contacts,
+  contactsSchema,
+} from '../checkout/checkout-schema';
+import { Game } from '../core/models';
+
+// Сколько игр в наборе и сколько букв в открытке
+export const MIN_GAMES = 2;
+export const MAX_GAMES = 4;
+export const MESSAGE_MAX = 200;
+
+// Упаковка набора: цена в рублях
+export const WRAPPINGS = [
+  { id: 'kraft', title: 'Крафт', price: 0 },
+  { id: 'festive', title: 'Праздничная', price: 290 },
+  { id: 'wooden', title: 'Деревянный ящик', price: 990 },
+] as const;
+
+export type Wrapping = (typeof WRAPPINGS)[number];
+
+// Подарочный набор. Каждому шагу мастера — своя часть модели
+export interface GiftBox {
+  // Шаг 1: игры
+  games: Game[];
+  // Шаг 2: упаковка и открытка
+  design: {
+    wrapping: Wrapping['id'];
+    recipient: string; // кому подарок
+    message: string; // текст открытки
+  };
+  // Шаг 3: контакты покупателя
+  contacts: Contacts;
+}
+
+// Правила всего набора. Шаг проверяет свою часть: form.games, form.design, form.contacts
+export const giftSchema = schema<GiftBox>((box) => {
+  // minLength и maxLength работают и с массивами: считают элементы
+  const count = `Выберите от ${MIN_GAMES} до ${MAX_GAMES} игр`;
+  minLength(box.games, MIN_GAMES, { message: count });
+  maxLength(box.games, MAX_GAMES, { message: count });
+  required(box.design.recipient, { message: 'Кому подарок?' });
+  maxLength(box.design.message, MESSAGE_MAX, {
+    message: `Не больше ${MESSAGE_MAX} символов`,
+  });
+  // Контакты — те же правила, что в оформлении заказа
+  apply(box.contacts, contactsSchema);
+});
+""",
+        'gift/gift-store.ts': """import {
+  Service,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { form } from '@angular/forms/signals';
+import { firstValueFrom } from 'rxjs';
+import { Game } from '../core/models';
+import { GiftBox, WRAPPINGS, giftSchema } from './gift-schema';
+
+// Пустой набор: с него начинается мастер и к нему возвращается после заказа
+function emptyBox(): GiftBox {
+  return {
+    games: [],
+    design: { wrapping: 'kraft', recipient: '', message: '' },
+    contacts: { name: '', phone: '', email: '' },
+  };
+}
+
+// Набор, который собирают в мастере. Шаги мастера — разные страницы, а набор один:
+// он живёт в сервисе, пока покупатель ходит между шагами и по магазину (до перезагрузки)
+@Service()
+export class GiftStore {
+  private readonly http = inject(HttpClient);
+  private readonly model = signal<GiftBox>(emptyBox());
+  // Форма в сервисе: поле сервиса создаётся в контексте внедрения, как и поле компонента
+  readonly form = form(this.model, giftSchema);
+
+  readonly games = computed(() => this.model().games);
+  readonly wrapping = computed(
+    () =>
+      WRAPPINGS.find(
+        (wrapping) =>
+          wrapping.id === this.model().design.wrapping,
+      ) ?? WRAPPINGS[0],
+  );
+  readonly gamesTotal = computed(() =>
+    this.games().reduce((sum, game) => sum + game.price, 0),
+  );
+  readonly total = computed(
+    () => this.gamesTotal() + this.wrapping().price,
+  );
+
+  has(game: Game): boolean {
+    return this.games().some((item) => item.id === game.id);
+  }
+
+  // Положить или убрать. Игру, которой нет на складе, не кладём: кнопку можно включить в обход disabled
+  toggle(game: Game) {
+    this.form
+      .games()
+      .value.update((games) =>
+        this.has(game)
+          ? games.filter((item) => item.id !== game.id)
+          : game.inStock > 0
+            ? [...games, game]
+            : games,
+      );
+  }
+
+  // Набор — обычный заказ: каждая игра по одной штуке, упаковка и открытка — в поле gift.
+  // Ошибку сервера получит тот, кто вызвал
+  async placeOrder(): Promise<number> {
+    const { games, design, contacts } = this.model();
+    const order = await firstValueFrom(
+      this.http.post<{ id: number }>('/api/orders', {
+        items: games.map((game) => ({
+          gameId: game.id,
+          quantity: 1,
+        })),
+        contacts,
+        gift: design,
+        total: this.total(),
+      }),
+    );
+    this.model.set(emptyBox());
+    // Новый набор — с чистого листа: без «тронутых» полей и показанных ошибок
+    this.form().reset();
+    return order.id;
+  }
+}
+""",
+        'gift/gift-guards.ts': """import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { GiftStore } from './gift-store';
+
+// Шаги мастера — по порядку: по ссылке или из истории дальше готового шага не попасть.
+// Гард читает ту же форму, что и шаги: готов ли шаг, решают правила схемы
+export const gamesChosenGuard: CanActivateFn = () =>
+  inject(GiftStore).form.games().valid() ||
+  inject(Router).createUrlTree(['/gift/games']);
+
+export const designDoneGuard: CanActivateFn = () =>
+  inject(GiftStore).form.design().valid() ||
+  inject(Router).createUrlTree(['/gift/design']);
+""",
+        'gift/gift.routes.ts': """import { Routes } from '@angular/router';
+import { GiftConfirm } from './gift-confirm';
+import { GiftDesign } from './gift-design';
+import { GiftGames } from './gift-games';
+import {
+  designDoneGuard,
+  gamesChosenGuard,
+} from './gift-guards';
+import { GiftLayout } from './gift-layout';
+
+// Маршруты мастера: /gift/games, /gift/design, /gift/confirm. Путь '' — относительно /gift
+export const giftRoutes: Routes = [
+  {
+    path: '',
+    component: GiftLayout,
+    children: [
+      { path: '', redirectTo: 'games', pathMatch: 'full' },
+      {
+        path: 'games',
+        component: GiftGames,
+        title: 'Подарок: игры',
+        data: { breadcrumb: 'Игры' },
+      },
+      {
+        path: 'design',
+        component: GiftDesign,
+        title: 'Подарок: упаковка',
+        data: { breadcrumb: 'Упаковка' },
+        canActivate: [gamesChosenGuard],
+      },
+      {
+        path: 'confirm',
+        component: GiftConfirm,
+        title: 'Подарок: оформление',
+        data: { breadcrumb: 'Оформление' },
+        canActivate: [gamesChosenGuard, designDoneGuard],
+      },
+    ],
+  },
+];
+""",
+        'gift/gift-layout.ts': """import { Component } from '@angular/core';
+import {
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+
+// Рамка мастера: заголовок, список шагов и место для страницы шага
+@Component({
+  selector: 'app-gift-layout',
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  templateUrl: './gift-layout.html',
+  styleUrl: './gift-layout.css',
+})
+export class GiftLayout {}
+""",
+        'gift/gift-layout.html': """<h1>Подарочный набор</h1>
+<!-- Шаги — ссылки: на шаг дальше готового не пустит гард -->
+<ol class="steps">
+  <li>
+    <a
+      routerLink="games"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="step"
+      >Игры</a
+    >
+  </li>
+  <li>
+    <a
+      routerLink="design"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="step"
+      >Упаковка</a
+    >
+  </li>
+  <li>
+    <a
+      routerLink="confirm"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="step"
+      >Оформление</a
+    >
+  </li>
+</ol>
+<router-outlet />
+""",
+        'gift/gift-layout.css': """/* Шаги мастера в строку: «1. Игры  2. Упаковка  3. Оформление» */
+.steps {
+  display: flex;
+  gap: 24px;
+  margin: 0 0 12px;
+  padding: 0 0 0 18px;
+  border-bottom: 1px solid #d2d2d7;
+  font-size: 14px;
+}
+
+.steps a {
+  display: inline-block;
+  padding: 6px 0;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+/* Текущий шаг: класс active ставит routerLinkActive */
+.steps a.active {
+  border-bottom: 2px solid var(--brand);
+  color: var(--text);
+}
+""",
+        'gift/gift-games.ts': """import { Component, inject } from '@angular/core';
+import { httpResource } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { GamesPage } from '../core/models';
+import { FieldErrors } from '../shared/field-errors/field-errors';
+import { PricePipe } from '../shared/price-pipe';
+import { GiftStore } from './gift-store';
+
+// Сколько игр загрузить для выбора: весь каталог одной страницей — игр в нём меньше
+const CHOICE_SIZE = 100;
+
+// Шаг 1, /gift/games: игры для набора
+@Component({
+  selector: 'app-gift-games',
+  imports: [FieldErrors, PricePipe],
+  templateUrl: './gift-games.html',
+  styleUrl: './gift-games.css',
+})
+export class GiftGames {
+  protected readonly gift = inject(GiftStore);
+  private readonly router = inject(Router);
+
+  protected readonly catalog = httpResource<GamesPage>(() => ({
+    url: '/api/games',
+    params: { size: CHOICE_SIZE },
+  }));
+
+  // Дальше — только с верным набором. Ошибки поля видны, когда оно «тронуто»: трогаем сами
+  protected next() {
+    const games = this.gift.form.games();
+    games.markAsTouched();
+    if (games.valid()) {
+      this.router.navigate(['/gift/design']);
+    }
+  }
+}
+""",
+        'gift/gift-games.html': """<!-- Сводка и «Далее» — над списком: игр много, до конца списка листать долго -->
+<div class="summary">
+  <span>
+    В наборе: {{ gift.games().length }} на
+    {{ gift.gamesTotal() | price }}
+  </span>
+  <button class="button" (click)="next()">Далее</button>
+</div>
+<app-field-errors [field]="gift.form.games" />
+@if (catalog.isLoading()) {
+  <p class="muted">Загружаем игры…</p>
+} @else if (catalog.error()) {
+  <p class="error-message">
+    Не удалось загрузить игры.
+    <button class="link-button" (click)="catalog.reload()">
+      Повторить
+    </button>
+  </p>
+} @else if (catalog.value(); as page) {
+  <ul class="choice-list">
+    @for (game of page.items; track game.id) {
+      <li [class.chosen]="gift.has(game)">
+        <span class="title">{{ game.title }}</span>
+        <span class="price">{{ game.price | price }}</span>
+        <!-- Раскупленную игру, которая уже в наборе, можно убрать: выключена — только чужая -->
+        <button
+          class="pick link-button"
+          [attr.aria-pressed]="gift.has(game)"
+          [disabled]="game.inStock === 0 && !gift.has(game)"
+          (click)="gift.toggle(game)"
+        >
+          @if (gift.has(game)) {
+            ✓ В наборе
+          } @else if (game.inStock === 0) {
+            Нет в наличии
+          } @else {
+            В набор
+          }
+        </button>
+      </li>
+    }
+  </ul>
+}
+""",
+        'gift/gift-games.css': """/* Сводка набора и «Далее» в одну строку */
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 480px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* Игры для набора: название, цена и кнопка в одну строку */
+.choice-list {
+  max-width: 480px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.choice-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--surface);
+}
+
+.choice-list .title {
+  flex: 1;
+}
+
+/* Игра в наборе */
+.choice-list li.chosen .title {
+  font-weight: 600;
+}
+
+.pick {
+  width: 7.5em;
+  text-align: right;
+}
+
+.pick:disabled {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: default;
+}
+""",
+        'gift/gift-design.ts': """import { Component, inject } from '@angular/core';
+import { FormField } from '@angular/forms/signals';
+import { Router, RouterLink } from '@angular/router';
+import { FieldAria } from '../shared/field-aria';
+import { FieldErrors } from '../shared/field-errors/field-errors';
+import { PricePipe } from '../shared/price-pipe';
+import { MESSAGE_MAX, WRAPPINGS } from './gift-schema';
+import { GiftStore } from './gift-store';
+
+// Шаг 2, /gift/design: упаковка и открытка
+@Component({
+  selector: 'app-gift-design',
+  imports: [
+    FieldAria,
+    FieldErrors,
+    FormField,
+    PricePipe,
+    RouterLink,
+  ],
+  templateUrl: './gift-design.html',
+})
+export class GiftDesign {
+  protected readonly gift = inject(GiftStore);
+  private readonly router = inject(Router);
+
+  protected readonly wrappings = WRAPPINGS;
+  protected readonly messageMax = MESSAGE_MAX;
+
+  protected next() {
+    const design = this.gift.form.design();
+    design.markAsTouched();
+    if (design.valid()) {
+      this.router.navigate(['/gift/confirm']);
+    }
+  }
+}
+""",
+        'gift/gift-design.html': """@let design = gift.form.design;
+<a class="back-link" routerLink="/gift/games">← Назад</a>
+<fieldset class="field">
+  <legend>Упаковка</legend>
+  @for (wrapping of wrappings; track wrapping.id) {
+    <label>
+      <input
+        type="radio"
+        [value]="wrapping.id"
+        [formField]="design.wrapping"
+      />
+      {{ wrapping.title }} —
+      {{ wrapping.price ? (wrapping.price | price) : 'бесплатно' }}
+    </label>
+  }
+</fieldset>
+<label class="field">
+  Кому
+  <input [formField]="design.recipient" />
+  <app-field-errors [field]="design.recipient" />
+</label>
+<label class="field">
+  Текст открытки
+  <textarea rows="3" [formField]="design.message"></textarea>
+  <span class="muted">
+    {{ design.message().value().length }} / {{ messageMax }}
+  </span>
+  <app-field-errors [field]="design.message" />
+</label>
+<p>
+  <button class="button" (click)="next()">Далее</button>
+</p>
+""",
+        'gift/gift-confirm.ts': """import { Component, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  FormField,
+  FormRoot,
+  submit,
+} from '@angular/forms/signals';
+import { RouterLink } from '@angular/router';
+import { FieldAria } from '../shared/field-aria';
+import { FieldErrors } from '../shared/field-errors/field-errors';
+import { PricePipe } from '../shared/price-pipe';
+import { GiftStore } from './gift-store';
+
+// Шаг 3, /gift/confirm: что в наборе, контакты покупателя и оформление
+@Component({
+  selector: 'app-gift-confirm',
+  imports: [
+    FieldAria,
+    FieldErrors,
+    FormField,
+    FormRoot,
+    PricePipe,
+    RouterLink,
+  ],
+  templateUrl: './gift-confirm.html',
+})
+export class GiftConfirm {
+  protected readonly gift = inject(GiftStore);
+  // Номер оформленного заказа. Пока заказа нет — null
+  protected readonly orderId = signal<number | null>(null);
+
+  // Отправляем всю форму: submit ещё раз проверит все шаги, а не только контакты.
+  // Ошибку, которую вернёт функция, форма покажет у себя
+  protected send() {
+    submit(this.gift.form, async () => {
+      try {
+        this.orderId.set(await this.gift.placeOrder());
+        return undefined;
+      } catch (error) {
+        // 409 — какой-то игры не хватило на складе: сервер пишет какой
+        return {
+          kind: 'server',
+          message:
+            error instanceof HttpErrorResponse &&
+            error.status === 409
+              ? error.error.message
+              : 'Не удалось оформить набор. Попробуйте ещё раз',
+        };
+      }
+    });
+  }
+}
+""",
+        'gift/gift-confirm.html': """@if (orderId(); as id) {
+  <h2>Набор №{{ id }} оформлен</h2>
+  <p>Спасибо! Соберём набор и свяжемся с вами.</p>
+  <a routerLink="/gift">Собрать ещё один</a>
+} @else {
+  @let box = gift.form;
+  <a class="back-link" routerLink="/gift/design">← Назад</a>
+  <ul>
+    @for (game of gift.games(); track game.id) {
+      <li>{{ game.title }} — {{ game.price | price }}</li>
+    }
+  </ul>
+  <p>
+    Упаковка: {{ gift.wrapping().title }}<br />
+    Кому: {{ box.design.recipient().value() }}
+  </p>
+  @if (box.design.message().value(); as message) {
+    <blockquote class="muted">{{ message }}</blockquote>
+  }
+  <p>
+    Итого: <b>{{ gift.total() | price }}</b>
+  </p>
+  <!-- FormRoot отменяет отправку браузером; отправляет send() -->
+  <form [formRoot]="box" (submit)="send()">
+    <label class="field">
+      Имя
+      <input
+        autocomplete="name"
+        [formField]="box.contacts.name"
+      />
+      <app-field-errors [field]="box.contacts.name" />
+    </label>
+    <label class="field">
+      Телефон
+      <input
+        type="tel"
+        autocomplete="tel"
+        placeholder="+7 900 123-45-67"
+        [formField]="box.contacts.phone"
+      />
+      <app-field-errors [field]="box.contacts.phone" />
+    </label>
+    <label class="field">
+      E-mail
+      <input
+        type="email"
+        autocomplete="email"
+        [formField]="box.contacts.email"
+      />
+      <app-field-errors [field]="box.contacts.email" />
+    </label>
+    @for (error of box().errors(); track error.kind) {
+      <p class="error-message">{{ error.message }}</p>
+    }
+    <button class="button" [disabled]="box().submitting()">
+      {{ box().submitting() ? 'Оформляем…' : 'Оформить набор' }}
+    </button>
+  </form>
+}
+""",
+    },
+)
+
+S3 = edit(
+    S3,
+    'app.routes.ts',
+    (
+        """  {
+    path: 'login',""",
+        """  {
+    path: 'gift',
+    // Мастер подарочного набора: шаги — дочерние маршруты, код загрузится при первом переходе
+    loadChildren: () =>
+      import('./gift/gift.routes').then((m) => m.giftRoutes),
+    data: { breadcrumb: 'Подарочный набор' },
+  },
+  {
+    path: 'login',""",
+    ),
+)
+
+S3 = edit(
+    S3,
+    'layout/header/header.html',
+    (
+        """      >Каталог</a
+    >""",
+        """      >Каталог</a
+    >
+    <a
+      routerLink="/gift"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+      >Подарок</a
+    >""",
+    ),
+)
+
 steps = {
     '01-choose-project': {'start': S1},
     '02-compare-wishlist': {'start': S2_START, 'solution': S2},
+    '03-gift-box': {'start': S3_START, 'solution': S3},
 }
 
 

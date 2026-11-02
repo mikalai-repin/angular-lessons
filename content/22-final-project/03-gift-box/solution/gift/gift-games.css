@@ -1,0 +1,47 @@
+/* Сводка набора и «Далее» в одну строку */
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 480px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* Игры для набора: название, цена и кнопка в одну строку */
+.choice-list {
+  max-width: 480px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.choice-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--surface);
+}
+
+.choice-list .title {
+  flex: 1;
+}
+
+/* Игра в наборе */
+.choice-list li.chosen .title {
+  font-weight: 600;
+}
+
+.pick {
+  width: 7.5em;
+  text-align: right;
+}
+
+.pick:disabled {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: default;
+}

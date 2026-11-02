@@ -1,0 +1,43 @@
+<!-- Сводка и «Далее» — над списком: игр много, до конца списка листать долго -->
+<div class="summary">
+  <span>
+    В наборе: {{ gift.games().length }} на
+    {{ gift.gamesTotal() | price }}
+  </span>
+  <button class="button" (click)="next()">Далее</button>
+</div>
+<app-field-errors [field]="gift.form.games" />
+@if (catalog.isLoading()) {
+  <p class="muted">Загружаем игры…</p>
+} @else if (catalog.error()) {
+  <p class="error-message">
+    Не удалось загрузить игры.
+    <button class="link-button" (click)="catalog.reload()">
+      Повторить
+    </button>
+  </p>
+} @else if (catalog.value(); as page) {
+  <ul class="choice-list">
+    @for (game of page.items; track game.id) {
+      <li [class.chosen]="gift.has(game)">
+        <span class="title">{{ game.title }}</span>
+        <span class="price">{{ game.price | price }}</span>
+        <!-- Раскупленную игру, которая уже в наборе, можно убрать: выключена — только чужая -->
+        <button
+          class="pick link-button"
+          [attr.aria-pressed]="gift.has(game)"
+          [disabled]="game.inStock === 0 && !gift.has(game)"
+          (click)="gift.toggle(game)"
+        >
+          @if (gift.has(game)) {
+            ✓ В наборе
+          } @else if (game.inStock === 0) {
+            Нет в наличии
+          } @else {
+            В набор
+          }
+        </button>
+      </li>
+    }
+  </ul>
+}

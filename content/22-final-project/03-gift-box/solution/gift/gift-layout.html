@@ -1,0 +1,29 @@
+<h1>Подарочный набор</h1>
+<!-- Шаги — ссылки: на шаг дальше готового не пустит гард -->
+<ol class="steps">
+  <li>
+    <a
+      routerLink="games"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="step"
+      >Игры</a
+    >
+  </li>
+  <li>
+    <a
+      routerLink="design"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="step"
+      >Упаковка</a
+    >
+  </li>
+  <li>
+    <a
+      routerLink="confirm"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="step"
+      >Оформление</a
+    >
+  </li>
+</ol>
+<router-outlet />

@@ -61,7 +61,10 @@
    - `href` в превью — с `/app/` (`<base href>`): проверка ищет ссылки по окончанию адреса; `routerLink` + `[queryParams]="{ ids: '12,3,7' }"` даёт `/app/wishlist?ids=12,3,7` (запятая не кодируется — проверено);
    - чужой список в Store через `restored` не меняет `localStorage` (эффект сохраняет только на `favoriteToggled`), поэтому проверка смотрит и счётчик «♥ N» в шапке;
    - AOT (`aot-chapter`) видит и ленивые страницы (`import()` в `loadComponent`) — проверено опечаткой в шаблоне.
-3. ⬜ **Вариант Б**: то же самое.
+3. ✅ **Вариант Б** (02.11.2026): шаг `03-gift-box` (`custom`, `url: /gift`, `removedInStart` — заготовки А), образец, текст с 5 подсказками, `check.ts`; `validate`, `step-checks`, `run-chapter`, `aot-chapter` чистые, 11 мутаций (`tools/e2e/out/mut22b.mjs`) не проходят с точной подсказкой. Что важно дальше:
+   - образец: `GiftStore` (модель `GiftBox` из трёх частей и `form()` в поле сервиса), `gift-schema.ts` (`minLength`/`maxLength` у массива игр, `contactsSchema`), дочерние маршруты `/gift/games|design|confirm` через `loadChildren`, гарды по `form.games().valid()`/`form.design().valid()`, «Далее» — `markAsTouched()` части + переход, оформление — `submit(всей формы, action)`, после заказа `model.set(пустой)` + `form().reset()`;
+   - `check.ts` стартует с `token-user` и корзиной из одной игры, читает заказ через `GET /api/orders` с токеном (тело запроса в `requests` не видно), 409 вызывает сам — раскупает «Ночной экспресс» своим `fetch` (`document.defaultView.fetch` идёт в учебный бэкенд);
+   - темы для квиза из текста Б: форма в сервисе (контекст внедрения), гард и `providers` компонента, `markAsTouched` для поля без `<input>`, `reset()` после заказа, событие `orderPlaced` очищает корзину, сумму считает сервер.
 4. ⬜ **Вариант В и финал**: чек-лист «своего приложения», итоги курса, `quiz.yaml` со сверкой вторым взглядом.
 5. ⬜ **Прогоны и документация**: `aot-chapter.mjs`, `run-chapter.mjs`, `step-checks.mjs`, `checks/ch22-*.mjs`, документация (`authoring-process.md`, раздел 7), коммит.
 

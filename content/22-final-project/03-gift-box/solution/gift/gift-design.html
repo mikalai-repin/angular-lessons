@@ -1,0 +1,34 @@
+@let design = gift.form.design;
+<a class="back-link" routerLink="/gift/games">← Назад</a>
+<fieldset class="field">
+  <legend>Упаковка</legend>
+  @for (wrapping of wrappings; track wrapping.id) {
+    <label>
+      <input
+        type="radio"
+        [value]="wrapping.id"
+        [formField]="design.wrapping"
+      />
+      {{ wrapping.title }} —
+      {{
+        wrapping.price ? (wrapping.price | price) : 'бесплатно'
+      }}
+    </label>
+  }
+</fieldset>
+<label class="field">
+  Кому
+  <input [formField]="design.recipient" />
+  <app-field-errors [field]="design.recipient" />
+</label>
+<label class="field">
+  Текст открытки
+  <textarea rows="3" [formField]="design.message"></textarea>
+  <span class="muted">
+    {{ design.message().value().length }} / {{ messageMax }}
+  </span>
+  <app-field-errors [field]="design.message" />
+</label>
+<p>
+  <button class="button" (click)="next()">Далее</button>
+</p>
