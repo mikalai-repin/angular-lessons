@@ -63,7 +63,7 @@ public/assets/        — обложки игр (scripts/build-covers.mjs), CRED
 public/vendor/, public/preview.html — генерирует scripts/copy-vendor.mjs (не в git)
 scripts/              — copy-vendor, validate-content, build-covers, step-files (старт шага по цепочке)
 tools/e2e/            — проверки в headless Chrome (lib, run-dir, run-chapter, exp, checks/)
-tools/authoring/      — steps.py (запись только изменений шага), format-content.py, генератор последней главы ch21-gen.py (образец; `dump <папка>` — полные снимки для опытов)
+tools/authoring/      — steps.py (запись только изменений шага), format-content.py, генератор последней главы ch22-gen.py (образец; `dump <папка>` — полные снимки для опытов)
 ```
 
 ## Команды
@@ -79,7 +79,7 @@ tools/authoring/      — steps.py (запись только изменений
 
 ## Текущий статус
 
-Платформа готова, **главы 1–21 написаны** (часть 2 закончена, в части 3 — главы 19–21; осталась глава 22), у каждой главы есть квиз (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед продолжением прочитайте `docs/authoring-process.md` целиком.
+Платформа готова, **курс написан: главы 1–22**, у каждой главы есть квиз (`content/<глава>/quiz.yaml`, страница `/<глава>/quiz`, глава пройдена при ≥ 85 %; формат — `docs/lesson-format.md`). Осталось — этап 5 (`strictTemplates` в `npm run validate`, проверка шаблонов в редакторе). Статус и следующий шаг — в `docs/roadmap.md`, код магазина на конец последней главы — в `docs/authoring-process.md`. Перед правкой глав прочитайте `docs/authoring-process.md` целиком.
 
 ## Пользователь и тон работы
 
