@@ -84,9 +84,13 @@ export function CodeEditor({
     const reveal = () => {
       const tab = tabs.querySelector<HTMLElement>('.tab-group.active');
       if (!tab || tabs.clientWidth === 0) return;
+      // Справа полосу закрывает прилипшая кнопка «+» (с отступом и тенью): видимая часть вкладок кончается левее неё
+      const add = tabs.querySelector<HTMLElement>('.tab-add');
+      const covered = add ? tabs.getBoundingClientRect().right - add.getBoundingClientRect().left + 6 : 0;
+      const visible = tabs.clientWidth - covered;
       if (tab.offsetLeft < tabs.scrollLeft) tabs.scrollLeft = tab.offsetLeft;
-      else if (tab.offsetLeft + tab.offsetWidth > tabs.scrollLeft + tabs.clientWidth) {
-        tabs.scrollLeft = tab.offsetLeft + tab.offsetWidth - tabs.clientWidth;
+      else if (tab.offsetLeft + tab.offsetWidth > tabs.scrollLeft + visible) {
+        tabs.scrollLeft = tab.offsetLeft + tab.offsetWidth - visible;
       }
     };
     reveal();
@@ -142,10 +146,10 @@ export function CodeEditor({
               )}
             </span>
           ))}
+          <button className="icon-button tab-add" title="Новый файл" aria-label="Новый файл" onClick={onCreateFile}>
+            +
+          </button>
         </div>
-        <button className="icon-button tab-add" title="Новый файл" aria-label="Новый файл" onClick={onCreateFile}>
-          +
-        </button>
         {actions}
       </div>
       <div className="editor-body">

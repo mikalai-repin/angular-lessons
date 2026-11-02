@@ -92,7 +92,7 @@ export default async ({ page, pageText, navigate, wait }) => {
 В `tools/e2e/lib.mjs` есть всё для своих проверок:
 
 - чистое превью: `compileDir`, `openPreview(browser, compiled, { url, backend, waitMs })`, `collect` (ошибки среды и запросы бэкенда), `pageText`, `appUrl`, `navigate`; образец — `checks/preview.mjs`;
-- интерфейс платформы: `openCourse('/chapter/step', { onDialog, ignoreConsole })` открывает платформу с чистым прогрессом и возвращает помощники проверки главы — `expect`, `frame()` (iframe превью, после перезапуска — последний), `consoleText`, `title`, `count`, `showSolution`, `nextStep`, `checkConsoleClean`, `runWithCode` (код эксперимента подкладывается в сохранённый прогресс шага), `finish`; `clean()` — текст без неразрывных пробелов; образцы — `checks/platform.mjs` и `checks/chNN-*.mjs`.
+- интерфейс платформы: `openCourse('/chapter/step', { onDialog, ignoreConsole })` открывает платформу с чистым прогрессом и возвращает помощники проверки главы — `expect`, `frame()` (iframe превью, после перезапуска — последний), `consoleText`, `title`, `count`, `showSolution`, `nextStep`, `checkConsoleClean`, `runWithCode` (код эксперимента подкладывается в сохранённый прогресс шага), `finish`; окна платформы («Решение», «Сброс», файлы) — `answerDialog(page, { value, accept })`, `onDialog` — только для нативного `confirm()` в коде ученика; `clean()` — текст без неразрывных пробелов; образцы — `checks/platform.mjs` и `checks/chNN-*.mjs`.
 
 ## 4. Текст уроков
 

@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react
 import { allSteps, course, quizPath, stepPath } from '../content/course';
 import { progress } from '../progress/storage';
 import { Appearance } from './Appearance';
+import { DialogHost } from './Dialog';
 import { AngularLogo, Loader } from './Loader';
 // Страница шага тянет Monaco, TypeScript-воркер и Prettier — грузим её отдельным чанком: шапка и оглавление
 // появляются сразу
@@ -100,6 +101,7 @@ export function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+        <DialogHost />
       </div>
     </BrowserRouter>
   );

@@ -738,6 +738,89 @@ button {
   border-color: var(--accent);
 }
 
+.button.danger {
+  color: #fff;
+  background: var(--error);
+  border-color: var(--error);
+}
+
+.button.danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+  border-color: var(--error);
+}
+
+/* Модальное окно платформы (Dialog.tsx) — вместо window.prompt / confirm / alert */
+.app-dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+}
+
+.app-dialog::backdrop {
+  background: rgba(10, 8, 16, 0.45);
+}
+
+.app-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+.app-dialog-body h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.app-dialog-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.app-dialog-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.app-dialog-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.app-dialog-input[aria-invalid='true'] {
+  border-color: var(--error);
+  outline-color: var(--error);
+}
+
+.app-dialog-error {
+  margin: -4px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--error);
+}
+
+.app-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .link-button {
   padding: 0;
   font-size: 12px;
@@ -844,10 +927,23 @@ button {
   color: var(--text);
 }
 
+/* «+» идёт сразу за последней вкладкой, а когда вкладки не помещаются — прилипает к правому краю полосы:
+   кнопку видно всегда, а вкладки под ней прокручиваются до конца (reveal в CodeEditor учитывает её ширину) */
 .editor-header .tab-add {
+  position: sticky;
+  right: 0;
   align-self: center;
-  margin: 0 2px;
+  margin-left: 2px;
   font-size: 18px;
+  background: var(--surface);
+  /* слева — плавный край вкладок под кнопкой, справа — сплошной фон поверх отступа полосы */
+  box-shadow:
+    -10px 0 8px -2px var(--surface),
+    8px 0 0 var(--surface);
+}
+
+.editor-header .tab-add:hover {
+  background: var(--border);
 }
 
 .editor-host {
@@ -911,7 +1007,8 @@ button {
   flex: none;
   width: 210px;
   overflow: auto;
-  padding: 6px 0;
+  /* без нижнего отступа: под прилипшей «+ Новый файл» не должны просвечивать строки */
+  padding: 6px 0 0;
   border-right: 1px solid var(--border);
   background: var(--surface-2);
   font-size: 13px;
@@ -982,8 +1079,14 @@ button {
   padding-right: 48px;
 }
 
+/* «+ Новый файл» идёт после списка, а когда список длиннее дерева — прилипает к низу: кнопку видно всегда */
 .tree-add {
+  position: sticky;
+  bottom: 0;
   margin-top: 6px;
+  padding-block: 6px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
   color: var(--text-muted);
 }
 

@@ -3,7 +3,7 @@
 // node tools/e2e/run-chapter.mjs 05-assets [ширина]
 import { basename } from 'node:path';
 import { chapterSteps } from '../../scripts/step-files.mjs';
-import { BASE_URL, CONTENT, OUT, launch, wait } from './lib.mjs';
+import { answerDialog, BASE_URL, CONTENT, OUT, launch, wait } from './lib.mjs';
 
 const [chapterDir, width = '1600'] = process.argv.slice(2);
 if (!chapterDir) {
@@ -31,6 +31,7 @@ for (const step of steps) {
   const button = await page.$('.lesson-footer-middle .button');
   if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
     await button.click();
+    await answerDialog(page);
     await wait(3500);
   }
   await page.screenshot({ path: `${OUT}/${chapterDir}-${step}.png` });

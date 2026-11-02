@@ -18,6 +18,7 @@ import { LessonPanel } from '../lesson/LessonPanel';
 import { Preview, type CheckResult, type PreviewMode, type PreviewRun } from '../preview/Preview';
 import { progress } from '../progress/storage';
 import { downloadProject } from './download';
+import { askConfirm, askText, showMessage } from './Dialog';
 import { useMediaQuery } from './useMediaQuery';
 
 const AUTORUN_DELAY = 1000;
@@ -204,58 +205,85 @@ function StepWorkspace({ step }: { step: Step }) {
     runCode();
   }
 
-  function onCreateFile() {
+  async function onCreateFile() {
     const folder = active.slice(0, active.lastIndexOf('/') + 1);
-    const answer = window.prompt('Новый файл — путь от src/app/, расширение .ts, .html или .css:', folder);
+    const answer = await askText({
+      title: 'Новый файл',
+      message: 'Путь от src/app/, расширение .ts, .html или .css.',
+      value: folder,
+      confirmLabel: 'Создать',
+      validate: (value) => fileNameError(normalizeFileName(value), fileListRef.current),
+    });
     if (answer === null) return;
     const name = normalizeFileName(answer);
-    const error = fileNameError(name, fileListRef.current);
-    if (error) {
-      window.alert(error);
-      return;
-    }
     replaceFiles({ ...filesRef.current, [name]: '' }, name);
   }
 
-  function onRenameFile(file: string) {
-    const answer = window.prompt(`Новое имя для «${file}»:`, file);
+  async function onRenameFile(file: string) {
+    // Выделено имя без папки и расширения — его обычно и меняют
+    const start = file.lastIndexOf('/') + 1;
+    const dot = file.lastIndexOf('.');
+    const answer = await askText({
+      title: 'Переименовать файл',
+      message: `Новое имя для «${file}». Импорты и templateUrl в других файлах поправьте сами.`,
+      value: file,
+      selection: [start, dot > start ? dot : file.length],
+      confirmLabel: 'Переименовать',
+      validate: (value) => {
+        const name = normalizeFileName(value);
+        if (name === file) return null;
+        return fileNameError(
+          name,
+          fileListRef.current.filter((other) => other !== file),
+        );
+      },
+    });
     if (answer === null) return;
     const name = normalizeFileName(answer);
     if (name === file) return;
-    const error = fileNameError(
-      name,
-      fileListRef.current.filter((other) => other !== file),
-    );
-    if (error) {
-      window.alert(error);
-      return;
-    }
     // Импорты и templateUrl в других файлах не меняем — как и IDE без рефакторинга, их правит ученик
     const next: FileMap = {};
     for (const [other, code] of Object.entries(filesRef.current)) next[other === file ? name : other] = code;
     replaceFiles(next, name);
   }
 
-  function onDeleteFile(file: string) {
+  async function onDeleteFile(file: string) {
     if (fileListRef.current.length === 1) {
-      window.alert('Последний файл шага удалить нельзя.');
+      await showMessage({ title: 'Файл не удалить', message: 'Последний файл шага удалить нельзя.' });
       return;
     }
-    if (!window.confirm(`Удалить файл «${file}»? Вернуть файлы шага можно кнопкой «Сброс».`)) return;
+    const ok = await askConfirm({
+      title: `Удалить «${file}»?`,
+      message: 'Вернуть файлы шага можно кнопкой «Сброс».',
+      confirmLabel: 'Удалить',
+      danger: true,
+    });
+    if (!ok) return;
     const rest = { ...filesRef.current };
     delete rest[file];
     replaceFiles(rest);
   }
 
-  function onReset() {
-    if (!window.confirm('Вернуть стартовый код шага? Ваши изменения пропадут.')) return;
+  async function onReset() {
+    const ok = await askConfirm({
+      title: 'Вернуть стартовый код шага?',
+      message: 'Ваши изменения пропадут.',
+      confirmLabel: 'Сбросить',
+      danger: true,
+    });
+    if (!ok) return;
     replaceFiles(startFiles(step));
     progress.clearCode(step.id);
     setHasBackup(false);
   }
 
-  function onShowSolution() {
-    if (!window.confirm('Показать решение? Ваш код сохранится, его можно будет вернуть.')) return;
+  async function onShowSolution() {
+    const ok = await askConfirm({
+      title: 'Показать решение?',
+      message: 'Ваш код сохранится, его можно будет вернуть кнопкой «Вернуть мой код».',
+      confirmLabel: 'Показать',
+    });
+    if (!ok) return;
     progress.setBackup(step.id, filesRef.current);
     setHasBackup(true);
     // Решение — ровно его файлы: созданные учеником убираются (они остаются в копии его кода), удалённые возвращаются
@@ -275,7 +303,7 @@ function StepWorkspace({ step }: { step: Step }) {
     try {
       await downloadProject(step, filesRef.current);
     } catch (error) {
-      window.alert(`Не удалось собрать архив: ${(error as Error).message}`);
+      await showMessage({ title: 'Не удалось собрать архив', message: (error as Error).message });
     } finally {
       setDownloading(false);
     }

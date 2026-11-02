@@ -143,8 +143,33 @@ export function createChecks() {
 }
 
 /**
+ * Отвечает на окно платформы (src/app/Dialog.tsx — вместо window.prompt / confirm / alert): ждёт его,
+ * вписывает value в поле (если задано) и нажимает кнопку подтверждения, accept: false — «Отмена».
+ * Возвращает заголовок, текст окна и ошибку под полем; open — окно осталось открытым (ошибка ввода)
+ */
+export async function answerDialog(page, { value, accept = true } = {}) {
+  await page.waitForSelector('.app-dialog[open]', { timeout: 5000 });
+  const read = () =>
+    page.$eval('.app-dialog', (d) => ({
+      open: d.open,
+      title: d.querySelector('h2')?.textContent ?? '',
+      message: d.querySelector('.app-dialog-message')?.textContent ?? '',
+      error: d.querySelector('.app-dialog-error')?.textContent ?? '',
+    }));
+  const shown = await read();
+  if (value !== undefined) {
+    await page.$eval('.app-dialog-input', (input) => input.select());
+    await page.keyboard.type(value);
+  }
+  await page.click(accept ? '.app-dialog-actions [type=submit]' : '.app-dialog-actions [type=button]');
+  await wait(200);
+  const after = await read();
+  return { ...shown, open: after.open, error: after.error };
+}
+
+/**
  * Открывает интерфейс платформы (1600 × 900) на шаге startPath ('/signals/problem') с чистым прогрессом
- * и возвращает помощники проверки главы. Диалоги по умолчанию принимаются («Решение» спрашивает подтверждение);
+ * и возвращает помощники проверки главы. Нативные диалоги (confirm в коде ученика) по умолчанию принимаются;
  * ignoreConsole(line) — строки консоли, которые не считаются ошибкой
  */
 export async function openCourse(startPath, { onDialog = (d) => d.accept(), ignoreConsole = () => false } = {}) {
@@ -185,6 +210,7 @@ export async function openCourse(startPath, { onDialog = (d) => d.accept(), igno
       const button = await page.$('.lesson-footer-middle .button');
       if (button && (await button.evaluate((e) => e.textContent)) === 'Решение') {
         await button.click();
+        await answerDialog(page);
         await wait(3500);
       }
     },

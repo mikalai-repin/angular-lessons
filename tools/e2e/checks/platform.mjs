@@ -5,17 +5,9 @@
 import { execSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { BASE_URL, CONTENT, openCourse, OUT, PROGRESS_KEY, readDir, wait } from '../lib.mjs';
+import { answerDialog, BASE_URL, CONTENT, openCourse, OUT, PROGRESS_KEY, readDir, wait } from '../lib.mjs';
 
-/** Ответы на window.prompt по очереди (имена новых файлов); confirm и alert принимаются */
-const promptAnswers = [];
-const dialogs = [];
-const { page, expect, runWithCode, finish } = await openCourse('/first-app/what-is-angular', {
-  onDialog: (dialog) => {
-    dialogs.push(`${dialog.type()}: ${dialog.message()}`);
-    return dialog.type() === 'prompt' ? dialog.accept(promptAnswers.shift() ?? '') : dialog.accept();
-  },
-});
+const { page, expect, runWithCode, finish } = await openCourse('/first-app/what-is-angular');
 
 // Код ученика с ошибками подкладываем в сохранённый прогресс — так же, как его сохранил бы редактор
 const files = readDir(`${CONTENT}/01-first-app/01-what-is-angular/start`);
@@ -254,19 +246,35 @@ for (const [route, dir, names] of formatCases) {
     page.$$eval('.tabs .tab', (els, name) => els.find((e) => e.textContent.trim() === name)?.click(), name);
   const stepTabs = await tabs();
 
-  // Неподходящее имя: файл не создаётся, ученик видит причину
-  promptAnswers.push('catalog/bad name.js');
+  // Неподходящее имя: окно не закрывается, причина — под полем; «Отмена» — файла нет
   await page.click('.tab-add');
-  await wait(300);
-  expect(dialogs.at(-1)?.startsWith('alert: Имя «catalog/bad name.js» не подходит'), 'неподходящее имя файла — alert');
+  let dialog = await answerDialog(page, { value: 'catalog/bad name.js' });
+  expect(dialog.title === 'Новый файл', `имя нового файла спрашивает окно платформы (${dialog.title})`);
+  expect(
+    dialog.open && dialog.error.startsWith('Имя «catalog/bad name.js» не подходит'),
+    `неподходящее имя — ошибка под полем, окно открыто (${dialog.error})`,
+  );
+  await page.screenshot({ path: `${OUT}/platform-dialog.png` });
+  await answerDialog(page, { accept: false });
+  expect(!(await page.$('.app-dialog[open]')), '«Отмена» закрывает окно');
   expect((await tabs()).length === stepTabs.length, 'файл с неподходящим именем не создан');
+
+  // Esc — тоже отмена
+  await page.click('.tab-add');
+  await page.waitForSelector('.app-dialog[open]');
+  await page.keyboard.press('Escape');
+  await wait(200);
+  expect(
+    !(await page.$('.app-dialog[open]')) && (await tabs()).length === stepTabs.length,
+    'Esc закрывает окно без файла',
+  );
 
   await clickTab('catalog/catalog.ts');
   await wait(300);
-  promptAnswers.push('catalog/hello.ts');
   await page.click('.tab-add');
-  await wait(500);
-  expect(dialogs.at(-1)?.startsWith('prompt: Новый файл'), 'имя нового файла — prompt');
+  dialog = await answerDialog(page, { value: 'catalog/hello.ts' });
+  expect(!dialog.open, 'подходящее имя — окно закрылось');
+  await wait(300);
   let list = await tabs();
   expect(
     list.includes('catalog/hello.ts') && (await activeTab()) === 'catalog/hello.ts',
@@ -318,13 +326,16 @@ for (const [route, dir, names] of formatCases) {
   // Переименование: двойной щелчок по вкладке; импорт в main.ts ученик правит сам
   await clickTab('catalog/hello.ts');
   await wait(300);
-  promptAnswers.push('catalog/greeting.ts');
   await page.$$eval('.tabs .tab', (els) =>
     els
       .find((e) => e.textContent.trim() === 'catalog/hello.ts')
       ?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })),
   );
-  await wait(1000);
+  await page.waitForSelector('.app-dialog[open]');
+  const selected = await page.$eval('.app-dialog-input', (i) => i.value.slice(i.selectionStart, i.selectionEnd));
+  expect(selected === 'hello', `при переименовании выделено имя без папки и расширения (${selected})`);
+  await answerDialog(page, { value: 'catalog/greeting.ts' });
+  await wait(800);
   list = await tabs();
   expect(
     list.includes('catalog/greeting.ts') &&
@@ -342,8 +353,9 @@ for (const [route, dir, names] of formatCases) {
   await clickTab('app.css');
   await wait(300);
   await page.click('.tab-group.active .file-action[title="Удалить файл"]');
+  dialog = await answerDialog(page);
+  expect(dialog.title === 'Удалить «app.css»?', `удаление спрашивает подтверждение (${dialog.title})`);
   await wait(3000);
-  expect(dialogs.at(-1)?.startsWith('confirm: Удалить файл «app.css»'), 'удаление спрашивает подтверждение');
   expect(!(await tabs()).includes('app.css'), 'файл шага удалён');
   expect((await consoleText()).includes('не найден файл «./app.css»'), 'сборка не находит удалённый файл');
   await page.reload({ waitUntil: 'networkidle0' });
@@ -353,6 +365,7 @@ for (const [route, dir, names] of formatCases) {
 
   // «Сброс»: файлы шага как в начале
   await page.$$eval('.toolbar .button', (els) => els.find((e) => e.textContent === 'Сброс')?.click());
+  await answerDialog(page);
   await wait(3000);
   list = await tabs();
   expect(JSON.stringify(list) === JSON.stringify(stepTabs), '«Сброс» возвращает файлы шага');
@@ -365,10 +378,10 @@ for (const [route, dir, names] of formatCases) {
   await page.goto(`${BASE_URL}/signals/practice`, { waitUntil: 'networkidle0' });
   await wait(2500);
   const practiceTabs = await tabs();
-  promptAnswers.push('notes.ts');
   await page.click('.tab-add');
-  await wait(500);
+  await answerDialog(page, { value: 'notes.ts' });
   await page.$$eval('.lesson-footer .button', (els) => els.find((e) => e.textContent === 'Решение')?.click());
+  await answerDialog(page);
   await wait(1500);
   list = await tabs();
   expect(JSON.stringify(list) === JSON.stringify(practiceTabs), `«Решение» — ровно файлы шага (${list.join(', ')})`);
