@@ -2,7 +2,7 @@ import MarkdownIt from 'markdown-it';
 import container from 'markdown-it-container';
 import { createHighlighterCore, type HighlighterCore } from 'shiki/core';
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
-import { findStepByDir, stepPath } from '../content/course';
+import { findPage, findStepByDir, pagePath, stepPath } from '../content/course';
 
 // Подключаем только нужные языки: полный бандл Shiki тянет ~200 грамматик.
 // Для html и ts берём грамматики Angular: они знают @if/@for, привязки и шаблоны внутри декораторов
@@ -124,7 +124,8 @@ function createMarkdown(highlighter: HighlighterCore) {
     });
   }
 
-  // Ссылки: step:02-templates/02-property-binding → внутренняя навигация, внешние — в новой вкладке
+  // Ссылки: step:02-templates/02-property-binding и page:legacy (справочная страница) — внутренняя навигация,
+  // внешние — в новой вкладке
   const defaultLinkOpen =
     md.renderer.rules.link_open ?? ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
   md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
@@ -135,6 +136,11 @@ function createMarkdown(highlighter: HighlighterCore) {
       token.attrSet('href', step ? stepPath(step) : '#');
       token.attrSet('data-internal', '');
       if (!step) token.attrSet('class', 'broken-link');
+    } else if (href.startsWith('page:')) {
+      const page = findPage(href.slice('page:'.length));
+      token.attrSet('href', page ? pagePath(page) : '#');
+      token.attrSet('data-internal', '');
+      if (!page) token.attrSet('class', 'broken-link');
     } else if (/^https?:/.test(href)) {
       token.attrSet('target', '_blank');
       token.attrSet('rel', 'noopener');

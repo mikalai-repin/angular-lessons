@@ -1,0 +1,42 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+:host(.sold-out) .cover {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.cover {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 6px;
+}
+
+.title,
+.price,
+.stock {
+  margin: 0;
+  font-size: 14px;
+}
+
+s {
+  color: var(--muted);
+}
+
+.out {
+  color: var(--brand);
+}
+
+.ok {
+  color: #1d7f3a;
+}
+
+.button {
+  margin-top: auto;
+}

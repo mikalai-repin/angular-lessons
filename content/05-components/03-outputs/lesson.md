@@ -105,5 +105,5 @@ this.add.emit(this.game());
 ```ts
 @Output() add = new EventEmitter<void>();
 ```
-До Angular 17.3 выход объявляли декоратором `@Output()` над полем с `EventEmitter` — это подкласс `Subject` из RxJS. Работает так же: `this.add.emit()` в компоненте, `(add)="…"` у родителя. Из-за наследования от `Subject` на него можно было подписаться через `subscribe` и применять операторы RxJS — этим часто злоупотребляли, и `EventEmitter` появлялся в сервисах, где ему не место. `output()` проще и не тянет RxJS.
+До Angular 17.3 выход объявляли декоратором `@Output()` над полем с `EventEmitter` — это подкласс `Subject` из RxJS. Работает так же: `this.add.emit()` в компоненте, `(add)="…"` у родителя. Из-за наследования от `Subject` на него можно было подписаться через `subscribe` и применять операторы RxJS — этим часто злоупотребляли, и `EventEmitter` появлялся в сервисах, где ему не место. `output()` проще и не тянет RxJS. Переводит старые выходы `ng generate @angular/core:output-migration`.
 :::

@@ -21,6 +21,8 @@ declare module 'virtual:course' {
       templateCheck?: boolean;
       steps: { dir: string; meta: StepMeta }[];
     }[];
+    /** Справочные страницы content/pages/<slug>.md */
+    pages: { slug: string; title: string; description?: string }[];
   };
   export default course;
 
@@ -32,4 +34,6 @@ declare module 'virtual:course' {
   }
   /** Папка главы → загрузчик её чанка */
   export const sources: Record<string, () => Promise<{ default: ChapterSource }>>;
+  /** Справочная страница → загрузчик её текста (markdown без frontmatter) */
+  export const pageSources: Record<string, () => Promise<{ default: string }>>;
 }

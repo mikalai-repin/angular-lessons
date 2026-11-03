@@ -141,5 +141,5 @@ provideAppInitializer(() => {
 }
 ```
 
-`APP_INITIALIZER` помечен `@deprecated` с версии 19 — «use provideAppInitializer instead». `provideAppInitializer` делает то же самое: регистрирует функцию в этом токене.
+`APP_INITIALIZER` помечен `@deprecated` с версии 19 — «use provideAppInitializer instead». `provideAppInitializer` делает то же самое: регистрирует функцию в этом токене. При обновлении до 19 `ng update` предлагает необязательную миграцию `provide-initializer`, которая так и переписывает код.
 :::

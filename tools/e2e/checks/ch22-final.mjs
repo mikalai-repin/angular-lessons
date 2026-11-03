@@ -112,7 +112,7 @@ expect(!(await footerButtons()).includes('Решение'), 'шаг 4: кноп�
 await checkConsoleClean('шаг 4');
 const own = await download('04-start');
 sameAsStep(own, `${chapter}/04-own-app/start`, 'шаг 4, «Скачать»');
-sameAsStep(own, `${CONTENT}/21-reading-code/07-practice/solution`, 'шаг 4, «Скачать» = магазин главы 21');
+sameAsStep(own, `${CONTENT}/21-reading-code/08-practice/solution`, 'шаг 4, «Скачать» = магазин главы 21');
 
 // После последнего шага — квиз главы
 expect(

@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from steps import PROJECT, format_snapshots, read_dir, rep, step_dir, write_steps
 
 ROOT = f'{PROJECT}/content/22-final-project'
-BASE = read_dir(step_dir(f'{PROJECT}/content/21-reading-code/07-practice/solution'))
+BASE = read_dir(step_dir(f'{PROJECT}/content/21-reading-code/08-practice/solution'))
 
 
 def edit(files, name, *pairs):
@@ -1247,5 +1247,5 @@ if __name__ == '__main__':
     if len(sys.argv) > 2 and sys.argv[1] == 'dump':
         dump(sys.argv[2])
     else:
-        write_steps(ROOT, steps, base='21-reading-code/07-practice')
+        write_steps(ROOT, steps, base='21-reading-code/08-practice')
     print('ok')

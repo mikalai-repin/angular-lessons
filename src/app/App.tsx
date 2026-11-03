@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router';
-import { course, quizPath, stepPath } from '../content/course';
+import { course, pagePath, quizPath, stepPath } from '../content/course';
 import { progress } from '../progress/storage';
 import { Appearance } from './Appearance';
 import { DialogHost } from './Dialog';
@@ -10,6 +10,7 @@ import { AngularLogo, Loader } from './Loader';
 // и начальный экран появляются сразу
 const StepPage = lazy(() => import('./StepPage').then((module) => ({ default: module.StepPage })));
 const QuizPage = lazy(() => import('../quiz/QuizPage').then((module) => ({ default: module.QuizPage })));
+const ReferencePage = lazy(() => import('./ReferencePage').then((module) => ({ default: module.ReferencePage })));
 
 function TableOfContents() {
   const location = useLocation();
@@ -55,6 +56,20 @@ function TableOfContents() {
             </ol>
           </section>
         ))}
+        {course.pages.length > 0 && (
+          <section>
+            <h3>Справочник</h3>
+            <ol>
+              {course.pages.map((page) => (
+                <li key={page.slug}>
+                  <Link to={pagePath(page)} className={location.pathname === pagePath(page) ? 'current' : undefined}>
+                    {page.title}
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
       </nav>
     </details>
   );
@@ -90,6 +105,15 @@ export function App() {
               element={
                 <Suspense fallback={<Loader label="Загружаем редактор…" />}>
                   <StepPage />
+                </Suspense>
+              }
+            />
+            {/* Справочные страницы — один сегмент: /legacy; шаги и квизы — два */}
+            <Route
+              path="/:page"
+              element={
+                <Suspense fallback={<Loader label="Загружаем страницу…" />}>
+                  <ReferencePage />
                 </Suspense>
               }
             />

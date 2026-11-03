@@ -1,7 +1,7 @@
 ---
 title: Выбор проекта
 startFrom: custom
-base: 21-reading-code/07-practice
+base: 21-reading-code/08-practice
 baseHash: '7db65bc6ec6b'
 noSolution: true
 focus: app.routes.ts

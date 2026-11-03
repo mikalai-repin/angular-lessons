@@ -128,5 +128,5 @@ protected readonly fewLeft = FEW_LEFT;
 <s *ngIf="game.oldPrice as oldPrice; else noDiscount" class="old-price">{{ oldPrice }} ₽</s>
 <ng-template #noDiscount><span>Без скидки</span></ng-template>
 ```
-Это директива `NgIf` из `@angular/common`: её нужно было импортировать в компонент, а ветку `else` — описывать отдельным `<ng-template>` с именем. Блок `@if` встроен в шаблоны, импорт не нужен, а `@else if` у `*ngIf` не было вообще. `NgIf` устарела в Angular 20. Перевести старый проект на блоки помогает команда `ng generate @angular/core:control-flow`.
+Это директива `NgIf` из `@angular/common`: её нужно было импортировать в компонент, а ветку `else` — описывать отдельным `<ng-template>` с именем. Блок `@if` встроен в шаблоны, импорт не нужен, а `@else if` у `*ngIf` не было вообще. `NgIf` устарела в Angular 20. Перевести старый проект на блоки помогает команда `ng generate @angular/core:control-flow`, а при обновлении до 21 `ng update` выполняет эту миграцию сам.
 :::

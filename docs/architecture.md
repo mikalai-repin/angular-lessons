@@ -50,7 +50,7 @@
 |---|---|---|
 | Сборка платформы | Vite 8 + TypeScript 6.0 | Как в курсе PixiJS. TypeScript 7 нельзя — см. «Версии» |
 | UI платформы | React 19 | Готовый код из курса PixiJS |
-| Роутинг платформы | `react-router`, URL вида `/:chapter/:step` | |
+| Роутинг платформы | `react-router`, URL вида `/:chapter/:step`, квиз — `/:chapter/quiz`, справочная страница — `/:page` | |
 | Редактор | Monaco Editor 0.57 | TS language service (встроенный TS **5.9**) с типами `@angular/*` и `rxjs`; языки `html` и `css` со своими воркерами. В продакшен-сборке подсветка только `css`, `html`, `javascript`, `typescript` (плагин `monaco-languages` в `vite.config.ts`; в dev Monaco собран целиком) |
 | Компиляция TS → JS | Веб-воркер `src/compiler/compile.worker.ts`: TypeScript 6.0 + `angularJitApplicationTransform` | TS-воркер Monaco не умеет применять трансформы; без трансформа не работают `input()`, `output()`, `model()`, `viewChild()` |
 | Шаблоны → код | JIT-компилятор `@angular/compiler` в iframe превью | |
@@ -201,10 +201,12 @@
 
 ## Загрузка контента и валидатор
 
-Уроки в бандл собирает плагин `scripts/vite-course-content.mjs` (он читает `content/` в Node функциями `scripts/step-files.mjs`, YAML разбирает там же). Два вида модулей:
+Уроки в бандл собирает плагин `scripts/vite-course-content.mjs` (он читает `content/` в Node функциями `scripts/step-files.mjs`, YAML разбирает там же). Три вида модулей:
 
 - `virtual:course` — `course.json`, `chapter.json` и frontmatter всех шагов, входит в начальный бандл. Из него `src/content/course.ts` строит `course`, `allSteps`, адреса шагов, оглавление и начальный экран — синхронно, как раньше;
 - `virtual:course-chapter/<папка главы>` — тексты уроков, собственные файлы `start/` и `solution/` шагов (только изменения), `check.ts`, квиз и полный код базы первого шага. Отдельный чанк на главу; `loadChapter(chapter)` загружает его один раз и собирает полный код старта и решения каждого шага через `shared/step-chain.js` (шаг хранит только изменения, см. `lesson-format.md`). `StepPage` и `QuizPage` берут его через `use()` под `Suspense` из `App.tsx`.
+
+- `virtual:course-page/<slug>` — текст справочной страницы `content/pages/<slug>.md` (её `title` и `description` — в `virtual:course`, поле `pages`). Отдельный чанк; `loadPage(page)` из `course.ts`, отрисовка — `src/app/ReferencePage.tsx` (ленивый чанк) по адресу `/<slug>`: маршрут из одного сегмента `/:page`, неизвестная страница — переадресация на `/`. Ссылки — раздел «Справочник» в оглавлении и на начальном экране, в markdown — `page:<slug>` (`src/lesson/markdown.ts`).
 
 Типы модулей — в `src/env.d.ts`. В dev плагин следит за `content/`: любая правка сбрасывает модули курса (база первого шага зависит от прошлых глав) и перезагружает страницу.
 

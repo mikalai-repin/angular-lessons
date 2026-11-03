@@ -135,5 +135,5 @@ Error: Unexpected routed component type. Expected Login but got CartPage
 :::
 
 ::: legacy Вы встретите в старом коде: RouterTestingModule
-Раньше роутер в тестах подключали модулем: `imports: [RouterTestingModule.withRoutes(routes)]`. В Angular 22 он `@deprecated`: «Use `provideRouter` or `RouterModule`/`RouterModule.forRoot` instead». Поддельное расположение (`Location`), ради которого модуль был нужен, теперь есть в `TestBed` по умолчанию.
+Раньше роутер в тестах подключали модулем: `imports: [RouterTestingModule.withRoutes(routes)]`. В Angular 22 он `@deprecated`: «Use `provideRouter` or `RouterModule`/`RouterModule.forRoot` instead». Поддельное расположение (`Location`), ради которого модуль был нужен, теперь есть в `TestBed` по умолчанию. Заменить модуль во всех тестах помогает `ng generate @angular/core:router-testing-module-migration`.
 :::

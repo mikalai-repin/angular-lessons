@@ -392,6 +392,10 @@
 | cross-origin isolation | изоляция страницы (cross-origin isolation) | заголовки COOP/COEP; нужна для `SharedArrayBuffer` и WebContainers |
 | WebContainers | WebContainers | Node.js в браузере (StackBlitz): встроенный редактор angular.dev |
 | pending task | ожидающая задача | `PendingTasks.add()`: пока есть, приложение не стабильно, сервер не сериализует страницу |
+| NgModule | модуль (`NgModule`) | класс с `@NgModule`: `declarations`, `imports`, `providers`, `bootstrap`; не путать с модулем ES (файлом) |
+| migration | миграция | схема, которая переписывает код: `ng update` выполняет обязательные сам, остальные — `ng generate @angular/core:…` (шаг 21.7) |
+| developer preview | developer preview | API уже можно пробовать, но он может измениться (`@developerPreview`); после — стабильный |
+| deprecated | устаревший (`@deprecated`) | API работает, но его собираются убрать |
 
 ## Магазин «Ход конём»
 

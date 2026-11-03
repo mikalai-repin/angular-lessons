@@ -2503,3 +2503,51 @@ a.button {
     font-size: 16px;
   }
 }
+
+/* Справочная страница вне глав (src/app/ReferencePage.tsx): текст в оформлении урока, шире панели урока */
+.reference-page {
+  height: 100%;
+  overflow: auto;
+  padding: 40px 16px 56px;
+}
+
+.reference-header,
+.reference-page .lesson-content {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.reference-kind {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.reference-header h1 {
+  margin: 6px 0 12px;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+}
+
+.reference-header p {
+  margin: 0 0 24px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+/* Таблицы в пять столбцов на узком экране прокручиваются сами, а не растягивают страницу */
+.reference-page .lesson-content table {
+  display: block;
+  overflow-x: auto;
+}
+
+@media (max-width: 700px) {
+  .reference-page {
+    padding-top: 24px;
+  }
+
+  .reference-header h1 {
+    font-size: 26px;
+  }
+}

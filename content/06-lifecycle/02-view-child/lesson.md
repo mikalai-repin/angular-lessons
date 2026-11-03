@@ -117,5 +117,5 @@ ERROR RuntimeError: NG0951: Child query result is required but no value is avail
 @ViewChild('searchBox') searchBox!: ElementRef<HTMLInputElement>;
 @ViewChildren(GameCard) cards!: QueryList<GameCard>;
 ```
-До Angular 17.2 запросы объявляли декораторами над полями. Результат был не сигналом, а обычным полем, которое Angular заполнял сам, — и до хука `ngAfterViewInit` (шаг 7) оно было `undefined`. Для нескольких результатов был класс `QueryList` с потоком `changes`. Ещё встретится `{ static: true }` — способ получить элемент раньше, если он не внутри управляющего блока.
+До Angular 17.2 запросы объявляли декораторами над полями. Результат был не сигналом, а обычным полем, которое Angular заполнял сам, — и до хука `ngAfterViewInit` (шаг 7) оно было `undefined`. Для нескольких результатов был класс `QueryList` с потоком `changes`. Ещё встретится `{ static: true }` — способ получить элемент раньше, если он не внутри управляющего блока. Сигнальные запросы стали стабильными в 19; перевести на них старые помогает `ng generate @angular/core:signal-queries-migration`.
 :::

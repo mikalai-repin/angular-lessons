@@ -1,0 +1,25 @@
+<header class="header">
+  <strong>Ход конём</strong>
+  <span>В корзине: {{ cartCount$ | async }}</span>
+</header>
+
+<input
+  class="search"
+  placeholder="Поиск игры"
+  [(ngModel)]="query"
+  (ngModelChange)="onSearch($event)"
+/>
+
+<p *ngIf="loading; else list" class="muted">Загружаем…</p>
+<ng-template #list>
+  <div class="grid">
+    <app-game-card
+      *ngFor="let game of games; trackBy: trackById"
+      [game]="game"
+      (add)="addToCart($event)"
+    ></app-game-card>
+  </div>
+  <p *ngIf="games.length === 0" class="muted">
+    Ничего не нашлось
+  </p>
+</ng-template>

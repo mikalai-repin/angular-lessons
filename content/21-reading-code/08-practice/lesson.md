@@ -1,6 +1,7 @@
 ---
 title: 'Практикум: хранилище, которое не падает'
 startFrom: custom
+removedInStart: [legacy/app.component.css, legacy/app.component.html, legacy/app.component.ts, legacy/app.module.ts, legacy/game-card/game-card.component.css, legacy/game-card/game-card.component.html, legacy/game-card/game-card.component.ts, legacy/services/cart.service.ts, legacy/services/games.service.ts]
 focus: core/browser-storage.ts
 api: [SafeStorage, 'implements Storage', SecurityError, QuotaExceededError, NG0200]
 ---
@@ -9,7 +10,7 @@ api: [SafeStorage, 'implements Storage', SecurityError, QuotaExceededError, NG02
 
 ## Что изменилось в коде
 
-Код — магазин главы 20. В `core/browser-storage.ts` добавлен комментарий `TODO` с заданием.
+Код — магазин главы 20: старого приложения из шага 7 больше нет, `main.ts` снова запускает «Ход конём». В `core/browser-storage.ts` добавлен комментарий `TODO` с заданием.
 
 ## Опыт 1: данные сайтов запрещены
 
@@ -210,7 +211,8 @@ export const BROWSER_STORAGE = new InjectionToken<Storage | null>(
 - **Пререндер**: статический сайт, `PendingTasks` для асинхронной статьи, статья в `ng-state`, `@defer` для того, что не нужно на сервере, правила хостинга и «мягкая 404».
 - **Встроенный редактор**: настоящий `ng serve` в WebContainers против JIT в браузере — и что бывает с окружением без lock-файла.
 - **Ревью**: что команда сама переписала за месяц, что стоит перенять, где мы бы сделали иначе.
+- **Старый проект**: «Ход конём» образца Angular 15 — модуль, zone.js, `@Input()`, потоки вместо сигналов; что поменял `ng update` до 22 и как переводят такой код по одному компоненту.
 
-Главный вывод: в большом проекте нет особой магии. Те же резолверы, сигналы, сервисы и `@defer`, что в «Ходе конём», — только их больше, и живут они дольше: со следами переходов, мёртвым кодом и `TODO`. Читать такой код вы теперь умеете.
+Главный вывод: в большом проекте нет особой магии. Те же резолверы, сигналы, сервисы и `@defer`, что в «Ходе конём», — только их больше, и живут они дольше: со следами переходов, мёртвым кодом и `TODO`. А в проекте постарше рядом с ними окажутся модули и zone.js. Читать такой код вы теперь умеете.
 
 Впереди — глава 22, финальный проект: своё приложение или новый раздел магазина, без пошаговых инструкций.

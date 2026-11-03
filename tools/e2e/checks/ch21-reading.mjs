@@ -1,12 +1,24 @@
 // Проверка главы 21 в интерфейсе платформы: шаги кнопкой «Далее» (магазин главы 20 без изменений, консоль чистая),
 // опыты шага 2 (страница 404 с export default и без него, пропуск плавной смены страниц при смене сортировки)
+// шаг 7 (старое приложение на модулях и zone.js: старт и решение, опыты — без Eager, без zone.js, без standalone: false)
 // и опыты практикума (запрет данных сайтов, переполненное хранилище) на старте и на решении.
 // Проверка практикума (check.ts) — в checks/step-checks.mjs 21-reading-code.
 // node tools/e2e/checks/ch21-reading.mjs
 import { CONTENT, clean, openCourse, readDir, wait } from '../lib.mjs';
 
-const { page, expect, frame, consoleText, title, nextStep, checkConsoleClean, runWithCode, finish } =
-  await openCourse('/reading-code/map');
+const {
+  page,
+  expect,
+  frame,
+  consoleText,
+  title,
+  count: countIn,
+  nextStep,
+  showSolution,
+  checkConsoleClean,
+  runWithCode,
+  finish,
+} = await openCourse('/reading-code/map');
 
 const appText = async () =>
   clean(
@@ -47,8 +59,20 @@ for (const [i, name] of titles.entries()) {
   expect(await waitText('Хиты'), `шаг ${i + 1}: в превью — магазин`);
   await checkConsoleClean(`шаг ${i + 1}`);
 }
+
+// 21.7: старый «Ход конём» — модуль, zone.js, *ngIf. На старте и на «Решении» — шесть игр, консоль чистая
 await nextStep();
-expect((await title())?.startsWith('Практикум'), `шаг 7: ${await title()}`);
+expect((await title()) === 'Проект старше сигналов', `шаг 7: ${await title()}`);
+expect(await waitText('Зельевары'), 'шаг 7, старт: старое приложение показывает игры');
+await checkConsoleClean('шаг 7, старт');
+await showSolution();
+expect(await waitText('Зельевары'), 'шаг 7, решение: те же игры');
+await checkConsoleClean('шаг 7, решение');
+expect((await countIn('app-game-card')) === 6, `шаг 7, решение: шесть карточек (${await countIn('app-game-card')})`);
+
+await nextStep();
+expect((await title())?.startsWith('Практикум'), `шаг 8: ${await title()}`);
+expect(await waitText('Хиты'), 'шаг 8: в превью снова магазин главы 20');
 
 // 21.2, опыт: «Нет такой страницы» лениво. С export default — работает, без него — TS2322 и NG04014
 const routing = readDir(`${CONTENT}/21-reading-code/02-routing/start`);
@@ -152,7 +176,7 @@ const logIn = async () => {
   await wait(1500);
 };
 for (const kind of ['start', 'solution']) {
-  const files = readDir(`${CONTENT}/21-reading-code/07-practice/${kind}`);
+  const files = readDir(`${CONTENT}/21-reading-code/08-practice/${kind}`);
 
   await runWithCode('reading-code/practice', { ...files, 'main.ts': denied + files['main.ts'] }, 5000);
   text = clean(await consoleText());
@@ -181,5 +205,44 @@ for (const kind of ['start', 'solution']) {
     await checkConsoleClean('практикум, решение, переполнение');
   }
 }
+
+// 21.7, опыт 1: без Eager компонент — OnPush, экран отстаёт на шаг: «Загружаем…», после «зел» — прежние шесть игр,
+// после «ь» — «Зельевары»
+const legacy = readDir(`${CONTENT}/21-reading-code/07-legacy-code/start`);
+const without = (file, line) => ({ ...legacy, [file]: replace(legacy[file], [[line, '']]) });
+await runWithCode(
+  'reading-code/legacy-code',
+  without('legacy/app.component.ts', '  changeDetection: ChangeDetectionStrategy.Eager,\n'),
+  4000,
+);
+expect((await appText()).includes('Загружаем…'), 'шаг 7, без Eager: «Загружаем…» после ответа сервера');
+await frame().type('.search', 'зел');
+await wait(1000);
+expect((await appText()).includes('Остров сокровищ'), 'шаг 7, без Eager: после «зел» — прошлый список');
+await frame().type('.search', 'ь');
+await wait(1000);
+const lagging = await appText();
+expect(
+  lagging.includes('Зельевары') && !lagging.includes('Остров сокровищ'),
+  'шаг 7, без Eager: после «ь» — «Зельевары»',
+);
+
+// Опыт 2: без zone.js — NG0908; задание: без standalone: false — ошибка про declarations
+await runWithCode('reading-code/legacy-code', without('main.ts', "import 'zone.js';\n"), 4000);
+expect(
+  clean(await consoleText()).includes('NG0908: In this configuration Angular requires Zone.js'),
+  'шаг 7, без zone.js: NG0908',
+);
+await runWithCode(
+  'reading-code/legacy-code',
+  without('legacy/game-card/game-card.component.ts', '  standalone: false,\n'),
+  4000,
+);
+expect(
+  clean(await consoleText()).includes(
+    '"GameCardComponent" is marked as standalone and can\'t be declared in any NgModule',
+  ),
+  'шаг 7, без standalone: false: ошибка про declarations',
+);
 
 await finish();

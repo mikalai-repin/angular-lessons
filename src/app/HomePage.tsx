@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { allSteps, course, quizPath, stepPath, type Chapter } from '../content/course';
+import { allSteps, course, pagePath, quizPath, stepPath, type Chapter } from '../content/course';
 import { progress } from '../progress/storage';
 import { AngularLogo } from './Loader';
 
@@ -89,6 +89,24 @@ export function HomePage() {
           </section>
         );
       })}
+
+      {course.pages.length > 0 && (
+        <section className="home-part">
+          <h2>Справочник</h2>
+          <ul className="home-chapters">
+            {course.pages.map((page) => (
+              <li key={page.slug}>
+                <Link to={pagePath(page)} className="home-chapter">
+                  <span className="home-chapter-body">
+                    <span className="home-chapter-title">{page.title}</span>
+                    {page.description && <span className="home-chapter-description">{page.description}</span>}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

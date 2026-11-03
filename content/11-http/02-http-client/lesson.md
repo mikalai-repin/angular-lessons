@@ -110,5 +110,5 @@ export class AppModule {}
 constructor(private http: HttpClient) {}
 ```
 
-И часто встречается `provideHttpClient(withFetch())` — так включали `fetch` вместо `XMLHttpRequest`, когда по умолчанию использовался `XMLHttpRequest`. В Angular 22 `withFetch()` помечена устаревшей: `fetch` и так используется по умолчанию.
+И часто встречается `provideHttpClient(withFetch())` — так включали `fetch` вместо `XMLHttpRequest`, когда по умолчанию использовался `XMLHttpRequest`. В Angular 22 `withFetch()` помечена устаревшей: `fetch` и так используется по умолчанию. Поэтому при обновлении до 22 `ng update` дописывает `withXhr()` в каждый `provideHttpClient(…)` без `withFetch()` — чтобы приложение по-прежнему ходило через `XMLHttpRequest`. А `HttpClientModule` он заменяет на `provideHttpClient(withInterceptorsFromDi())` ещё при обновлении до 18.
 :::

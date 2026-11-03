@@ -2,7 +2,7 @@
 // shared/step-chain.js) и сборка кода шага тем же модулем, что и превью (ловит ненайденные templateUrl/styleUrl
 // и синтаксические ошибки). Полный код каждого старта и решения выгружает в .content-check/ и собирает там ngc
 // (AOT, без вывода файлов): типы TS и шаблонов (strictTemplates), расширенная диагностика шаблонов.
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import ts from 'typescript';
 import { parse as parseYaml } from 'yaml';
@@ -152,6 +152,42 @@ function checkQuiz(chapterDir, chapterPath, stepDirs) {
     if (options.length < 3 || options.length > 5) errors.push(`${at}: вариантов ${options.length}, нужно от 3 до 5`);
     if (!options.every(isText)) errors.push(`${at}: каждый вариант — непустая строка`);
     else if (new Set(options.map((o) => o.trim())).size !== options.length) errors.push(`${at}: варианты повторяются`);
+  }
+}
+
+// Справочные страницы (content/pages/<slug>.md, адрес /<slug>) и внутренние ссылки уроков, квизов и страниц:
+// step:<глава>/<шаг> — на существующий шаг, page:<slug> — на существующую страницу
+const pagesDir = join(root, 'pages');
+const pageSlugs = new Set(
+  isDir(pagesDir)
+    ? readdirSync(pagesDir)
+        .filter((name) => name.endsWith('.md'))
+        .map((name) => name.slice(0, -3))
+    : [],
+);
+const linkSources = [];
+for (const slug of pageSlugs) {
+  const where = `pages/${slug}.md`;
+  const text = readFileSync(join(pagesDir, `${slug}.md`), 'utf8');
+  if (!/^[a-z0-9-]+$/.test(slug)) errors.push(`${where}: имя файла — латиница в kebab-case`);
+  if (!/^---\n[\s\S]*?^title: .+$[\s\S]*?\n---\n/m.test(text)) errors.push(`${where}: во frontmatter нет title`);
+  linkSources.push([where, text]);
+}
+const stepIds = new Set();
+for (const chapterDir of course.chapters) {
+  for (const step of resolveChapterDir(join(root, chapterDir))) {
+    const stepDir = step.path.split('/').at(-1);
+    stepIds.add(`${chapterDir}/${stepDir}`);
+    linkSources.push([`${chapterDir}/${stepDir}`, readFileSync(join(step.path, 'lesson.md'), 'utf8')]);
+  }
+  const quizPath = join(root, chapterDir, 'quiz.yaml');
+  if (existsSync(quizPath)) linkSources.push([`${chapterDir}/quiz.yaml`, readFileSync(quizPath, 'utf8')]);
+}
+for (const [where, text] of linkSources) {
+  for (const [, scheme, target] of text.matchAll(/\]\((step|page):([^)\s]*)\)/g)) {
+    if (scheme === 'step' && !stepIds.has(target)) errors.push(`${where}: ссылка step:${target} — нет такого шага`);
+    if (scheme === 'page' && !pageSlugs.has(target))
+      errors.push(`${where}: ссылка page:${target} — нет такой страницы`);
   }
 }
 

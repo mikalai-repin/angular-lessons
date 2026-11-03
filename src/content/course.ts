@@ -1,6 +1,6 @@
 import { resolveChapter } from '../../shared/step-chain.js';
 import type { ChainMeta, FileMap } from '../../shared/step-chain.js';
-import courseIndex, { sources } from 'virtual:course';
+import courseIndex, { pageSources, sources } from 'virtual:course';
 
 /** Набор файлов шага: имя файла → исходный код */
 export type { FileMap };
@@ -101,12 +101,20 @@ export interface Part {
   description: string;
 }
 
+/** Справочная страница вне глав: content/pages/<slug>.md, адрес /<slug> */
+export interface Page {
+  slug: string;
+  title: string;
+  description?: string;
+}
+
 export interface Course {
   title: string;
   angularVersion: string;
   /** Части курса по порядку; chapter.part — номер части с единицы */
   parts: Part[];
   chapters: Chapter[];
+  pages: Page[];
 }
 
 // Уроки собирает плагин scripts/vite-course-content.mjs: оглавление (названия глав, frontmatter шагов) — в бандле
@@ -162,7 +170,13 @@ function loadCourse(): Course {
     }));
     return chapter;
   });
-  return { title: courseIndex.title, angularVersion: courseIndex.angularVersion, parts: courseIndex.parts, chapters };
+  return {
+    title: courseIndex.title,
+    angularVersion: courseIndex.angularVersion,
+    parts: courseIndex.parts,
+    chapters,
+    pages: courseIndex.pages,
+  };
 }
 
 export const course = loadCourse();
@@ -199,6 +213,27 @@ export function loadChapter(chapter: Chapter): Promise<ChapterContent> {
     // Не загрузилось (сеть, новая версия на сервере) — следующий заход загрузит заново
     promise.catch(() => loaded.delete(chapter));
     loaded.set(chapter, promise);
+  }
+  return promise;
+}
+
+export function findPage(slug?: string): Page | undefined {
+  return course.pages.find((page) => page.slug === slug);
+}
+
+export function pagePath(page: Page): string {
+  return `/${page.slug}`;
+}
+
+const loadedPages = new Map<Page, Promise<string>>();
+
+/** Текст справочной страницы (markdown); промис один на страницу — его можно отдавать в `use()` */
+export function loadPage(page: Page): Promise<string> {
+  let promise = loadedPages.get(page);
+  if (!promise) {
+    promise = pageSources[page.slug]().then((module) => module.default);
+    promise.catch(() => loadedPages.delete(page));
+    loadedPages.set(page, promise);
   }
   return promise;
 }
