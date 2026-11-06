@@ -2,7 +2,7 @@
 title: Angular CLI
 startFrom: custom
 base: 19-internals/07-practice
-baseHash: '4f3d2c2c9bb4'
+baseHash: '84f311e3c206'
 noSolution: true
 focus: main.ts
 removedInStart: [debug/cd-log.ts, debug/signal-lab.ts, debug/view-log.ts]

@@ -12,12 +12,14 @@ import {
   forkJoin,
   map,
   of,
+  tap,
   throwError,
 } from 'rxjs';
 import { favoritesFeature } from '../../core/favorites-feature';
 import { Game } from '../../core/models';
 import { SHOP_CONFIG } from '../../core/shop-config';
 import { GameCard } from '../../shared/game-card/game-card';
+import { FavoritesPageActions } from './favorites-page-actions';
 
 // Раздел кабинета «Избранное»: игры, отмеченные сердечком
 @Component({
@@ -26,8 +28,9 @@ import { GameCard } from '../../shared/game-card/game-card';
   templateUrl: './favorites-page.html',
 })
 export class FavoritesPage {
+  private readonly store = inject(Store);
   // id игр в избранном — из Store
-  protected readonly ids = inject(Store).selectSignal(
+  protected readonly ids = this.store.selectSignal(
     favoritesFeature.selectIds,
   );
   private readonly http = inject(HttpClient);
@@ -47,6 +50,7 @@ export class FavoritesPage {
     stream: ({ params }) =>
       forkJoin(params.map((id) => this.loadGame(id))).pipe(
         map((games) => games.filter((game) => game !== null)),
+        tap((games) => this.forgetMissing(params, games)),
       ),
   });
 
@@ -62,5 +66,23 @@ export class FavoritesPage {
             : throwError(() => error),
         ),
       );
+  }
+
+  // Игр, которых не нашлось (404), нет и в избранном — тогда и счётчик в шапке верен.
+  // Пропавших нет — хранилище не трогаем: новый массив id запустил бы загрузку снова, и так по кругу
+  private forgetMissing(
+    ids: readonly number[],
+    games: readonly Game[],
+  ) {
+    const missing = ids.filter(
+      (id) => !games.some((game) => game.id === id),
+    );
+    if (missing.length > 0) {
+      this.store.dispatch(
+        FavoritesPageActions.missingGamesFound({
+          gameIds: missing,
+        }),
+      );
+    }
   }
 }

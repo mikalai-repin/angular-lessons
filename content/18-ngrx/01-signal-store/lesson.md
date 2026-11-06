@@ -2,7 +2,7 @@
 title: Signal Store
 startFrom: custom
 base: 17-admin/08-practice
-baseHash: '30f5b3611e6e'
+baseHash: '0bb33094d9ee'
 focus: core/favorites-store.ts
 api: [NgRx, signalStore, withState, withComputed, withMethods, patchState, withHooks, protectedState]
 ---
@@ -56,6 +56,11 @@ export const FavoritesStore = signalStore(
           : [...ids, game.id],
       }));
     },
+    forget(missing: readonly number[]) {
+      patchState(store, ({ ids }) => ({
+        ids: ids.filter((id) => !missing.includes(id)),
+      }));
+    },
   })),
   withHooks({
     onInit(store) {
@@ -95,7 +100,7 @@ export const FavoritesStore = signalStore(
 
 Магазин работает как раньше: сердечко в карточке отмечает игру, счётчик в шапке растёт, после перезапуска превью избранное на месте.
 
-При этом **ни шапку, ни карточку, ни страницу избранного менять не пришлось**. Они просят `inject(FavoritesStore)` и вызывают `favorites.count()`, `favorites.has(game)`, `favorites.toggle(game)` — у хранилища ровно те же члены, что были у сервиса. Для компонента Signal Store — обычный сервис с сигналами.
+При этом **ни шапку, ни карточку, ни страницу избранного менять не пришлось**. Они просят `inject(FavoritesStore)` и вызывают `favorites.count()`, `favorites.has(game)`, `favorites.toggle(game)`, `favorites.forget(missing)` — у хранилища ровно те же члены, что были у сервиса. Для компонента Signal Store — обычный сервис с сигналами.
 
 ## Состояние закрыто
 

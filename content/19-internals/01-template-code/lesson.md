@@ -2,7 +2,7 @@
 title: Код шаблона
 startFrom: custom
 base: 18-ngrx/09-practice
-baseHash: '89d261fcc5fb'
+baseHash: '520bb6b8fe40'
 noSolution: true
 focus: shared/game-card/game-card.html
 api: [вкладка «Шаблон», ɵɵdefineComponent, ɵɵconditionalCreate, ɵɵconditional, ɵɵnextContext, ɵɵpureFunction1, ɵɵdomElementStart, ɵfac]

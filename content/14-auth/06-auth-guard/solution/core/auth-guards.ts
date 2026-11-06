@@ -11,3 +11,9 @@ export const authGuard: CanActivateFn = (_route, state) => {
     queryParams: { returnUrl: state.url },
   });
 };
+
+// Страница только для гостей. Вошедшему на странице входа делать нечего — на главную
+export const guestGuard: CanActivateFn = () =>
+  inject(AuthStore).isLoggedIn()
+    ? inject(Router).createUrlTree(['/'])
+    : true;

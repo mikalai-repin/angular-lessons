@@ -2,7 +2,7 @@
 title: Выбор проекта
 startFrom: custom
 base: 21-reading-code/08-practice
-baseHash: '7db65bc6ec6b'
+baseHash: '47080f32bb20'
 noSolution: true
 focus: app.routes.ts
 api: [финальный проект, check.ts, «Скачать»]

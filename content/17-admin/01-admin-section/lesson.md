@@ -2,7 +2,7 @@
 title: Раздел админки
 startFrom: custom
 base: 16-testing/08-practice
-baseHash: '9a4b47362db2'
+baseHash: '95b76a5f86eb'
 focus: admin/admin.routes.ts
 url: /admin
 api: [children, loadChildren, canMatch, '<table>', routerLinkActiveOptions]

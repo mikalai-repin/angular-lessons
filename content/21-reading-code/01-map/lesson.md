@@ -2,7 +2,7 @@
 title: Карта проекта
 startFrom: custom
 base: 20-real-project/09-deploy
-baseHash: 'f58e92a741f7'
+baseHash: '9142e7d8c87a'
 noSolution: true
 focus: app.config.ts
 api: [angular.dev, adev, '@angular/docs', Bazel, 'workspace:*', mergeApplicationConfig]

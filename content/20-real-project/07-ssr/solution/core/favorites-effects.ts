@@ -8,6 +8,7 @@ import {
   ofType,
 } from '@ngrx/effects';
 import { map, tap } from 'rxjs';
+import { FavoritesPageActions } from '../account/favorites-page/favorites-page-actions';
 import { GameCardActions } from '../shared/game-card/game-card-actions';
 import { FavoritesStorageActions } from './favorites-storage-actions';
 import { BROWSER_STORAGE } from './browser-storage';
@@ -33,7 +34,7 @@ export const restoreFavorites = createEffect(
   { functional: true },
 );
 
-// Эффект: после каждого переключения сердечка записать избранное.
+// Эффект: после каждого изменения избранного (сердечко, пропавшие игры) записать его.
 // dispatch: false — эффект ничего не отправляет обратно в Store
 export const saveFavorites = createEffect(
   (
@@ -42,7 +43,10 @@ export const saveFavorites = createEffect(
     storage = inject(BROWSER_STORAGE),
   ) =>
     actions$.pipe(
-      ofType(GameCardActions.favoriteToggled),
+      ofType(
+        GameCardActions.favoriteToggled,
+        FavoritesPageActions.missingGamesFound,
+      ),
       // К действию — текущие id из Store: редьюсер уже обработал это действие
       concatLatestFrom(() =>
         store.select(favoritesFeature.selectIds),

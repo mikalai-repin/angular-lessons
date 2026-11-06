@@ -2,7 +2,7 @@
 title: Зачем тесты
 startFrom: custom
 base: 15-performance/08-practice
-baseHash: '5ce28a8694bb'
+baseHash: '7246d41fc9a7'
 preview: tests
 focus: shared/plural.spec.ts
 api: [describe, it, expect, toBe, '*.spec.ts']

@@ -5,3 +5,9 @@ export const authGuard: CanActivateFn = (_route, state) => {
   // TODO: вошёл — пустить; не вошёл — на /login, а адрес страницы (state.url) — в query-параметр returnUrl
   return true;
 };
+
+// Страница только для гостей
+export const guestGuard: CanActivateFn = () => {
+  // TODO: не вошёл — пустить; вошёл — на главную
+  return true;
+};

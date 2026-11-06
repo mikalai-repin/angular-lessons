@@ -44,6 +44,12 @@ export const FavoritesStore = signalStore(
           : [...ids, game.id],
       }));
     },
+    // Этих игр больше нет в каталоге — убираем их из избранного
+    forget(missing: readonly number[]) {
+      patchState(store, ({ ids }) => ({
+        ids: ids.filter((id) => !missing.includes(id)),
+      }));
+    },
   })),
 );
 

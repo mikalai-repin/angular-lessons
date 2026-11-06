@@ -16,6 +16,12 @@ export const authGuard: CanActivateFn = (_route, state) => {
   });
 };
 
+// Страница только для гостей. Вошедшему на странице входа делать нечего — на главную
+export const guestGuard: CanActivateFn = () =>
+  inject(AuthStore).isLoggedIn()
+    ? inject(Router).createUrlTree(['/'])
+    : true;
+
 // Раздел только для администратора. Остальным маршрута как будто нет: роутер ищет дальше и находит «**» — 404
 export const adminGuard: CanMatchFn = () =>
   inject(AuthStore).isAdmin();

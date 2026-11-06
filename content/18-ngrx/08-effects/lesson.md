@@ -54,7 +54,10 @@ on(FavoritesStorageActions.restored, (_, { ids }) => ({ ids })),
 export const saveFavorites = createEffect(
   (actions$ = inject(Actions), store = inject(Store)) =>
     actions$.pipe(
-      ofType(GameCardActions.favoriteToggled),
+      ofType(
+        GameCardActions.favoriteToggled,
+        FavoritesPageActions.missingGamesFound,
+      ),
       concatLatestFrom(() => store.select(favoritesFeature.selectIds)),
       tap(([, ids]) => localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))),
     ),
@@ -62,7 +65,7 @@ export const saveFavorites = createEffect(
 );
 ```
 
-Эффекту нужны не данные действия, а **состояние после него**. `concatLatestFrom` из `@ngrx/operators` добавляет к каждому действию текущее значение потока: получается пара `[действие, ids]`. Редьюсер к этому моменту уже отработал — эффекты получают действие после редьюсеров. `store.select(…)` — селектор как поток (`Observable`), а не сигнал: здесь мы в мире RxJS.
+`ofType` принимает несколько типов: избранное меняют два действия — сердечко и пропавшие игры, — и записывать нужно после обоих. Эффекту нужны не данные действия, а **состояние после него**. `concatLatestFrom` из `@ngrx/operators` добавляет к каждому действию текущее значение потока: получается пара `[действие, ids]`. Редьюсер к этому моменту уже отработал — эффекты получают действие после редьюсеров. `store.select(…)` — селектор как поток (`Observable`), а не сигнал: здесь мы в мире RxJS.
 
 `dispatch: false` — эффект ничего не возвращает в Store: запись в `localStorage` — конец пути.
 

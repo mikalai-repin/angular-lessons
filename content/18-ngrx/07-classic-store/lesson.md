@@ -6,14 +6,15 @@ removedInSolution: [core/favorites-store.ts]
 api: ['@ngrx/store', createActionGroup, props, createReducer, on, createFeature, createSelector, provideStore, provideState, Store.dispatch, selectSignal]
 ---
 
-Signal Store появился в NgRx недавно. А большинство существующих проектов на NgRx написаны на **классическом Store** (`@ngrx/store`) — библиотеке, устроенной по образцу Redux. Скорее всего, на работе вы встретите именно его. Чтобы читать такой код, перепишем на нём то, что уже умеем делать иначе, — избранное. Сравнивать будет легко: у избранного одно поле состояния и одно действие.
+Signal Store появился в NgRx недавно. А большинство существующих проектов на NgRx написаны на **классическом Store** (`@ngrx/store`) — библиотеке, устроенной по образцу Redux. Скорее всего, на работе вы встретите именно его. Чтобы читать такой код, перепишем на нём то, что уже умеем делать иначе, — избранное. Сравнивать будет легко: у избранного одно поле состояния и два действия.
 
 ## Что изменилось в коде
 
-Две заготовки:
+Две заготовки и один готовый файл:
 
 - `shared/game-card/game-card-actions.ts` — группа действий карточки игры, пока без действий;
-- `core/favorites-feature.ts` — часть состояния «избранное»: начальное состояние и пустой редьюсер.
+- `core/favorites-feature.ts` — часть состояния «избранное»: начальное состояние и пустой редьюсер;
+- `account/favorites-page/favorites-page-actions.ts` — готовая группа действий страницы «Избранное»: `FavoritesPageActions.missingGamesFound({ gameIds })` — сервер не нашёл этих игр. Это второе действие избранного, бывший метод `forget` из шага 12.5.
 
 `core/favorites-store.ts` пока на месте — в конце шага его не станет.
 
@@ -63,6 +64,12 @@ export const favoritesFeature = createFeature({
         ? state.ids.filter((id) => id !== gameId)
         : [...state.ids, gameId],
     })),
+    on(
+      FavoritesPageActions.missingGamesFound,
+      (state, { gameIds }) => ({
+        ids: state.ids.filter((id) => !gameIds.includes(id)),
+      }),
+    ),
   ),
   extraSelectors: ({ selectIds }) => ({
     selectCount: createSelector(selectIds, (ids) => ids.length),
@@ -70,7 +77,7 @@ export const favoritesFeature = createFeature({
 });
 ```
 
-**`createReducer(начальное, on(…), …)`** — редьюсер. `on(создатель действия, функция)` из `@ngrx/store` (не тот `on`, что из `@ngrx/signals/events` в прошлом шаге) — что сделать с состоянием на это действие. В отличие от `withReducer` функция возвращает **всё** новое состояние части, а не только изменения.
+**`createReducer(начальное, on(…), …)`** — редьюсер. `on(создатель действия, функция)` из `@ngrx/store` (не тот `on`, что из `@ngrx/signals/events` в прошлом шаге) — что сделать с состоянием на это действие. Действий два — и `on` два: сердечко в карточке и пропавшие игры со страницы «Избранное». В отличие от `withReducer` функция возвращает **всё** новое состояние части, а не только изменения.
 
 **`createFeature`** собирает часть состояния (feature): имя — ключ в общем объекте, редьюсер — и селекторы. Простые селекторы она создаёт **сама**: `selectFavoritesState` — вся часть, `selectIds` — по одному на каждое поле. Свои — в `extraSelectors`.
 
@@ -109,11 +116,11 @@ protected toggleFavorite() {
 
 ::: task
 1. В `game-card-actions.ts` добавьте действие `'Favorite Toggled'` с `props<{ gameId: number }>()`.
-2. В `favorites-feature.ts` — `on(…)` в редьюсере и `extraSelectors` с `selectCount`.
+2. В `favorites-feature.ts` — `on(…)` для обоих действий в редьюсере и `extraSelectors` с `selectCount`.
 3. В `app.config.ts` — `provideStore()` и `provideState(favoritesFeature)`.
 4. `GameCard`: `isFavorite` — через `selectSignal(favoritesFeature.selectIds)`, метод `toggleFavorite()` с `dispatch`; в шаблоне — `(click)="toggleFavorite()"`.
 5. `Header`: `favoritesCount = inject(Store).selectSignal(favoritesFeature.selectCount)`, в шаблоне — `favoritesCount()`.
-6. `FavoritesPage`: `ids = inject(Store).selectSignal(favoritesFeature.selectIds)`, в ресурсе и шаблоне — `this.ids()` и `ids().length === 0`.
+6. `FavoritesPage`: `store = inject(Store)`, `ids = this.store.selectSignal(favoritesFeature.selectIds)`, в ресурсе и шаблоне — `this.ids()` и `ids().length === 0`; в `forgetMissing` вместо `forget` — `dispatch(FavoritesPageActions.missingGamesFound({ gameIds: missing }))`.
 7. Удалите `core/favorites-store.ts`.
 8. Тест карточки (`game-card.spec.ts`) тоже создаёт карточку — добавьте в его `providers` `provideStore()` и `provideState(favoritesFeature)`.
 :::

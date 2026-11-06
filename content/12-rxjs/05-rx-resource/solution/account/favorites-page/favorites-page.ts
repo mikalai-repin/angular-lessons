@@ -11,6 +11,7 @@ import {
   forkJoin,
   map,
   of,
+  tap,
   throwError,
 } from 'rxjs';
 import { FavoritesStore } from '../../core/favorites-store';
@@ -39,6 +40,7 @@ export class FavoritesPage {
     stream: ({ params }) =>
       forkJoin(params.map((id) => this.loadGame(id))).pipe(
         map((games) => games.filter((game) => game !== null)),
+        tap((games) => this.forgetMissing(params, games)),
       ),
   });
 
@@ -54,5 +56,19 @@ export class FavoritesPage {
             : throwError(() => error),
         ),
       );
+  }
+
+  // Игр, которых не нашлось (404), нет и в избранном — тогда и счётчик в шапке верен.
+  // Пропавших нет — хранилище не трогаем: новый массив id запустил бы загрузку снова, и так по кругу
+  private forgetMissing(
+    ids: readonly number[],
+    games: readonly Game[],
+  ) {
+    const missing = ids.filter(
+      (id) => !games.some((game) => game.id === id),
+    );
+    if (missing.length > 0) {
+      this.favorites.forget(missing);
+    }
   }
 }

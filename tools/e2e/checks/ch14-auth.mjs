@@ -158,6 +158,9 @@ expect(
 );
 await logIn();
 expect((await address()) === '/account/orders', 'шаг 6: после входа — обратно на заказы');
+// Вошедшему страница входа не нужна: guestGuard ведёт на главную (адресная строка — с перезапуском превью)
+await go('/login');
+expect((await address()) === '/', `шаг 6: вошедший на /login — на главную (${await address()})`);
 await checkConsoleClean('шаг 6');
 
 // 7. Роли: админка только для администратора

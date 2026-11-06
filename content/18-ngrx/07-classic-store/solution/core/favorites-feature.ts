@@ -4,6 +4,7 @@ import {
   createSelector,
   on,
 } from '@ngrx/store';
+import { FavoritesPageActions } from '../account/favorites-page/favorites-page-actions';
 import { GameCardActions } from '../shared/game-card/game-card-actions';
 
 // Состояние избранного: id игр, отмеченных сердечком
@@ -25,6 +26,12 @@ export const favoritesFeature = createFeature({
         ids: state.ids.includes(gameId)
           ? state.ids.filter((id) => id !== gameId)
           : [...state.ids, gameId],
+      }),
+    ),
+    on(
+      FavoritesPageActions.missingGamesFound,
+      (state, { gameIds }) => ({
+        ids: state.ids.filter((id) => !gameIds.includes(id)),
       }),
     ),
   ),

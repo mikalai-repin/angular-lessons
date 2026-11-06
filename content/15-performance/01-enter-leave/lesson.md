@@ -2,7 +2,7 @@
 title: Анимация появления и исчезновения
 startFrom: custom
 base: 14-auth/09-practice
-baseHash: 'a2d102094965'
+baseHash: 'a61f640d5eae'
 focus: cart/cart-page/cart-page.html
 url: /cart
 api: [animate.enter, animate.leave, '@keyframes']

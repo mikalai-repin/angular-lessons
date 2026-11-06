@@ -16,6 +16,12 @@ export const authGuard: CanActivateFn = (_route, state) => {
   });
 };
 
+// Страница только для гостей. Вошедшему на странице входа делать нечего — на главную
+export const guestGuard: CanActivateFn = () =>
+  inject(AuthStore).isLoggedIn()
+    ? inject(Router).createUrlTree(['/'])
+    : true;
+
 // Раздел только для администратора
 export const adminGuard: CanMatchFn = () => {
   // TODO: true — только если вошёл администратор

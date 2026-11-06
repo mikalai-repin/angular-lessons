@@ -2,7 +2,7 @@
 title: Как устроен вход
 startFrom: custom
 base: 13-forms/10-practice
-baseHash: '7ecc2d0c593f'
+baseHash: 'f7aabc0ae3ec'
 focus: core/auth-store.ts
 api: [AuthStore, токен, isLoggedIn, asReadonly]
 ---

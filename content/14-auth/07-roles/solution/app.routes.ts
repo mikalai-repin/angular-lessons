@@ -6,7 +6,7 @@ import {
   cartNotEmptyGuard,
   unsavedCheckoutGuard,
 } from './checkout/checkout-guards';
-import { adminGuard } from './core/auth-guards';
+import { adminGuard, guestGuard } from './core/auth-guards';
 import { gameTitleResolver } from './game/game-title';
 import { Home } from './home/home';
 import { Login } from './login/login';
@@ -46,7 +46,13 @@ export const routes: Routes = [
     // Отпустить со страницы? Спрашивает гард перед уходом
     canDeactivate: [unsavedCheckoutGuard],
   },
-  { path: 'login', component: Login, title: 'Вход' },
+  {
+    path: 'login',
+    component: Login,
+    title: 'Вход',
+    // Вошедшего покупателя на страницу входа не пускаем
+    canActivate: [guestGuard],
+  },
   {
     path: 'account',
     // Кабинет со всеми вложенными маршрутами — отдельный модуль: загрузится при первом переходе

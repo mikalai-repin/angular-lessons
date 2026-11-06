@@ -4,7 +4,7 @@ import {
   cartNotEmptyGuard,
   unsavedCheckoutGuard,
 } from './checkout/checkout-guards';
-import { adminGuard } from './core/auth-guards';
+import { adminGuard, guestGuard } from './core/auth-guards';
 import { gameTitleResolver } from './game/game-title';
 import { Home } from './home/home';
 import { NotFound } from './not-found/not-found';
@@ -72,6 +72,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./login/login').then((m) => m.Login),
     title: 'Вход',
+    // Вошедшего покупателя на страницу входа не пускаем
+    canActivate: [guestGuard],
   },
   {
     path: 'account',

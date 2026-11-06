@@ -2,7 +2,7 @@
 title: Модель формы
 startFrom: custom
 base: 12-rxjs/09-practice
-baseHash: '9884d1055cc2'
+baseHash: '0e27b3381d96'
 focus: login/login.ts
 url: /login
 api: [Signal Forms, form, FormField, '[formField]', FieldTree]

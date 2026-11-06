@@ -10,7 +10,7 @@ api: [CanActivateFn, UrlTree, createUrlTree, returnUrl, открытый ред�
 
 ## Что изменилось в коде
 
-Новый файл `core/auth-guards.ts` — заготовка гарда `authGuard`: пока он пускает всех.
+Новый файл `core/auth-guards.ts` — заготовки гардов `authGuard` и `guestGuard`: пока они пускают всех.
 
 Если вы вошли в прошлом шаге, токен прожил 30 секунд и уже истёк: магазин при запуске это заметил, и в шапке «Войти». В этом шаге токены снова живут час.
 
@@ -45,6 +45,28 @@ export const authGuard: CanActivateFn = (_route, state) => {
 ```
 
 «Избранное» остаётся открытым: оно хранится в браузере, и вход для него не нужен.
+
+## Страница только для гостей
+
+Обратная задача: вошедшему покупателю незачем страница входа. Ссылки «Войти» в шапке у него нет, но адрес `/login` можно набрать или вернуться на него кнопкой «Назад» — и войти ещё раз, под другим именем, не выходя. Гард `guestGuard` — зеркало `authGuard`:
+
+```ts core/auth-guards.ts
+export const guestGuard: CanActivateFn = () =>
+  inject(AuthStore).isLoggedIn()
+    ? inject(Router).createUrlTree(['/'])
+    : true;
+```
+
+`returnUrl` здесь не нужен: вошедший никуда не шёл через вход — отправляем на главную. Подключаем гард к маршруту `login` в `app.routes.ts`:
+
+```ts app.routes.ts {5}
+{
+  path: 'login',
+  component: Login,
+  title: 'Вход',
+  canActivate: [guestGuard],
+},
+```
 
 ## Возврат после входа
 
@@ -84,15 +106,16 @@ router.navigate(['/login'], {
 ::: task
 1. Напишите `authGuard`: вошёл — `true`; нет — `UrlTree` на `/login` с query-параметром `returnUrl: state.url`.
 2. Подключите его к маршруту `orders` в `account.routes.ts`: `canActivate: [authGuard]`.
-3. В `Login` объявите вход `returnUrl = input<string>()` и после входа переходите по `safeReturnUrl(this.returnUrl())`. Функцию `safeReturnUrl` напишите внизу файла: адрес начинается с `/`, но не с `//`, — он, иначе `'/'`.
-4. В `authInterceptor` после `401` переходите на `/login` с `returnUrl: router.url` — через `router.navigate([...], { queryParams })`.
+3. Напишите `guestGuard`: не вошёл — `true`; вошёл — `UrlTree` на главную. Подключите его к маршруту `login` в `app.routes.ts`.
+4. В `Login` объявите вход `returnUrl = input<string>()` и после входа переходите по `safeReturnUrl(this.returnUrl())`. Функцию `safeReturnUrl` напишите внизу файла: адрес начинается с `/`, но не с `//`, — он, иначе `'/'`.
+5. В `authInterceptor` после `401` переходите на `/login` с `returnUrl: router.url` — через `router.navigate([...], { queryParams })`.
 :::
 
 ## Что получилось
 
 Превью открыто на `/account/orders`, но в адресной строке — `/login?returnUrl=%2Faccount%2Forders`: гард не пустил гостя. Войдите — и вы на «Моих заказах». Страница пока пустая: её содержимое — в практикуме.
 
-Перейдите на «Избранное» и обратно на «Заказы» — гард пускает. Выйдите, перейдите на «Избранное» и щёлкните «Заказы» — снова страница входа.
+Перейдите на «Избранное» и обратно на «Заказы» — гард пускает. Наберите в адресной строке `/login` — вы на главной: `guestGuard` не пустил вошедшего на вход. Выйдите, перейдите на «Избранное» и щёлкните «Заказы» — снова страница входа.
 
 ## Эксперименты
 

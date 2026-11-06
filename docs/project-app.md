@@ -61,9 +61,9 @@ core/
                              с главы 18 — Signal Store: позиции — withEntities (ключ game.id), промокод — withLinkedState,
                              сверка с сервером refresh (rxMethod), очистка по событию checkoutEvents.orderPlaced (withReducer)
   with-storage.ts            withStorage(key, { save, restore }) — своё расширение Signal Store: localStorage (глава 18)
-  (favorites-store.ts        FavoritesStore: id избранного (глава 8), localStorage (глава 9), Signal Store (главы 18.1–18.6);
+  (favorites-store.ts        FavoritesStore: id избранного (глава 8), localStorage (глава 9), forget пропавших игр (12.5), Signal Store (главы 18.1–18.6);
                              с шага 18.7 — классический Store, файл удалён)
-  favorites-feature.ts       избранное в классическом Store: createFeature, редьюсер, selectIds/selectCount (глава 18)
+  favorites-feature.ts       избранное в классическом Store: createFeature, редьюсер (сердечко и пропавшие игры), selectIds/selectCount (глава 18)
   favorites-effects.ts       эффекты NgRx: restoreFavorites (ROOT_EFFECTS_INIT), saveFavorites (глава 18);
                              favorites-storage-actions.ts — действие Restored
   action-log.ts              мета-редьюсер: журнал действий Store в консоли при разработке (глава 18)
@@ -79,7 +79,7 @@ core/
   auth-store.ts              AuthStore: токен и пользователь (сигналы), logIn/logOut, restore (GET /api/me при запуске),
                              refresh (одно обновление на всех), метка SKIP_AUTH (глава 14)
   auth-interceptor.ts        Authorization: Bearer для /api/…, 401 → обновление токена и повтор, иначе выход (глава 14)
-  auth-guards.ts             authGuard (canActivate, returnUrl) и adminGuard (canMatch по роли) (глава 14)
+  auth-guards.ts             authGuard (canActivate, returnUrl), guestGuard (вошедшего — с /login на главную) и adminGuard (canMatch по роли) (глава 14)
   games-api.ts               запросы к /api/games (план; в главе 11 запросы — ресурсы в компонентах)
   models.ts                  типы Game, GamesPage, Review, CartItem, Order, User
   (games-data.ts             локальный каталог глав 2–10; удалён в главе 11)
